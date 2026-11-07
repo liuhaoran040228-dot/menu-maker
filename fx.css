@@ -1,0 +1,45 @@
+html,body.fx{margin:0;height:100%;overflow:hidden;background:#0b1030;overscroll-behavior:none}
+body.fx{touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;font-family:system-ui,"PingFang SC","Microsoft YaHei",sans-serif;color:#fff}
+.fx-stage{position:fixed;inset:0;height:100dvh;width:100vw;overflow:hidden}
+.fx-stage canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.fx-hud{position:absolute;top:max(8px,env(safe-area-inset-top));left:max(10px,env(safe-area-inset-left));right:max(10px,env(safe-area-inset-right));display:flex;gap:8px;align-items:center;pointer-events:none;z-index:5}
+.fx-hud .chip{background:#0d1640aa;border:1px solid #ffffff40;border-radius:999px;padding:5px 12px;font-weight:800;font-size:14px;backdrop-filter:blur(6px);text-shadow:0 1px 3px #000a;display:flex;gap:6px;align-items:center}
+.fx-hud .chip img{height:18px}
+.fx-hud .grow{flex:1}
+.fx-icon{pointer-events:auto;width:44px;height:44px;border-radius:50%;border:2px solid #ffffff70;background:#1a2560bb;color:#fff;font-size:20px;display:grid;place-items:center;backdrop-filter:blur(6px);text-decoration:none;cursor:pointer;padding:0}
+.fx-bar{position:relative;width:min(30vw,220px);height:12px;border-radius:9px;background:#0008;border:1px solid #fff6;overflow:hidden}
+.fx-bar i{position:absolute;inset:0;transform-origin:left;background:linear-gradient(90deg,#ff6fae,#ffd36f);transition:transform .25s cubic-bezier(.2,.9,.3,1.2)}
+.fx-skills{position:absolute;right:max(18px,env(safe-area-inset-right));bottom:max(18px,env(safe-area-inset-bottom));width:230px;height:200px;z-index:6;pointer-events:none}
+.fx-btn{position:absolute;border-radius:50%;pointer-events:auto;border:none;padding:0;cursor:pointer;background:radial-gradient(circle at 35% 30%,#fff9,var(--c,#7aa8ff) 45%,#1d2470 100%);box-shadow:0 0 18px var(--c,#7aa8ff),inset 0 -6px 12px #0006,0 0 0 3px #ffffff55;transition:transform .08s}
+.fx-btn::before{content:"";position:absolute;inset:-7px;border-radius:50%;background:conic-gradient(#ffffffe0 calc(var(--r,1)*360deg),#0000 0);-webkit-mask:radial-gradient(circle,#0000 62%,#000 64%);mask:radial-gradient(circle,#0000 62%,#000 64%)}
+.fx-btn::after{content:"";position:absolute;inset:-26px;border-radius:50%}
+.fx-btn img,.fx-btn svg{position:absolute;inset:16%;width:68%;height:68%;object-fit:contain;filter:drop-shadow(0 2px 3px #0008);pointer-events:none}
+.fx-btn.cool{filter:grayscale(.7) brightness(.7)}
+.fx-btn.down{transform:scale(.88)}
+.fx-btn.ready{animation:fxReady .5s ease-out}
+@keyframes fxReady{0%{box-shadow:0 0 0 0 #fff,0 0 18px var(--c)}100%{box-shadow:0 0 0 22px #fff0,0 0 18px var(--c)}}
+.fx-joy{position:absolute;width:130px;height:130px;margin:-65px 0 0 -65px;border-radius:50%;background:radial-gradient(circle,#ffffff18,#ffffff30 68%,#ffffff70 70%,#fff0 72%);pointer-events:none;opacity:.0;transition:opacity .15s;z-index:4}
+.fx-joy.on{opacity:1}
+.fx-joy i{position:absolute;left:50%;top:50%;width:58px;height:58px;margin:-29px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff,#ffb3dd 50%,#c46cff);box-shadow:0 0 18px #ff9be0}
+.fx-joy.idle{opacity:.45}
+.fx-over{position:absolute;inset:0;z-index:10;display:grid;place-items:center;background:radial-gradient(circle,#1b2a7a99,#060a24ee);transition:opacity .35s}
+.fx-over.hide{opacity:0;pointer-events:none}
+.fx-card{text-align:center;animation:fxPop .45s cubic-bezier(.2,1.4,.4,1)}
+.fx-card h1{font-size:clamp(26px,6vmin,46px);margin:.2em 0;text-shadow:0 0 18px #ff8fd8,0 3px 0 #6a2b9a}
+.fx-card p{opacity:.85;margin:.3em 0 1em;font-size:15px}
+.fx-card img.hero{height:min(34vmin,220px);filter:drop-shadow(0 8px 20px #ff9be088);animation:fxBob 2.4s ease-in-out infinite}
+.fx-play{width:96px;height:96px;border-radius:50%;border:none;font-size:40px;color:#fff;background:radial-gradient(circle at 35% 30%,#fff,#ff7cc8 45%,#8a3cff);box-shadow:0 0 30px #ff7cc8;cursor:pointer;animation:fxPulse 1.4s infinite}
+.fx-row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:8px 0 14px}
+.fx-pick{width:58px;height:58px;border-radius:16px;border:2px solid #fff4;background:#ffffff18;cursor:pointer;padding:3px}
+.fx-pick img{width:100%;height:100%;object-fit:contain}
+.fx-pick.on{border-color:#ffd36f;box-shadow:0 0 14px #ffd36f;background:#ffd36f33}
+.fx-pick.lock{opacity:.45}
+@keyframes fxPop{from{transform:scale(.6);opacity:0}}
+@keyframes fxBob{50%{transform:translateY(-10px)}}
+@keyframes fxPulse{50%{transform:scale(1.07);box-shadow:0 0 50px #ff7cc8}}
+.fx-banner{position:absolute;left:0;right:0;top:32%;text-align:center;font-size:clamp(28px,7vmin,60px);font-weight:900;z-index:7;pointer-events:none;text-shadow:0 0 20px #ff5fb8,0 4px 0 #4b1a7a;opacity:0}
+.fx-banner.show{animation:fxBan 1.6s ease-out}
+@keyframes fxBan{0%{opacity:0;transform:scale(2.2)}15%{opacity:1;transform:scale(1)}80%{opacity:1}100%{opacity:0;transform:translateY(-30px)}}
+.fx-rotate{display:none}
+@media (orientation:portrait){body.fx-land .fx-rotate{display:grid;position:absolute;inset:0;z-index:20;place-items:center;text-align:center;background:#0b1030f2;font-size:18px;padding:20px}}
+.fx-rotate img{height:30vh;animation:fxBob 2s infinite}

@@ -1,34 +1,10 @@
-/* Local convenience gate, not tamper-proof DRM. No codes or user content sent anywhere. */
-const VIP_HASHES = [
-  "67153121c03dbda976b4d3cb8778800def8f62c66f45e871d617c577e426e8c3",
-  "201d2a1779bd6d5776fe2742aa3859800224fef6b1d3a275af20f959ac1cc67a",
-  "15795278b1331a65b26807ff1ebe99f8cb3e5af80eeece6630a577ac66aed825",
-  "56267fbb230692a5738bdf6dddffd60bd067f7ef762a966f6fbec08fc1d4ab6f",
-  "4e31678fbe50b70425ab616aa534eae778d2ab45121f07d2ece88688bf835fea",
-  "fb6e5d584a0531c37fc5ca44f254ca40657c89cfef29f5cf48af6ef6d2410f87",
-  "0ea5dfc16261f8b0801c3a44791c21d9a0a659f3816f54893829951d91896c16",
-  "3aed38472ac5e0be7444b284f1240e3a974d0f8fc1f0489653a8f723efea7537",
-  "c86af2ca6182f6056134af7294c5b9bc54ed7d2383499f9223c096983ee41ce9",
-  "8fe8934e976ac662a424348f9666cfb7cc5748bc3aaf4c418f639ee6772c605b",
-  "422e5718b66898a96325674c28aea50d1d26b9f18873c8d30932707021cd12ce",
-  "3355b59db93dfc212f812d3c9b6072fbc2e133fee3acaca37fcc552607c16ca7",
-  "a888aad685c624428c9d9c7c64c7430434e09c56f2baa235ad3ce8b3e511a368",
-  "cf4bc6cb5ec9e78f2943ea2ed309edf5161b0dea3ad2b7242b3fc0bc70bd1fb3",
-  "2c070177f12143695bca36e24c33a8313eec0bf925dd80ee56601646cbea798d",
-  "fa4e65cd22507f8052ea0bfb23284fc386262d1ecc37f9a854521bf26fba8c53",
-  "f7c7d578f05d6c9a8c973981356ff9adc4203e7afa8b103ac4d5769547294167",
-  "6e39bcc0f8dd25f0ddd5bf442487291e0cd6be1964b8241c2208f6b930b6d4a8",
-  "e184c37d0c96ceb4f283ce54bdab4969bbfaf09ac2b75fe9287d569713a17250",
-  "11b10796fbe71d0b473ce9c728664cf897517c19a601ccb4addc16b53a99b468",
-  "53d36de024de2e91b12c8484fcaca905e7297e46169c09c9d1439fc3ea28c27f",
-  "973bd15e8d7d1945761f0c7563b1237259b76a22028c2f3aad3cae7ccbe4bf90",
-  "7385080589ce43e4fcddb7ce032fd3ed3f022919c2461d13e66ceb8b41ecd3a8",
-  "caa5d7fea2f5e29d703653461f0f8bf9e0a3593271673a8fe653e2a60d5e0ab5",
-  "a68a2760322989929ae07c69dc5949c8fdb6475d9ba39c65b399efd4da11ef59",
-  "63df3629cc79b866a4b25732e2266691d5433a2f06cbff455b1ec386a3d5edf0",
-  "f36f35db01efaf488e9425262300d5e5a69fd4407de0bef72de024d72cd4d351",
-  "45546084f58772c5bdfe908a85e01d7a76446f151d02bfef9bca7a7f09607183",
-  "be7622e4b1670d902adaa2d111e12d4775a3f748ea6d0b52b258991d2b27324f",
-  "e6c54c65a90851253e52a0d2fcd967e3f67c12d122bab63082bcda9de21e2ea8"
-];
-window.VIP=(()=>{const key='lili-vip-v1';const normalize=s=>s.trim().toUpperCase().replace(/\s+/g,'');let session=null;function get(){try{return JSON.parse(localStorage.getItem(key))}catch{return session}}function active(){const s=get();return !!(s&&VIP_HASHES.includes(s.hash)&&(s.kind==='P'||(s.kind==='M'&&Number.isFinite(s.expires)&&s.expires>Date.now())))}function open(){dialog.showModal()}const button=document.createElement('button');button.className='vip-btn';button.type='button';button.textContent='开通VIP';const slot=document.querySelector('.vip-slot');if(slot)slot.append(button);else{button.classList.add('float');document.body.append(button)}const dialog=document.createElement('dialog');dialog.className='ui-dialog';dialog.innerHTML='<div class="dlg-head">'+(window.UI?UI.MASCOT.replace('<svg','<svg width="64" height="64"'):'')+'<h2>开通 VIP</h2><p>激活码可在闲鱼搜索店铺获取</p></div><div class="dlg-body"><ul class="perks"><li>更多配色 / 模板</li><li>导出无免费版水印</li><li>适用工具批量导出</li><li>游戏皮肤与道具</li></ul><label for="vip-code">激活码</label><input id="vip-code" autocomplete="off" placeholder="M-… 或 P-…"><p id="vip-status" role="status"></p><div class="dlg-row"><button id="vip-close" class="alt" type="button">关闭</button><button id="vip-activate" type="button">激活</button></div><p class="dlg-fine">仅当前浏览器生效。月卡自首次本地激活起30天；清除浏览器数据会丢失状态。纯本地校验，不支持跨设备到期管理。</p></div>';document.body.append(dialog);button.onclick=open;dialog.querySelector('#vip-close').onclick=()=>dialog.close();function update(){button.textContent=active()?'VIP 已开通':'开通VIP';button.classList.toggle('on',active());window.dispatchEvent(new Event('vipchange'))}dialog.querySelector('#vip-activate').onclick=async()=>{const code=normalize(dialog.querySelector('input').value),status=dialog.querySelector('#vip-status');if(!/^[MP]-[A-Z0-9-]+$/.test(code)){status.textContent='激活码格式不正确';return}try{if(!crypto.subtle)throw Error('请在 HTTPS 或 localhost 下激活');const bytes=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(code));const hash=Array.from(new Uint8Array(bytes),b=>b.toString(16).padStart(2,'0')).join('');if(!VIP_HASHES.includes(hash)){status.textContent='激活码无效，请检查后重试';return}const prior=get(),kind=code[0];if(prior?.hash===hash&&kind==='M'&&prior.expires<=Date.now()){status.textContent='该激活记录已到期';return}const record=prior?.hash===hash?prior:{hash,kind,expires:kind==='M'?Date.now()+30*86400000:null};session=record;try{localStorage.setItem(key,JSON.stringify(record))}catch{status.textContent='存储不可用，本次页面有效'}dialog.querySelector('input').value='';status.textContent='激活成功'+(kind==='M'?'，有效期30天':'，永久有效');update()}catch(e){status.textContent=e.message}};window.addEventListener('storage',update);setInterval(update,60000);update();return {active,open}})();
+/* Server-backed account bridge. Legacy hashes support already-activated browsers only. */
+window.VIP_LEGACY_HASHES=["67153121c03dbda976b4d3cb8778800def8f62c66f45e871d617c577e426e8c3", "201d2a1779bd6d5776fe2742aa3859800224fef6b1d3a275af20f959ac1cc67a", "15795278b1331a65b26807ff1ebe99f8cb3e5af80eeece6630a577ac66aed825", "56267fbb230692a5738bdf6dddffd60bd067f7ef762a966f6fbec08fc1d4ab6f", "4e31678fbe50b70425ab616aa534eae778d2ab45121f07d2ece88688bf835fea", "fb6e5d584a0531c37fc5ca44f254ca40657c89cfef29f5cf48af6ef6d2410f87", "0ea5dfc16261f8b0801c3a44791c21d9a0a659f3816f54893829951d91896c16", "3aed38472ac5e0be7444b284f1240e3a974d0f8fc1f0489653a8f723efea7537", "c86af2ca6182f6056134af7294c5b9bc54ed7d2383499f9223c096983ee41ce9", "8fe8934e976ac662a424348f9666cfb7cc5748bc3aaf4c418f639ee6772c605b", "422e5718b66898a96325674c28aea50d1d26b9f18873c8d30932707021cd12ce", "3355b59db93dfc212f812d3c9b6072fbc2e133fee3acaca37fcc552607c16ca7", "a888aad685c624428c9d9c7c64c7430434e09c56f2baa235ad3ce8b3e511a368", "cf4bc6cb5ec9e78f2943ea2ed309edf5161b0dea3ad2b7242b3fc0bc70bd1fb3", "2c070177f12143695bca36e24c33a8313eec0bf925dd80ee56601646cbea798d", "fa4e65cd22507f8052ea0bfb23284fc386262d1ecc37f9a854521bf26fba8c53", "f7c7d578f05d6c9a8c973981356ff9adc4203e7afa8b103ac4d5769547294167", "6e39bcc0f8dd25f0ddd5bf442487291e0cd6be1964b8241c2208f6b930b6d4a8", "e184c37d0c96ceb4f283ce54bdab4969bbfaf09ac2b75fe9287d569713a17250", "11b10796fbe71d0b473ce9c728664cf897517c19a601ccb4addc16b53a99b468", "53d36de024de2e91b12c8484fcaca905e7297e46169c09c9d1439fc3ea28c27f", "973bd15e8d7d1945761f0c7563b1237259b76a22028c2f3aad3cae7ccbe4bf90", "7385080589ce43e4fcddb7ce032fd3ed3f022919c2461d13e66ceb8b41ecd3a8", "caa5d7fea2f5e29d703653461f0f8bf9e0a3593271673a8fe653e2a60d5e0ab5", "a68a2760322989929ae07c69dc5949c8fdb6475d9ba39c65b399efd4da11ef59", "63df3629cc79b866a4b25732e2266691d5433a2f06cbff455b1ec386a3d5edf0", "f36f35db01efaf488e9425262300d5e5a69fd4407de0bef72de024d72cd4d351", "45546084f58772c5bdfe908a85e01d7a76446f151d02bfef9bca7a7f09607183", "be7622e4b1670d902adaa2d111e12d4775a3f748ea6d0b52b258991d2b27324f", "e6c54c65a90851253e52a0d2fcd967e3f67c12d122bab63082bcda9de21e2ea8"];
+(()=>{'use strict';
+const script=document.currentScript,root=new URL('.',script.src).href;
+let account=null,wantsOpen=false;
+window.VIP={active:()=>account?account.active():false,open:()=>{if(account)account.open();else wantsOpen=true;}};
+const css=document.createElement('link');css.rel='stylesheet';css.href=root+'account.css';document.head.append(css);
+function accountModule(){const module=document.createElement('script');module.src=root+'account.js';module.onload=()=>{account=window.StarAccount;if(wantsOpen)account.open();window.dispatchEvent(new Event('vipchange'));};module.onerror=()=>{console.error('账号组件加载失败');};document.body.append(module);}
+const sdk=document.createElement('script');sdk.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0/dist/umd/supabase.min.js';sdk.crossOrigin='anonymous';sdk.onload=accountModule;sdk.onerror=accountModule;document.head.append(sdk);
+})();
