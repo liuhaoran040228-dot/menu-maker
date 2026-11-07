@@ -10,59 +10,52 @@
     enemies: [],
     loot: [],
     room: 1,
+    maxRoom: 5,
     roomCleared: false,
-    gold: 0,
+    coins: 0,
+    gems: 0,
     xp: 0,
     level: 1,
-    stats: {atk: 10, def: 5, hp: 100, maxHp: 100},
-    inventory: [],
-    scrollX: 0,
-    targetScrollX: 0,
+    stats: {atk: 10, def: 5, hp: 100, maxHp: 100, spd: 1},
     cameraX: 0,
     transitioning: false,
-    transitionPhase: 0,
-    showBag: false,
-    selectedChar: 'lan',
     comboCount: 0,
-    comboTimer: 0
+    comboTimer: 0,
+    sel: null,
+    mode: 'story',
+    bullets: []
   };
 
-  const RARITIES = [
-    {name: '普通', color: '#ffffff', tier: 0},
-    {name: '精良', color: '#4ade80', tier: 1},
-    {name: '稀有', color: '#3b82f6', tier: 2},
-    {name: '史诗', color: '#a855f7', tier: 3},
-    {name: '传说', color: '#f97316', tier: 4}
+  const RARITIES = ['N', 'R', 'SR', 'SSR'];
+  const RARITY_COLORS = {N: '#ffffff', R: '#4ade80', SR: '#3b82f6', SSR: '#a855f7'};
+  const RARITY_NAMES = {N: '普通', R: '精良', SR: '稀有', SSR: '传说'};
+
+  const STAGES = [
+    {id: 'garden', name: '花之庭院', bg: 'bg-garden', prop: 'prop-flowers', moteColor: '#fbbf24'},
+    {id: 'forest', name: '幽静森林', bg: 'bg-forest', prop: 'prop-pine', moteColor: '#86efac'},
+    {id: 'undersea', name: '深海遗迹', bg: 'bg-undersea', prop: 'prop-coral', moteColor: '#60a5fa'},
+    {id: 'snow', name: '雪域高原', bg: 'bg-snow', prop: '', moteColor: '#e0e7ff'},
+    {id: 'moon', name: '月华秘境', bg: 'bg-moon', prop: 'prop-crystal', moteColor: '#c084fc'},
+    {id: 'sakura', name: '樱之神社', bg: 'bg-sakura', prop: 'prop-sakura', moteColor: '#fda4af'},
+    {id: 'neon', name: '霓虹都市', bg: 'bg-neon', prop: 'prop-rail', moteColor: '#818cf8'},
+    {id: 'space', name: '星际空间', bg: 'bg-space', prop: 'prop-crystal', moteColor: '#a78bfa'}
   ];
 
   const CHARS = [
-    {id: 'lan', name: '蓝蓝', img: 'whale'},
-    {id: 'mo', name: '墨墨', img: 'mo-chibi'},
-    {id: 'li', name: '丽丽', img: 'li-chibi'},
-    {id: 'xing', name: '星星', img: 'xing-chibi'},
-    {id: 'hu', name: '虎虎', img: 'hu-chibi'}
+    {id: 'lan', name: '蓝蓝', img: 'whale', stats: {atk: 12, def: 8, hp: 120, spd: 1.0}},
+    {id: 'mo', name: '墨墨', img: 'mo-chibi', stats: {atk: 15, def: 5, hp: 100, spd: 1.2}},
+    {id: 'li', name: '丽丽', img: 'li-chibi', stats: {atk: 10, def: 10, hp: 140, spd: 0.9}},
+    {id: 'xing', name: '星星', img: 'xing-chibi', stats: {atk: 18, def: 4, hp: 90, spd: 1.3}},
+    {id: 'hu', name: '虎虎', img: 'hu-chibi', stats: {atk: 14, def: 6, hp: 110, spd: 1.1}}
   ];
-
-  const AREAS = [
-    {bg: 'bg-garden', prop: 'prop-flowers', moteColor: '#fbbf24'},
-    {bg: 'bg-forest', prop: 'prop-pine', moteColor: '#86efac'},
-    {bg: 'bg-undersea', prop: 'prop-coral', moteColor: '#60a5fa'},
-    {bg: 'bg-snow', prop: '', moteColor: '#e0e7ff'},
-    {bg: 'bg-moon', prop: 'prop-crystal', moteColor: '#c084fc'}
-  ];
-
-  const store = FX.store('monster-loot', {
-    bestRoom: 1,
-    stats: {atk: 10, def: 5, hp: 100, maxHp: 100},
-    inventory: []
-  });
 
   // Hero class
   class Hero {
-    constructor(charId) {
-      this.char = CHARS.find(c => c.id === charId);
+    constructor(sel) {
+      this.char = CHARS.find(c => c.id === sel.char);
+      this.skinFilter = sel.skin.filter;
       this.x = 300;
-      this.y = 400;
+      this.y = 420;
       this.vx = 0;
       this.vy = 0;
       this.z = 0;
@@ -91,7 +84,7 @@
       }
 
       const joy = FX.joystick({side: 'left'});
-      const speed = 220;
+      const speed = 220 * game.stats.spd;
 
       if (!this.attacking && joy.mag > 0.12) {
         this.vx = joy.x * speed;
@@ -119,8 +112,8 @@
 
       const roomLeft = game.cameraX;
       const roomRight = game.cameraX + 960;
-      this.x = Math.max(roomLeft + 50, Math.min(roomRight - 50, this.x));
-      this.y = Math.max(320, Math.min(480, this.y));
+      this.x = Math.max(roomLeft + 80, Math.min(roomRight - 80, this.x));
+      this.y = Math.max(350, Math.min(500, this.y));
 
       this.sx = FX.lerp(this.sx, this.targetSx, dt * 10);
       this.sy = FX.lerp(this.sy, this.targetSy, dt * 10);
@@ -157,22 +150,25 @@
       game.comboCount = (game.comboCount + 1) % 3;
       game.comboTimer = 0.8;
 
-      const lunge = game.comboCount === 2 ? 80 : 40;
+      const lunge = game.comboCount === 2 ? 120 : 60;
       this.vx = (this.flip ? -1 : 1) * lunge / 0.35;
       this.vy = 0;
 
       this.targetSx = 1.3;
       this.targetSy = 0.8;
 
-      const range = 100;
+      const range = 110;
       const slashX = this.x + (this.flip ? -range/2 : range/2);
-      const slashY = this.y;
+      const slashY = this.y - 60;
 
       for (let i = 0; i < 3; i++) {
         const angle = (this.flip ? Math.PI : 0) + FX.rand(-0.4, 0.4);
-        const sx = slashX + Math.cos(angle) * 20;
-        const sy = slashY + Math.sin(angle) * 20 - 30;
-        FX.trail(sx, sy, '#60a5fa', 3);
+        const dist = FX.rand(30, 60);
+        const sx = slashX + Math.cos(angle) * dist;
+        const sy = slashY + Math.sin(angle) * dist;
+        const screenX = sx - game.cameraX;
+        const screenY = sy;
+        FX.trail(screenX, screenY, '#60a5fa', 3);
       }
 
       const crit = Math.random() < 0.15;
@@ -192,15 +188,16 @@
     }
 
     skill1() {
-      // Star nova
       this.anim = 'cast';
       this.frame = 0;
       this.vx = 0;
       this.vy = 0;
 
       FX.shake(0.3);
-      FX.ring(this.x, this.y, {color: '#fbbf24', r: 180, life: 0.5});
-      FX.burst(this.x, this.y, {n: 30, color: '#fbbf24', speed: 250, life: 0.8, size: 4, glow: true});
+      const screenX = this.x - game.cameraX;
+      const screenY = this.y;
+      FX.ring(screenX, screenY, {color: '#fbbf24', r: 180, life: 0.5});
+      FX.burst(screenX, screenY, {n: 30, color: '#fbbf24', speed: 250, life: 0.8, size: 4, glow: true});
 
       const damage = Math.floor(game.stats.atk * 1.8);
       game.enemies.forEach(e => {
@@ -218,7 +215,6 @@
     }
 
     skill2() {
-      // Frost dash
       this.anim = 'jump';
       this.frame = 0;
       this.invulnerable = 0.4;
@@ -232,7 +228,9 @@
       
       const dashCheck = () => {
         for (let i = 0; i < 5; i++) {
-          FX.trail(this.x + FX.rand(-20, 20), this.y + FX.rand(-30, 0), '#60a5fa', 2);
+          const trailX = this.x + FX.rand(-20, 20) - game.cameraX;
+          const trailY = this.y + FX.rand(-30, 0);
+          FX.trail(trailX, trailY, '#60a5fa', 2);
         }
 
         game.enemies.forEach(e => {
@@ -244,7 +242,9 @@
             e.hit(damage, false);
             e.vx = dir * 180;
             e.hitByDash = true;
-            FX.burst(e.x, e.y, {n: 10, color: '#60a5fa', speed: 120, life: 0.6, size: 3});
+            const burstX = e.x - game.cameraX;
+            const burstY = e.y;
+            FX.burst(burstX, burstY, {n: 10, color: '#60a5fa', speed: 120, life: 0.6, size: 3});
           }
         });
       };
@@ -260,7 +260,6 @@
     }
 
     skill3() {
-      // Heal
       this.anim = 'cast';
       this.frame = 0;
       
@@ -268,9 +267,11 @@
       game.stats.hp = Math.min(game.stats.maxHp, game.stats.hp + heal);
       FX.bar('hp', game.stats.hp / game.stats.maxHp);
 
-      FX.ring(this.x, this.y, {color: '#4ade80', r: 100, life: 0.6});
-      FX.burst(this.x, this.y, {n: 20, color: '#4ade80', speed: 80, life: 1, size: 3, glow: true});
-      FX.text(this.x, this.y - 50, `+${heal}`, {color: '#4ade80', size: 24});
+      const screenX = this.x - game.cameraX;
+      const screenY = this.y;
+      FX.ring(screenX, screenY, {color: '#4ade80', r: 100, life: 0.6});
+      FX.burst(screenX, screenY, {n: 20, color: '#4ade80', speed: 80, life: 1, size: 3, glow: true});
+      FX.text(screenX, screenY - 50, `+${heal}`, {color: '#4ade80', size: 24});
     }
 
     takeDamage(amount) {
@@ -283,11 +284,13 @@
       this.hitFlash = 0.08;
       this.invulnerable = 0.5;
       FX.shake(0.2);
-      FX.text(this.x, this.y - 40, `-${reduced}`, {color: '#ef4444', size: 20});
-      FX.burst(this.x, this.y - 30, {n: 8, color: '#ef4444', speed: 100, life: 0.5, size: 2});
+      const screenX = this.x - game.cameraX;
+      const screenY = this.y;
+      FX.text(screenX, screenY - 40, `-${reduced}`, {color: '#ef4444', size: 20});
+      FX.burst(screenX, screenY - 30, {n: 8, color: '#ef4444', speed: 100, life: 0.5, size: 2});
 
       if (game.stats.hp <= 0) {
-        gameOver();
+        gameOver(false);
       }
     }
 
@@ -296,37 +299,41 @@
       ctx.globalAlpha = shadow;
       ctx.fillStyle = '#000';
       ctx.beginPath();
-      ctx.ellipse(this.x, this.y, 25 * this.sx, 12 * this.sy, 0, 0, Math.PI * 2);
+      ctx.ellipse(this.x, this.y, 50 * this.sx, 25 * this.sy, 0, 0, Math.PI * 2);
       ctx.fill();
       ctx.globalAlpha = 1;
 
       this.afterimages.forEach(img => {
         const imgName = this.char.img === 'whale' ? `whale-${img.anim}` : this.char.img;
-        const h = 100;
         ctx.globalAlpha = img.alpha;
-        FX.drawSprite(ctx, FX.img(imgName), img.x, img.y - img.z, h, {
+        ctx.save();
+        if (this.skinFilter) ctx.filter = this.skinFilter;
+        FX.drawSprite(ctx, FX.img(imgName), img.x, img.y - img.z, 165, {
           flip: img.flip, sx: this.sx, sy: this.sy
         });
+        ctx.restore();
       });
       ctx.globalAlpha = 1;
 
       const imgName = this.char.img === 'whale' ? `whale-${this.anim}` : this.char.img;
-      const h = 100;
 
       if (this.hitFlash > 0) {
         ctx.save();
-        ctx.filter = 'brightness(3)';
+        ctx.filter = (this.skinFilter || '') + ' brightness(3)';
+      } else if (this.skinFilter) {
+        ctx.save();
+        ctx.filter = this.skinFilter;
       }
 
       if (this.invulnerable > 0 && Math.floor(FX.time * 20) % 2 === 0) {
         ctx.globalAlpha = 0.5;
       }
 
-      FX.drawSprite(ctx, FX.img(imgName), this.x, this.y - this.z, h, {
+      FX.drawSprite(ctx, FX.img(imgName), this.x, this.y - this.z, 165, {
         flip: this.flip, sx: this.sx, sy: this.sy
       });
 
-      if (this.hitFlash > 0) {
+      if (this.hitFlash > 0 || this.skinFilter) {
         ctx.restore();
       }
       ctx.globalAlpha = 1;
@@ -344,14 +351,15 @@
       this.variant = variant;
       this.dead = false;
       this.hitFlash = 0;
+      this.dissolve = 0;
       this.frame = 0;
       this.flip = false;
 
       const configs = {
-        slime: {hp: 30, atk: 8, radius: 30, speed: 80, jumpInterval: 2},
-        bat: {hp: 20, atk: 6, radius: 25, speed: 150, swoopInterval: 3},
-        alien: {hp: 40, atk: 10, radius: 28, speed: 60, shootInterval: 2.5},
-        boss: {hp: 300, atk: 15, radius: 50, speed: 40, slamInterval: 4}
+        slime: {hp: 30, atk: 8, radius: 40, speed: 80, jumpInterval: 2, h: 100},
+        bat: {hp: 20, atk: 6, radius: 35, speed: 150, swoopInterval: 3, h: 110},
+        alien: {hp: 40, atk: 10, radius: 38, speed: 60, shootInterval: 2.5, h: 120},
+        boss: {hp: 300, atk: 15, radius: 80, speed: 40, slamInterval: 4, h: 240}
       };
 
       const cfg = configs[type];
@@ -360,8 +368,9 @@
       this.atk = cfg.atk * (1 + variant * 0.5);
       this.radius = cfg.radius * (1 + variant * 0.2);
       this.speed = cfg.speed;
+      this.height = cfg.h;
       this.actionTimer = FX.rand(0.5, 1.5);
-      this.actionInterval = cfg[Object.keys(cfg).find(k => k.includes('Interval'))];
+      this.actionInterval = cfg[Object.keys(cfg).find(k => k.includes('Interval'))] || 2;
 
       this.sx = 1;
       this.sy = 1;
@@ -370,7 +379,10 @@
     }
 
     update(dt) {
-      if (this.dead) return;
+      if (this.dead) {
+        this.dissolve += dt * 2;
+        return;
+      }
 
       if (this.hitFlash > 0) this.hitFlash -= dt;
       this.actionTimer -= dt;
@@ -380,22 +392,30 @@
       this.x += this.vx * dt;
       this.y += this.vy * dt;
 
-      this.y = Math.max(320, Math.min(480, this.y));
+      this.y = Math.max(340, Math.min(510, this.y));
 
       this.sx = FX.lerp(this.sx, this.targetSx, dt * 8);
       this.sy = FX.lerp(this.sy, this.targetSy, dt * 8);
       this.frame += dt * 6;
 
       const hero = game.hero;
+      if (!hero) return;
+
       const dx = hero.x - this.x;
       const dy = hero.y - this.y;
       const dist = Math.sqrt(dx*dx + dy*dy);
       this.flip = dx < 0;
 
+      if (dist > 120) {
+        const angle = Math.atan2(dy, dx);
+        this.vx += Math.cos(angle) * this.speed * dt * 2;
+        this.vy += Math.sin(angle) * this.speed * dt * 2;
+      }
+
       if (this.actionTimer <= 0) {
         this.actionTimer = this.actionInterval + FX.rand(-0.5, 0.5);
 
-        if (this.type === 'slime') {
+        if (this.type === 'slime' && dist > 0) {
           this.targetSy = 0.6;
           setTimeout(() => {
             this.vy = (dy / dist) * 150;
@@ -403,11 +423,11 @@
             this.targetSy = 1.3;
             setTimeout(() => this.targetSy = 1, 200);
           }, 300);
-        } else if (this.type === 'bat') {
+        } else if (this.type === 'bat' && dist > 0) {
           const angle = Math.atan2(dy, dx);
           this.vx = Math.cos(angle) * this.speed * 2;
           this.vy = Math.sin(angle) * this.speed * 2;
-        } else if (this.type === 'alien') {
+        } else if (this.type === 'alien' && dist > 0) {
           const bullet = {
             x: this.x, y: this.y,
             vx: (dx / dist) * 200,
@@ -415,34 +435,39 @@
             life: 3,
             damage: this.atk
           };
-          game.bullets = game.bullets || [];
           game.bullets.push(bullet);
-          FX.trail(this.x, this.y, '#f97316', 3);
+          const screenX = this.x - game.cameraX;
+          const screenY = this.y;
+          FX.trail(screenX, screenY, '#f97316', 3);
         } else if (this.type === 'boss') {
           if (Math.random() < 0.5) {
-            // Slam telegraph
             const slamX = hero.x;
             const slamY = hero.y;
-            FX.ring(slamX, slamY, {color: '#ef4444', r: 80, life: 1.2});
+            const screenX = slamX - game.cameraX;
+            const screenY = slamY;
+            FX.ring(screenX, screenY, {color: '#ef4444', r: 80, life: 1.2});
             setTimeout(() => {
               const hitDist = Math.sqrt((hero.x - slamX)**2 + (hero.y - slamY)**2);
               if (hitDist < 80) {
                 hero.takeDamage(this.atk * 2);
               }
               FX.shake(0.5);
-              FX.burst(slamX, slamY, {n: 20, color: '#ef4444', speed: 200, life: 0.8, size: 4});
+              const finalScreenX = slamX - game.cameraX;
+              const finalScreenY = slamY;
+              FX.burst(finalScreenX, finalScreenY, {n: 20, color: '#ef4444', speed: 200, life: 0.8, size: 4});
             }, 1200);
           } else {
-            // Summon
             const summonX = this.x + FX.rand(-100, 100);
             const summonY = this.y + FX.rand(-50, 50);
             game.enemies.push(new Enemy('slime', summonX, summonY, 0));
-            FX.ring(summonX, summonY, {color: '#a855f7', r: 50, life: 0.5});
+            const screenX = summonX - game.cameraX;
+            const screenY = summonY;
+            FX.ring(screenX, screenY, {color: '#a855f7', r: 50, life: 0.5});
           }
         }
       }
 
-      if (dist < this.radius + 30 && this.type !== 'alien') {
+      if (dist < this.radius + 50 && this.type !== 'alien') {
         hero.takeDamage(this.atk);
       }
     }
@@ -457,8 +482,10 @@
         this.targetSy = 1;
       }, 100);
 
-      FX.text(this.x, this.y - 50, `-${damage}`, {color: crit ? '#fbbf24' : '#ffffff', size: crit ? 28 : 20, crit});
-      FX.burst(this.x, this.y - 30, {n: crit ? 12 : 6, color: crit ? '#fbbf24' : '#ef4444', speed: 100, life: 0.5, size: 2});
+      const screenX = this.x - game.cameraX;
+      const screenY = this.y;
+      FX.text(screenX, screenY - 50, `-${damage}`, {color: crit ? '#fbbf24' : '#ffffff', size: crit ? 28 : 20, crit});
+      FX.burst(screenX, screenY - 30, {n: crit ? 12 : 6, color: crit ? '#fbbf24' : '#ef4444', speed: 100, life: 0.5, size: 2});
 
       if (crit) {
         FX.hitstop(0.08);
@@ -472,59 +499,68 @@
 
     die() {
       this.dead = true;
-      FX.burst(this.x, this.y, {n: 20, color: this.variant > 0 ? '#a855f7' : '#94a3b8', speed: 150, life: 1, size: 3});
+      const screenX = this.x - game.cameraX;
+      const screenY = this.y;
+      FX.burst(screenX, screenY, {n: 20, color: this.variant > 0 ? '#a855f7' : '#94a3b8', speed: 150, life: 1, size: 3});
       
       const xpGain = this.type === 'boss' ? 100 : (15 + this.variant * 10);
       game.xp += xpGain;
       updateXPBar();
 
-      const goldCount = Math.floor(FX.rand(3, 8) * (1 + this.variant * 0.5));
-      for (let i = 0; i < goldCount; i++) {
-        const angle = FX.rand(0, Math.PI * 2);
-        const speed = FX.rand(100, 200);
+      const coinCount = Math.floor(FX.rand(3, 8) * (1 + this.variant * 0.5));
+      for (let i = 0; i < coinCount; i++) {
         setTimeout(() => {
-          FX.burst(this.x, this.y, {n: 1, color: '#fbbf24', speed: 80, life: 0.8, size: 4, glow: true});
-          game.gold += 1;
+          game.coins += 1;
           updateHUD();
         }, i * 50);
       }
 
-      if (Math.random() < 0.25 + this.variant * 0.1) {
-        const lootTypes = ['item-weapon', 'item-armor', 'item-accessory'];
-        const lootType = lootTypes[Math.floor(Math.random() * lootTypes.length)];
-        const rarityRoll = Math.random();
-        let rarity = 0;
-        if (rarityRoll < 0.5) rarity = 0;
-        else if (rarityRoll < 0.75) rarity = 1;
-        else if (rarityRoll < 0.9) rarity = 2;
-        else if (rarityRoll < 0.97) rarity = 3;
-        else rarity = 4;
+      if (this.type === 'boss' || Math.random() < 0.08) {
+        game.gems += 1;
+        updateHUD();
+      }
 
-        rarity = Math.min(4, rarity + this.variant);
+      if (Math.random() < 0.25 + this.variant * 0.1) {
+        const slots = ['weapon', 'armor', 'accessory'];
+        const slot = slots[Math.floor(Math.random() * slots.length)];
+        const icons = {'weapon': 'item-weapon', 'armor': 'item-armor', 'accessory': 'item-accessory'};
+        const icon = icons[slot];
+        
+        const rarityRoll = Math.random();
+        let rarity = 'N';
+        if (rarityRoll < 0.5) rarity = 'N';
+        else if (rarityRoll < 0.75) rarity = 'R';
+        else if (rarityRoll < 0.9) rarity = 'SR';
+        else rarity = 'SSR';
 
         const loot = {
           x: this.x,
           y: this.y,
           z: 0,
           vz: 250,
-          type: lootType,
+          slot: slot,
+          icon: icon,
           rarity: rarity,
           collected: false,
           bobTime: 0
         };
         game.loot.push(loot);
-        FX.ring(this.x, this.y, {color: RARITIES[rarity].color, r: 40, life: 0.6});
+        const lootScreenX = this.x - game.cameraX;
+        const lootScreenY = this.y;
+        FX.ring(lootScreenX, lootScreenY, {color: RARITY_COLORS[rarity], r: 40, life: 0.6});
       }
 
-      game.enemies = game.enemies.filter(e => e !== this);
-      checkRoomCleared();
+      setTimeout(() => {
+        game.enemies = game.enemies.filter(e => e !== this);
+        checkRoomCleared();
+      }, 500);
     }
 
     draw(ctx) {
-      if (this.dead) return;
+      if (this.dissolve > 1) return;
 
       const shadow = 0.3;
-      ctx.globalAlpha = shadow;
+      ctx.globalAlpha = shadow * (1 - this.dissolve);
       ctx.fillStyle = '#000';
       ctx.beginPath();
       ctx.ellipse(this.x, this.y, this.radius * 0.8 * this.sx, this.radius * 0.4 * this.sy, 0, 0, Math.PI * 2);
@@ -532,9 +568,10 @@
       ctx.globalAlpha = 1;
 
       const imgName = `enemy-${this.type}`;
-      const h = this.radius * 2;
 
       ctx.save();
+      ctx.globalAlpha = 1 - this.dissolve;
+      
       if (this.variant > 0) {
         const hue = this.variant === 1 ? 60 : 240;
         ctx.filter = `hue-rotate(${hue}deg) brightness(1.2)`;
@@ -543,29 +580,29 @@
         ctx.filter = (ctx.filter || '') + ' brightness(3)';
       }
 
-      FX.drawSprite(ctx, FX.img(imgName), this.x, this.y, h, {
-        flip: this.flip, sx: this.sx * (1 + this.variant * 0.15), sy: this.sy * (1 + this.variant * 0.15)
+      const scaleBonus = 1 + this.variant * 0.15;
+      FX.drawSprite(ctx, FX.img(imgName), this.x, this.y, this.height, {
+        flip: this.flip, sx: this.sx * scaleBonus, sy: this.sy * scaleBonus
       });
 
       ctx.restore();
 
-      if (this.variant > 0) {
+      if (this.variant > 0 && !this.dead) {
         ctx.save();
         ctx.globalAlpha = 0.3 + Math.sin(FX.time * 4) * 0.2;
         ctx.strokeStyle = this.variant === 1 ? '#a855f7' : '#f97316';
         ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.arc(this.x, this.y - h/2, this.radius + 5, 0, Math.PI * 2);
+        ctx.arc(this.x, this.y - this.height/2, this.radius + 5, 0, Math.PI * 2);
         ctx.stroke();
         ctx.restore();
       }
 
-      // HP bar
-      if (this.hp < this.maxHp) {
-        const barW = 40;
-        const barH = 4;
+      if (this.hp < this.maxHp && !this.dead) {
+        const barW = 50;
+        const barH = 5;
         const barX = this.x - barW/2;
-        const barY = this.y - h - 10;
+        const barY = this.y - this.height - 10;
         
         ctx.fillStyle = '#1e293b';
         ctx.fillRect(barX, barY, barW, barH);
@@ -575,20 +612,19 @@
     }
   }
 
-  // Spawn wave
   function spawnWave() {
-    const isBoss = game.room % 5 === 0;
+    const isBoss = game.room === game.maxRoom;
     const roomX = game.cameraX + 480;
 
     if (isBoss) {
-      const boss = new Enemy('boss', roomX, 400, 0);
+      const boss = new Enemy('boss', roomX, 420, 0);
       game.enemies.push(boss);
       FX.banner('BOSS出现！');
       return;
     }
 
-    const count = Math.min(3 + Math.floor(game.room / 3), 8);
-    const variant = game.room > 5 ? (Math.random() < 0.3 + game.room * 0.02 ? 1 : 0) : 0;
+    const count = Math.min(3 + Math.floor(game.room / 2), 8);
+    const variant = game.room > 2 ? (Math.random() < 0.2 + game.room * 0.02 ? 1 : 0) : 0;
 
     for (let i = 0; i < count; i++) {
       const types = ['slime', 'bat', 'alien'];
@@ -604,7 +640,7 @@
       }
 
       const x = roomX + FX.rand(100, 860);
-      const y = FX.rand(340, 460);
+      const y = FX.rand(360, 480);
       const enemyVariant = Math.random() < 0.2 ? variant : 0;
       game.enemies.push(new Enemy(type, x, y, enemyVariant));
     }
@@ -613,17 +649,21 @@
   function checkRoomCleared() {
     if (game.enemies.length === 0 && !game.roomCleared) {
       game.roomCleared = true;
-      FX.banner('区域清理完成！');
-      setTimeout(() => {
-        nextRoom();
-      }, 1500);
+      
+      if (game.room === game.maxRoom) {
+        gameOver(true);
+      } else {
+        FX.banner('区域清理完成 →');
+        setTimeout(() => {
+          nextRoom();
+        }, 1500);
+      }
     }
   }
 
   function nextRoom() {
     game.transitioning = true;
-    game.transitionPhase = 0;
-    game.targetScrollX = game.cameraX + 960;
+    const targetX = game.cameraX + 960;
 
     const duration = 1.5;
     const start = FX.time;
@@ -632,8 +672,8 @@
     const transition = () => {
       const elapsed = FX.time - start;
       const t = Math.min(1, elapsed / duration);
-      const eased = FX.ease.inOut(t);
-      game.cameraX = startX + (game.targetScrollX - startX) * eased;
+      const eased = FX.ease.outCubic(t);
+      game.cameraX = startX + (targetX - startX) * eased;
 
       if (t >= 1) {
         game.room++;
@@ -660,9 +700,12 @@
       game.stats.def += 2;
 
       FX.banner(`等级提升！Lv.${game.level}`);
-      FX.ring(game.hero.x, game.hero.y, {color: '#fbbf24', r: 150, life: 1});
-      FX.burst(game.hero.x, game.hero.y, {n: 30, color: '#fbbf24', speed: 200, life: 1.2, size: 5, glow: true});
+      const screenX = game.hero.x - game.cameraX;
+      const screenY = game.hero.y;
+      FX.ring(screenX, screenY, {color: '#fbbf24', r: 150, life: 1});
+      FX.burst(screenX, screenY, {n: 30, color: '#fbbf24', speed: 200, life: 1.2, size: 5, glow: true});
       FX.bar('hp', 1);
+      updateHUD();
       updateXPBar();
     }
     const ratio = game.xp / (50 + game.level * 25);
@@ -670,258 +713,162 @@
   }
 
   function updateHUD() {
-    const goldText = `<span class="chip">💰 ${game.gold}</span>`;
-    const roomText = `<span class="chip">区域 ${game.room}</span>`;
-    FX.hud(goldText + '<span class="grow"></span>' + roomText);
+    const coinText = `<span class="chip">💰 ${game.coins}</span>`;
+    const gemText = `<span class="chip">💎 ${game.gems}</span>`;
+    const levelText = `<span class="chip">Lv.${game.level}</span>`;
+    const roomText = `<span class="chip">${game.room}/${game.maxRoom}</span>`;
+    
+    FX.hud(`
+      <div style="display:flex;gap:10px;align-items:center;width:100%;">
+        <div style="flex:1;">
+          <div style="font-size:11px;color:#94a3b8;margin-bottom:2px;">HP</div>
+          <div class="fx-bar" id="hp"><i></i></div>
+        </div>
+        <div style="flex:1;">
+          <div style="font-size:11px;color:#94a3b8;margin-bottom:2px;">XP</div>
+          <div class="fx-bar" id="xp"><i></i></div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          ${levelText}
+          ${coinText}
+          ${gemText}
+          ${roomText}
+        </div>
+      </div>
+    `);
+    
+    FX.bar('hp', game.stats.hp / game.stats.maxHp);
+    FX.bar('xp', game.xp / (50 + game.level * 25));
   }
 
   function collectLoot(loot) {
     loot.collected = true;
     
+    const statRolls = {
+      weapon: {atk: Math.floor((5 + RARITIES.indexOf(loot.rarity) * 8) * (0.8 + Math.random() * 0.4))},
+      armor: {def: Math.floor((3 + RARITIES.indexOf(loot.rarity) * 5) * (0.8 + Math.random() * 0.4))},
+      accessory: {hp: Math.floor((10 + RARITIES.indexOf(loot.rarity) * 20) * (0.8 + Math.random() * 0.4)), spd: 0.05 * (RARITIES.indexOf(loot.rarity) + 1)}
+    };
+
     const item = {
-      type: loot.type,
+      id: `${loot.slot}_${Date.now()}_${Math.random()}`,
+      slot: loot.slot,
+      icon: loot.icon,
       rarity: loot.rarity,
-      atk: loot.type === 'item-weapon' ? Math.floor((5 + loot.rarity * 8) * (0.8 + Math.random() * 0.4)) : 0,
-      def: loot.type === 'item-armor' ? Math.floor((3 + loot.rarity * 5) * (0.8 + Math.random() * 0.4)) : 0,
-      hp: loot.type === 'item-accessory' ? Math.floor((10 + loot.rarity * 20) * (0.8 + Math.random() * 0.4)) : 0
+      stats: statRolls[loot.slot] || {},
+      name: `${RARITY_NAMES[loot.rarity]}${loot.slot === 'weapon' ? '武器' : loot.slot === 'armor' ? '护甲' : '饰品'}`
     };
 
-    game.inventory.push(item);
-    equipBest();
+    window.Lobby.addItem(item);
 
-    FX.burst(loot.x, loot.y, {n: 15, color: RARITIES[loot.rarity].color, speed: 120, life: 0.8, size: 3, glow: true});
-    FX.text(game.hero.x, game.hero.y - 60, `获得 ${RARITIES[loot.rarity].name}装备`, {color: RARITIES[loot.rarity].color, size: 18});
+    const screenX = loot.x - game.cameraX;
+    const screenY = loot.y;
+    FX.burst(screenX, screenY, {n: 15, color: RARITY_COLORS[loot.rarity], speed: 120, life: 0.8, size: 3, glow: true});
+    FX.text(game.hero.x - game.cameraX, game.hero.y - 60, `获得 ${item.name}`, {color: RARITY_COLORS[loot.rarity], size: 18});
   }
 
-  function equipBest() {
-    const byType = {};
-    game.inventory.forEach(item => {
-      if (!byType[item.type]) byType[item.type] = [];
-      byType[item.type].push(item);
-    });
-
-    game.stats.atk = 10;
-    game.stats.def = 5;
-    let hpBonus = 0;
-
-    Object.values(byType).forEach(items => {
-      items.sort((a, b) => b.rarity - a.rarity);
-      const best = items[0];
-      game.stats.atk += best.atk;
-      game.stats.def += best.def;
-      hpBonus += best.hp;
-    });
-
-    const oldMax = game.stats.maxHp;
-    game.stats.maxHp = 100 + (game.level - 1) * 20 + hpBonus;
-    game.stats.hp += (game.stats.maxHp - oldMax);
-    FX.bar('hp', game.stats.hp / game.stats.maxHp);
-
-    store.stats = {...game.stats};
-    store.inventory = [...game.inventory];
-    store.save();
-  }
-
-  function showBag() {
-    game.showBag = true;
-    FX.paused = true;
-
-    let html = '<div style="background:#1e293b;color:#fff;padding:20px;border-radius:12px;max-width:600px;margin:auto;">';
-    html += '<h2 style="margin:0 0 20px 0;font-size:24px;text-align:center;">背包</h2>';
-
-    const byType = {};
-    game.inventory.forEach(item => {
-      if (!byType[item.type]) byType[item.type] = [];
-      byType[item.type].push(item);
-    });
-
-    Object.keys(byType).forEach(type => {
-      const typeName = type === 'item-weapon' ? '武器' : (type === 'item-armor' ? '护甲' : '饰品');
-      html += `<h3 style="margin:15px 0 10px 0;font-size:18px;color:#94a3b8;">${typeName}</h3>`;
-      
-      const grouped = {};
-      byType[type].forEach(item => {
-        const key = item.rarity;
-        if (!grouped[key]) grouped[key] = [];
-        grouped[key].push(item);
-      });
-
-      Object.keys(grouped).sort((a, b) => b - a).forEach(rarity => {
-        const items = grouped[rarity];
-        const r = RARITIES[rarity];
-        html += `<div style="display:flex;align-items:center;margin:8px 0;padding:10px;background:#334155;border-radius:8px;border-left:3px solid ${r.color};">`;
-        html += `<span style="color:${r.color};font-weight:bold;margin-right:10px;">${r.name}</span>`;
-        html += `<span style="color:#cbd5e1;">×${items.length}</span>`;
-        
-        if (items.length >= 3 && rarity < 4) {
-          html += `<button onclick="window.__mergeItems('${type}',${rarity})" style="margin-left:auto;padding:6px 12px;background:#3b82f6;color:#fff;border:none;border-radius:6px;cursor:pointer;">合成 ▲</button>`;
-        }
-        html += '</div>';
-      });
-    });
-
-    html += '<button onclick="window.__closeBag()" style="width:100%;margin-top:20px;padding:12px;background:#ef4444;color:#fff;border:none;border-radius:8px;font-size:16px;cursor:pointer;">关闭</button>';
-    html += '</div>';
-
-    const overlay = document.createElement('div');
-    overlay.id = 'bag-overlay';
-    overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;z-index:1000;';
-    overlay.innerHTML = html;
-    document.body.appendChild(overlay);
-  }
-
-  window.__closeBag = function() {
-    const overlay = document.getElementById('bag-overlay');
-    if (overlay) overlay.remove();
-    game.showBag = false;
-    FX.paused = false;
-  };
-
-  window.__mergeItems = function(type, rarity) {
-    const items = game.inventory.filter(i => i.type === type && i.rarity === rarity);
-    if (items.length < 3) return;
-
-    for (let i = 0; i < 3; i++) {
-      const idx = game.inventory.indexOf(items[i]);
-      game.inventory.splice(idx, 1);
-    }
-
-    const newItem = {
-      type: type,
-      rarity: rarity + 1,
-      atk: type === 'item-weapon' ? Math.floor((5 + (rarity + 1) * 8) * (0.8 + Math.random() * 0.4)) : 0,
-      def: type === 'item-armor' ? Math.floor((3 + (rarity + 1) * 5) * (0.8 + Math.random() * 0.4)) : 0,
-      hp: type === 'item-accessory' ? Math.floor((10 + (rarity + 1) * 20) * (0.8 + Math.random() * 0.4)) : 0
-    };
-
-    game.inventory.push(newItem);
-    equipBest();
-
-    window.__closeBag();
-    setTimeout(() => showBag(), 100);
-  };
-
-  function gameOver() {
+  function gameOver(win) {
     FX.running = false;
     
-    if (game.room > store.bestRoom) {
-      store.bestRoom = game.room;
-      store.save();
+    let stars = 0;
+    if (win) {
+      stars = 3;
+      if (game.stats.hp < game.stats.maxHp * 0.3) stars = 2;
+      if (game.stats.hp < game.stats.maxHp * 0.1) stars = 1;
     }
 
     setTimeout(() => {
-      FX.overlay({
-        title: '远征结束',
-        text: `到达区域: ${game.room}\n最佳记录: ${store.bestRoom}\n收集金币: ${game.gold}`,
-        hero: 'whale-idle',
-        button: '▶ 重新开始',
-        onStart: () => {
-          FX.hideOverlay();
-          startGame(game.selectedChar);
-        }
+      window.Lobby.reportResult({
+        stage: game.sel ? game.sel.stage : 0,
+        stars: stars,
+        coins: game.coins,
+        gems: game.gems,
+        missionsProgress: {}
       });
     }, 500);
   }
 
-  function startGame(charId) {
-    game.selectedChar = charId;
-    game.hero = new Hero(charId);
+  function startRun(sel) {
+    game.sel = sel;
+    game.mode = sel.mode;
+    game.maxRoom = sel.mode === 'story' ? 5 : 999;
+    
+    const charData = CHARS.find(c => c.id === sel.char);
+    game.stats = {
+      atk: sel.stats.atk || charData.stats.atk,
+      def: sel.stats.def || charData.stats.def,
+      hp: sel.stats.hp || charData.stats.hp,
+      maxHp: sel.stats.hp || charData.stats.hp,
+      spd: sel.stats.spd || charData.stats.spd
+    };
+
+    game.hero = new Hero(sel);
     game.enemies = [];
     game.loot = [];
     game.bullets = [];
     game.room = 1;
     game.roomCleared = false;
-    game.gold = 0;
+    game.coins = 0;
+    game.gems = 0;
     game.xp = 0;
     game.level = 1;
-    game.stats = {...store.stats};
-    game.inventory = [...store.inventory];
-    game.scrollX = 0;
     game.cameraX = 0;
     game.transitioning = false;
     game.comboCount = 0;
     game.comboTimer = 0;
 
-    FX.hud(`
-      <div style="display:flex;gap:10px;align-items:center;">
-        <div style="flex:1;">
-          <div style="font-size:12px;color:#94a3b8;margin-bottom:2px;">HP</div>
-          <div class="fx-bar" id="hp"><i></i></div>
-        </div>
-        <div style="flex:1;">
-          <div style="font-size:12px;color:#94a3b8;margin-bottom:2px;">XP</div>
-          <div class="fx-bar" id="xp"><i></i></div>
-        </div>
-      </div>
-    `);
-
-    FX.bar('hp', 1);
-    FX.bar('xp', 0);
     updateHUD();
 
     const attackBtn = FX.button({
       icon: 'item-weapon',
       color: '#ef4444',
-      size: 84,
+      size: 100,
       right: 20,
-      bottom: 180,
+      bottom: 20,
       key: 'KeyJ',
       cd: 0,
       hold: true,
       onPress: () => {
-        if (attackBtn.down) game.hero.attack();
+        if (attackBtn.down && FX.running && !FX.paused) game.hero.attack();
       }
     });
 
     const skill1Btn = FX.button({
       icon: 'item-star',
       color: '#fbbf24',
-      size: 74,
-      right: 120,
-      bottom: 180,
+      size: 70,
+      right: 140,
+      bottom: 18,
       key: 'KeyK',
       cd: 6,
       onPress: () => {
-        game.hero.skill1();
+        if (FX.running && !FX.paused) game.hero.skill1();
       }
     });
 
     const skill2Btn = FX.button({
       icon: 'item-ice',
       color: '#60a5fa',
-      size: 74,
-      right: 20,
-      bottom: 90,
+      size: 70,
+      right: 128,
+      bottom: 104,
       key: 'KeyL',
       cd: 5,
       onPress: () => {
-        game.hero.skill2();
+        if (FX.running && !FX.paused) game.hero.skill2();
       }
     });
 
     const skill3Btn = FX.button({
       icon: 'item-heart',
       color: '#4ade80',
-      size: 74,
-      right: 120,
-      bottom: 90,
+      size: 70,
+      right: 52,
+      bottom: 140,
       key: 'KeyI',
       cd: 15,
       onPress: () => {
-        game.hero.skill3();
-      }
-    });
-
-    const bagBtn = FX.button({
-      icon: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 6h-4V4c0-1.1-.9-2-2-2h-4c-1.1 0-2 .9-2 2v2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zM10 4h4v2h-4V4z"/></svg>',
-      color: '#a855f7',
-      size: 64,
-      right: 220,
-      bottom: 135,
-      key: 'KeyB',
-      cd: 0,
-      onPress: () => {
-        showBag();
+        if (FX.running && !FX.paused) game.hero.skill3();
       }
     });
 
@@ -929,29 +876,39 @@
     FX.running = true;
   }
 
-  // Main loop
-  const area = () => AREAS[(Math.floor(game.room / 5)) % AREAS.length];
+  function applySkin(sel) {
+    if (game.hero && sel.char === (game.sel ? game.sel.char : null)) {
+      game.hero.skinFilter = sel.skin.filter;
+      if (game.sel) game.sel.skin = sel.skin;
+    }
+  }
+
+  const area = () => {
+    const idx = game.sel ? game.sel.stage : 0;
+    return STAGES[Math.max(0, Math.min(idx, STAGES.length - 1))];
+  };
 
   function update(dt) {
-    if (!FX.running || FX.paused) return;
+    if (!FX.running || FX.paused || !game.hero) return;
 
     game.hero.update(dt);
 
     game.enemies.forEach(e => e.update(dt));
 
-    game.bullets = game.bullets || [];
     game.bullets = game.bullets.filter(b => {
       b.x += b.vx * dt;
       b.y += b.vy * dt;
       b.life -= dt;
 
-      const dx = b.x - game.hero.x;
-      const dy = b.y - game.hero.y;
-      const dist = Math.sqrt(dx*dx + dy*dy);
+      if (game.hero) {
+        const dx = b.x - game.hero.x;
+        const dy = b.y - game.hero.y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
 
-      if (dist < 30) {
-        game.hero.takeDamage(b.damage);
-        return false;
+        if (dist < 50) {
+          game.hero.takeDamage(b.damage);
+          return false;
+        }
       }
 
       return b.life > 0;
@@ -967,13 +924,13 @@
         loot.vz = 0;
       }
 
-      if (loot.z === 0) {
+      if (loot.z === 0 && game.hero) {
         loot.bobTime += dt;
         const dx = loot.x - game.hero.x;
         const dy = loot.y - game.hero.y;
         const dist = Math.sqrt(dx*dx + dy*dy);
 
-        if (dist < 50) {
+        if (dist < 70) {
           collectLoot(loot);
           return false;
         }
@@ -985,8 +942,6 @@
 
   function draw(ctx) {
     ctx.save();
-    ctx.translate(-game.cameraX, 0);
-
     const a = area();
     const layers = [
       {img: a.bg, speed: 0.2, y: 0, h: 540, alpha: 1}
@@ -996,6 +951,17 @@
     }
     FX.parallax(ctx, layers, game.cameraX * 0.3);
     FX.motes(ctx, a.moteColor);
+    ctx.restore();
+
+    ctx.save();
+    ctx.translate(-game.cameraX, 0);
+    
+    if (!game.hero) { 
+      ctx.restore(); 
+      FX.drawFX(ctx); 
+      FX.vignette(ctx);
+      return; 
+    }
 
     const entities = [
       ...game.enemies.map(e => ({obj: e, y: e.y, type: 'enemy'})),
@@ -1015,21 +981,23 @@
         ctx.globalAlpha = 0.4;
         ctx.fillStyle = '#000';
         ctx.beginPath();
-        ctx.ellipse(loot.x, loot.y, 15, 8, 0, 0, Math.PI * 2);
+        ctx.ellipse(loot.x, loot.y, 20, 10, 0, 0, Math.PI * 2);
         ctx.fill();
         ctx.globalAlpha = 1;
 
         const bob = Math.sin(loot.bobTime * 3) * 8;
-        const h = 40;
+        const h = 50;
         
         ctx.save();
-        ctx.shadowColor = RARITIES[loot.rarity].color;
+        ctx.shadowColor = RARITY_COLORS[loot.rarity];
         ctx.shadowBlur = 15;
-        FX.drawSprite(ctx, FX.img(loot.type), loot.x, loot.y - loot.z - bob, h, {glow: true});
+        FX.drawSprite(ctx, FX.img(loot.icon), loot.x, loot.y - loot.z - bob, h, {glow: true});
         ctx.restore();
 
         if (loot.z === 0 && Math.floor(FX.time * 8) % 8 === 0) {
-          FX.trail(loot.x + FX.rand(-10, 10), loot.y - 20 + FX.rand(-10, 10), RARITIES[loot.rarity].color, 2);
+          const trailX = loot.x + FX.rand(-10, 10) - game.cameraX;
+          const trailY = loot.y - 20 + FX.rand(-10, 10);
+          FX.trail(trailX, trailY, RARITY_COLORS[loot.rarity], 2);
         }
       }
     });
@@ -1052,7 +1020,6 @@
     FX.vignette(ctx);
   }
 
-  // Initialize
   const assets = [
     'bg-arena', 'bg-forest', 'bg-garden', 'bg-moon', 'bg-neon', 'bg-rail',
     'bg-sakura', 'bg-sky', 'bg-snow', 'bg-space', 'bg-station', 'bg-undersea',
@@ -1066,51 +1033,46 @@
   ];
 
   FX.load(assets).then(() => {
-    let selectedChar = 'lan';
-
-    const charButtons = CHARS.map(char => {
-      const btn = document.createElement('button');
-      btn.className = 'fx-pick';
-      if (char.id === selectedChar) btn.classList.add('selected');
-      btn.innerHTML = `<img src="../assets/${char.img === 'whale' ? 'whale-idle' : char.img}.webp" style="width:60px;height:60px;object-fit:contain;">`;
-      btn.onclick = () => {
-        selectedChar = char.id;
-        document.querySelectorAll('.fx-pick').forEach(b => b.classList.remove('selected'));
-        btn.classList.add('selected');
-      };
-      return btn;
+    const skins = [];
+    CHARS.forEach(char => {
+      skins.push(
+        {char: char.id, id: 'default', name: '默认', filter: '', rarity: 'N', vip: false},
+        {char: char.id, id: 'flame', name: '烈焰', filter: 'hue-rotate(20deg) saturate(1.3)', rarity: 'R', vip: false},
+        {char: char.id, id: 'frost', name: '冰霜', filter: 'hue-rotate(180deg) saturate(1.2)', rarity: 'SR', vip: false},
+        {char: char.id, id: 'galaxy', name: '星河', filter: 'hue-rotate(270deg) saturate(1.5) brightness(1.1)', rarity: 'SSR', vip: true}
+      );
     });
 
-    const charRow = document.createElement('div');
-    charRow.className = 'fx-row';
-    charRow.style.marginTop = '20px';
-    charButtons.forEach(btn => charRow.appendChild(btn));
-
-    FX.overlay({
+    window.Lobby.init({
+      id: 'monster-loot',
       title: '萌娘星糖远征',
-      text: '选择你的角色，踏上史诗般的冒险旅程！',
-      hero: 'whale-idle',
-      html: charRow.outerHTML,
-      button: '▶ 开始远征',
-      onStart: () => {
-        FX.hideOverlay();
-        startGame(selectedChar);
-      }
+      orientation: 'landscape',
+      bg: STAGES.map(s => ({img: s.bg, prop: s.prop, moteColor: s.moteColor})),
+      modes: ['story', 'endless'],
+      stages: STAGES,
+      chars: CHARS.map(c => ({
+        id: c.id,
+        name: c.name,
+        img: c.img === 'whale' ? 'whale-idle' : c.img,
+        chibi: c.img === 'whale' ? 'lan-chibi' : c.img,
+        stats: c.stats
+      })),
+      skins: skins,
+      currency: [
+        {id: 'coin', icon: 'item-chest'},
+        {id: 'gem', icon: 'item-star'}
+      ],
+      slots: [
+        {id: 'weapon', icon: 'item-weapon'},
+        {id: 'armor', icon: 'item-armor'},
+        {id: 'accessory', icon: 'item-accessory'}
+      ],
+      onStart: startRun,
+      onQuit: () => { FX.running = false; },
+      onSkinChange: applySkin
     });
 
     FX.loop(update, draw);
   });
-
-  // QA
-  window.__game = {
-    state: () => ({
-      room: game.room,
-      level: game.level,
-      gold: game.gold,
-      hp: game.stats.hp,
-      enemies: game.enemies.length,
-      inventory: game.inventory.length
-    })
-  };
 
 })();

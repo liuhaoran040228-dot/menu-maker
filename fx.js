@@ -8,7 +8,7 @@
   let W, H, dpr, aspect, logicalH;
   let updateFn, drawFn, dt, lastT, pauseBtn;
   let hitstopTimer = 0, shakeIntensity = 0, shakeDecay = 0.92;
-  let pauseState = false, runningFlag = false;
+  let pauseState = false, runningFlag = false, portraitMode = false;
   
   // Assets
   const images = {};
@@ -43,6 +43,8 @@
   
   // Init
   FX.init = function(opts = {}) {
+    portraitMode = opts.landscape === false;
+    if (FX._inited) return FX._initRes; FX._inited = true;
     logicalH = opts.logicalH || 540;
     const isLandscape = opts.landscape;
     
@@ -117,13 +119,14 @@
     stage.addEventListener('pointercancel', onPointerUp);
     
     document.addEventListener('visibilitychange', () => {
-      if (document.hidden && runningFlag && !overEl.classList.contains('hide')) {
+      if (document.hidden && runningFlag && overEl.classList.contains('hide')) {
         pauseState = true;
         updatePauseBtn();
+        if (window.Lobby && Lobby.pauseMenu) Lobby.pauseMenu();
       }
     });
     
-    return { cv, ctx, W, H };
+    return FX._initRes = { cv, ctx, W, H };
   };
   
   function resize() {
@@ -135,8 +138,8 @@
     cv.style.height = ch + 'px';
     
     aspect = cw / ch;
-    H = logicalH;
-    W = H * aspect;
+    if (portraitMode) { W = 540; H = W / aspect; }
+    else { H = logicalH; W = H * aspect; }
     
     const scale = cv.height / H;
     ctx.setTransform(scale, 0, 0, scale, 0, 0);
@@ -162,7 +165,6 @@
   FX.loop = function(update, draw) {
     updateFn = update;
     drawFn = draw;
-    runningFlag = true;
     lastT = performance.now() / 1000;
     requestAnimationFrame(tick);
   };
@@ -199,10 +201,11 @@
   
   FX.hitstop = sec => hitstopTimer = sec;
   FX.shake = intensity => shakeIntensity = Math.max(shakeIntensity, intensity);
-  Object.defineProperty(FX, 'paused', { get: () => pauseState });
-  Object.defineProperty(FX, 'running', { get: () => runningFlag });
+  Object.defineProperty(FX, 'paused', { get: () => pauseState, set: v => { pauseState = !!v; if (pauseBtn) updatePauseBtn(); } });
+  Object.defineProperty(FX, 'running', { get: () => runningFlag, set: v => { runningFlag = !!v; } });
   
   function togglePause() {
+    if (window.Lobby && Lobby.pauseMenu) { if (runningFlag) { pauseState = true; updatePauseBtn(); Lobby.pauseMenu(); } return; }
     pauseState = !pauseState;
     updatePauseBtn();
   }
@@ -236,7 +239,7 @@
     if (mag < JOY_DEADZONE) finalMag = 0;
     else finalMag = (mag - JOY_DEADZONE) / (1 - JOY_DEADZONE);
     
-    const joy = FX.joystick.state;
+    const joy = FX.joystick.state || (FX.joystick.state = { x: 0, y: 0, mag: 0, active: false });
     if (finalMag > 0) {
       joy.x = joyOutX / mag;
       joy.y = joyOutY / mag;
@@ -267,6 +270,7 @@
   }
   
   FX.joystick = function(opts) {
+    document.body.classList.add('fx-hasjoy');
     if (!FX.joystick.state) FX.joystick.state = { x: 0, y: 0, mag: 0, active: false };
     return FX.joystick.state;
   };
@@ -288,7 +292,7 @@
         btn.buffered = FX.time;
         btn.el.classList.add('down');
         btn.isDown = true;
-        if (btn.hold) btn.onPress();
+        if (btn.hold) (runningFlag && !pauseState && btn.onPress());
         hitBtn = true;
         break;
       }
@@ -336,7 +340,7 @@
         btn.el.classList.remove('down');
         btn.isDown = false;
         if (!btn.hold && FX.time - btn.buffered < 0.15 && btn.isReady) {
-          btn.onPress();
+          (runningFlag && !pauseState && btn.onPress());
           btn.lastPress = FX.time;
           btn.isReady = false;
           btn.el.classList.add('cool');
@@ -351,9 +355,10 @@
   
   // Button
   FX.button = function(opts) {
+    if (!FX._inited) FX.init({landscape:true});
     const el = document.createElement('button');
     el.className = 'fx-btn ready';
-    el.style.cssText = `right:${opts.right}px;bottom:${opts.bottom}px;width:${opts.size}px;height:${opts.size}px;`;
+    el.style.cssText = `right:calc(${opts.right}px*var(--k,1) + env(safe-area-inset-right));bottom:calc(${opts.bottom}px*var(--k,1) + env(safe-area-inset-bottom));width:calc(${opts.size}px*var(--k,1));height:calc(${opts.size}px*var(--k,1));`;
     el.style.setProperty('--c', opts.color || '#ff7cc8');
     el.style.setProperty('--r', '1');
     
@@ -372,7 +377,7 @@
       hold: opts.hold || false, isReady: true, lastPress: -999,
       pointerId: null, buffered: 0, isDown: false,
       ready: () => btn.isReady,
-      trigger: () => { if (btn.isReady) btn.onPress(); },
+      trigger: () => { if (btn.isReady) (runningFlag && !pauseState && btn.onPress()); },
       setCd: sec => { btn.cd = sec; },
       get down() { return btn.isDown; }
     };
@@ -380,7 +385,7 @@
     if (opts.key) {
       document.addEventListener('keydown', e => {
         if (e.code === opts.key && !e.repeat && btn.isReady) {
-          btn.onPress();
+          (runningFlag && !pauseState && btn.onPress());
           btn.lastPress = FX.time;
           btn.isReady = false;
           btn.el.classList.add('cool');
@@ -424,7 +429,7 @@
   FX.overlay = function(opts) {
     const card = overEl.querySelector('.fx-card');
     card.querySelector('h1').textContent = opts.title || '';
-    card.querySelector('p').textContent = opts.text || '';
+    card.querySelector('p').innerHTML = opts.text || '';
     card.querySelector('.fx-html').innerHTML = opts.html || '';
     card.querySelector('.fx-play').textContent = opts.button || '▶';
     
@@ -468,16 +473,17 @@
       if (i === 0) {
         const scale = H / img.naturalHeight;
         const sw = img.naturalWidth * scale;
-        const offsetX = -(scrollX * layer.speed) % sw;
-        for (let x = offsetX; x < W; x += sw) {
-          ctx.drawImage(img, x, 0, sw, H);
+        const span = sw * 2, o = ((scrollX * layer.speed) % span + span) % span;
+        for (let k = 0, x = -o; x < W; k++, x += sw) {
+          if (k % 2) { ctx.save(); ctx.translate(x + sw, 0); ctx.scale(-1, 1); ctx.drawImage(img, 0, 0, sw + 1, H); ctx.restore(); }
+          else ctx.drawImage(img, x, 0, sw + 1, H);
         }
       } else {
         const sy = layer.y, sh = layer.h;
         const scale = sh / img.naturalHeight;
         const sw = img.naturalWidth * scale;
         const gap = layer.gap || sw;
-        const offsetX = -(scrollX * layer.speed) % gap;
+        const offsetX = -(((scrollX * layer.speed) % gap) + gap) % gap;
         const vary = 1 + Math.sin(i * 1.234) * 0.08;
         const fh = sh * vary;
         for (let x = offsetX - sw; x < W + sw; x += gap) {
@@ -530,6 +536,24 @@
     ctx.restore();
   };
   
+
+  // Crisp spinning gold coin
+  FX.coin = function(ctx, x, y, r, t) {
+    const sx = Math.max(0.12, Math.abs(Math.cos(t * 4)));
+    ctx.save(); ctx.translate(x, y); ctx.filter = 'none'; ctx.globalCompositeOperation = 'source-over';
+    ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.beginPath(); ctx.ellipse(2, 3, r * sx, r, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.scale(sx, 1);
+    const g = ctx.createLinearGradient(-r, -r, r, r); g.addColorStop(0, '#fff6b0'); g.addColorStop(.45, '#ffc93c'); g.addColorStop(1, '#c97a00');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.fill();
+    ctx.lineWidth = Math.max(1.5, r * .14); ctx.strokeStyle = '#9a5a00'; ctx.stroke();
+    ctx.lineWidth = Math.max(1, r * .1); ctx.strokeStyle = '#ffe680'; ctx.beginPath(); ctx.arc(0, 0, r * .68, 0, Math.PI * 2); ctx.stroke();
+    ctx.fillStyle = '#fff8d0'; ctx.beginPath();
+    for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? r * .2 : r * .45; ctx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr); }
+    ctx.closePath(); ctx.fill();
+    ctx.restore();
+    if (sx > .9 && Math.sin(t * 9) > .97) { ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(x - r * .4, y - r * .4, r * .18, 0, Math.PI * 2); ctx.fill(); ctx.restore(); }
+  };
+
   // Particles
   FX.burst = function(x, y, opts) {
     const n = opts.n || 10;

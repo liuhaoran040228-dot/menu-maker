@@ -43,3 +43,12 @@ body.fx{touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touc
 .fx-rotate{display:none}
 @media (orientation:portrait){body.fx-land .fx-rotate{display:grid;position:absolute;inset:0;z-index:20;place-items:center;text-align:center;background:#0b1030f2;font-size:18px;padding:20px}}
 .fx-rotate img{height:30vh;animation:fxBob 2s infinite}
+.fx-card{max-height:94dvh;overflow:auto;padding:8px 18px;box-sizing:border-box;max-width:94vw;scrollbar-width:none}
+@media (max-height:500px){.fx-card img.hero{height:22vh}.fx-card h1{margin:0}.fx-card p{margin:.2em 0 .5em;font-size:13px}.fx-play{width:72px;height:72px;font-size:30px}.fx-row{margin:4px 0 8px}}
+.fx-stage{--k:clamp(.7,calc(100dvh / 520px),1.15)}
+.fx-skills{inset:0;width:auto;height:auto;right:0;bottom:0}
+body:not(.fx-hasjoy) .fx-joy{display:none}
+.fx-joy{margin:0 0 -65px -65px}
+.fx-hud{padding-right:54px}.fx-hud>.fx-icon:last-child{position:absolute;right:0}
+#pz{display:none!important}
+.fx-hud .chip{white-space:nowrap;flex-shrink:0}

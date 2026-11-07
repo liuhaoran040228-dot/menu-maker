@@ -3,8 +3,10 @@ window.VIP_LEGACY_HASHES=["67153121c03dbda976b4d3cb8778800def8f62c66f45e871d617c
 (()=>{'use strict';
 const script=document.currentScript,root=new URL('.',script.src).href;
 let account=null,wantsOpen=false;
-window.VIP={active:()=>account?account.active():false,open:()=>{if(account)account.open();else wantsOpen=true;}};
-const css=document.createElement('link');css.rel='stylesheet';css.href=root+'account.css';document.head.append(css);
-function accountModule(){const module=document.createElement('script');module.src=root+'account.js';module.onload=()=>{account=window.StarAccount;if(wantsOpen)account.open();window.dispatchEvent(new Event('vipchange'));};module.onerror=()=>{console.error('账号组件加载失败');};document.body.append(module);}
+window.VIP={tier:()=>account?.tier()||0,level:()=>account?.level()||1,perks:()=>account?.perks()||{},active:()=>account?account.active():false,open:()=>{if(account)account.open();else wantsOpen=true;}};
+const css=document.createElement('link');css.rel='stylesheet';css.href=root+'account.css';document.head.append(css);const premiumCss=document.createElement('link');premiumCss.rel='stylesheet';premiumCss.href=root+'premium.css';document.head.append(premiumCss);const appearanceCss=document.createElement('link');appearanceCss.rel='stylesheet';appearanceCss.href=root+'appearance.css';document.head.append(appearanceCss);
+function loadAccount(){const module=document.createElement('script');module.src=root+'account.js';module.onload=()=>{account=window.StarAccount;if(wantsOpen)account.open();window.dispatchEvent(new Event('vipchange'));};module.onerror=()=>{console.error('账号组件加载失败');};document.body.append(module);}
+function loadAppearance(){const a=document.createElement('script');a.src=root+'appearance.js';a.onload=loadAccount;a.onerror=loadAccount;document.body.append(a);}
+function accountModule(){const p=document.createElement('script');p.src=root+'premium.js';p.onload=loadAppearance;p.onerror=loadAppearance;document.body.append(p);}
 const sdk=document.createElement('script');sdk.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0/dist/umd/supabase.min.js';sdk.crossOrigin='anonymous';sdk.onload=accountModule;sdk.onerror=accountModule;document.head.append(sdk);
 })();

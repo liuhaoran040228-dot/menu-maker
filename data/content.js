@@ -1,12 +1,12 @@
 /* Content registry: add original content here without editing game logic. No external URLs. */
 window.StarData={
 characters:[{id:'lan',name:'蓝蓝',hair:'#65bde9',dark:'#3e71b6',dress:'#d5f4ff',tag:'海风导航员',mark:'whale'}, {id:'mo',name:'小模',hair:'#7bc7af',dark:'#398474',dress:'#e3fff0',tag:'花园整理师',mark:'flower'}, {id:'li',name:'栗栗',hair:'#c38c74',dark:'#875d63',dress:'#ffe7c7',tag:'点心治愈师',mark:'nut'}, {id:'xing',name:'星眠',hair:'#b39ae6',dark:'#7962b2',dress:'#ede3ff',tag:'银河观测员',mark:'star'}, {id:'hu',name:'橙铃',hair:'#f4ae7c',dark:'#c66a58',dress:'#fff0d7',tag:'元气探险家',mark:'fox'}],
-skins:[{id:0,name:'伙伴原色',vip:false},{id:1,name:'樱糖粉',vip:true,hair:'#f0a6cc',dress:'#fff1fa'},{id:2,name:'星河蓝',vip:true,hair:'#91a6ef',dress:'#e9efff'}],
+skins:[{id:0,name:'伙伴原色',vip:false},{id:1,name:'樱糖粉',vip:true,hair:'#f0a6cc',dress:'#fff1fa'},{id:2,name:'星河蓝',vip:true,minTier:3,hair:'#91a6ef',dress:'#e9efff'}],
 outfits:[
 {id:0,name:'星糖校服',price:0,vip:false,svg:'<path d="M42 103h36l8 28H34z" fill="#8188bf"/><path d="m47 101 13 11 13-11m-13 11v17" stroke="white" stroke-width="3" fill="none"/><path d="m60 111-7-5v10l7-3 7 3v-10z" fill="#f2accd"/>'},
-{id:1,name:'星愿魔法少女',price:100,vip:true,svg:'<path d="M42 101h36l14 31-16 6-16-5-17 5-15-6z" fill="#b995e8"/><path d="m43 102 17 9 17-9-7 18H50z" fill="#f5b9db"/><path d="m60 106 3 6 7 1-5 4 1 7-6-3-6 3 1-7-5-4 7-1z" fill="#fff0b0"/><path d="M40 129h40" stroke="#fff" stroke-width="3"/>'}
+{id:1,name:'星愿魔法少女',price:100,vip:true,minTier:2,svg:'<path d="M42 101h36l14 31-16 6-16-5-17 5-15-6z" fill="#b995e8"/><path d="m43 102 17 9 17-9-7 18H50z" fill="#f5b9db"/><path d="m60 106 3 6 7 1-5 4 1 7-6-3-6 3 1-7-5-4 7-1z" fill="#fff0b0"/><path d="M40 129h40" stroke="#fff" stroke-width="3"/>'}
 ],
-vehicles:[{id:'foot',name:'轻快步行',kind:'foot',price:0,vip:false,speed:1,jump:1},{id:'board',name:'糖星滑板',kind:'board',price:80,vip:false,speed:1.12,jump:1.07},{id:'hover',name:'月光飞行器',kind:'hover',price:0,vip:true,speed:1.2,jump:1.13}],
+vehicles:[{id:'foot',name:'轻快步行',kind:'foot',price:0,vip:false,speed:1,jump:1},{id:'board',name:'糖星滑板',kind:'board',price:80,vip:false,speed:1.12,jump:1.07},{id:'hover',name:'月光飞行器',kind:'hover',price:0,vip:true,minTier:4,speed:1.2,jump:1.13}],
 runnerItems:[{id:'magnet',name:'磁铁',glyph:'磁',color:'#f3b5d1',duration:7},{id:'shield',name:'护盾',glyph:'盾',color:'#aadfe6',duration:10},{id:'dash',name:'冲刺',glyph:'冲',color:'#e8c888',duration:3}],
 arcadeItems:{shooter:{name:'补给护盾',lives:1,duration:4},snake:{name:'防撞护符',charges:1},fighter:{name:'星光护盾',charges:1}},
 campaign:[{id:'lan',name:'海风试炼 · 蓝蓝',hp:80,speed:80,damage:.7},{id:'li',name:'点心试炼 · 栗栗',hp:100,speed:100,damage:.85},{id:'mo',name:'花园试炼 · 小模',hp:120,speed:105,damage:1},{id:'hu',name:'迅影试炼 · 橙铃',hp:145,speed:135,damage:1.05},{id:'xing',name:'星眠的幻光',hp:170,speed:120,damage:1.15},{id:'xing',name:'首领 · 星穹守护者',hp:230,speed:140,damage:1.3}],
