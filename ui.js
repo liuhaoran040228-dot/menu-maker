@@ -1,8 +1,8 @@
 /* shared UI chrome: top bar, footer, toasts, confirm, game overlays. No network. */
 window.UI=(()=>{const root=document.currentScript.src.replace(/ui\.js(\?.*)?$/,'');
-const MASCOT='<svg viewBox="0 0 120 120" aria-hidden="true"><path d="M60 10C38 30 14 46 14 74c0 22 20 38 46 38s46-16 46-38C106 46 82 30 60 10z" fill="#9a5b32"/><path d="M60 10C50 22 40 30 34 40c10-6 18-8 26-8s16 2 26 8C80 30 70 22 60 10z" fill="#6e3d1e"/><path d="M22 86c8 16 22 24 38 24s30-8 38-24c-10 6-22 9-38 9s-28-3-38-9z" fill="#e8c9a0"/><ellipse cx="44" cy="70" rx="5" ry="6.5" fill="#3b2a1f"/><ellipse cx="76" cy="70" rx="5" ry="6.5" fill="#3b2a1f"/><circle cx="46" cy="68" r="1.8" fill="#fff"/><circle cx="78" cy="68" r="1.8" fill="#fff"/><ellipse cx="34" cy="82" rx="7" ry="4" fill="#f29b8a" opacity=".7"/><ellipse cx="86" cy="82" rx="7" ry="4" fill="#f29b8a" opacity=".7"/><path d="M53 80q7 6 14 0" stroke="#3b2a1f" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M60 12q4-8 12-9" stroke="#6f9a6a" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M68 6q10-2 14 6-10 2-14-6z" fill="#8fbf7f"/></svg>';
+const MASCOT=window.Chars?Chars.render('li'):'';
 const isHub=/tools\.html$/.test(location.pathname);
-const bar=document.createElement('div');bar.className='topbar';bar.innerHTML='<div class="topbar-in"><a class="brand" href="'+root+'tools.html">'+MASCOT+'<span>栗栗的日常小工具</span></a>'+(isHub?'<span style="margin-left:auto"></span>':'<a class="back" href="'+root+'tools.html">← 全部工具</a>')+'<span class="vip-slot"></span></div>';
+const bar=document.createElement('div');bar.className='topbar';bar.innerHTML='<div class="topbar-in"><a class="brand" href="'+root+'tools.html">'+MASCOT+'<span>星糖萌娘社</span></a>'+(isHub?'<span style="margin-left:auto"></span>':'<a class="back" href="'+root+'tools.html">← 全部工具</a>')+'<span class="vip-slot"></span></div>';
 document.body.prepend(bar);
 document.querySelectorAll('footer').forEach(f=>f.remove());
 const foot=document.createElement('footer');foot.className='site-foot';foot.innerHTML='<b>需要定制可以闲鱼找我</b><br>本地处理 · 内容不上传';document.body.append(foot);

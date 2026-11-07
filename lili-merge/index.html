@@ -1,31 +1,31 @@
-<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no"><link rel="icon" href="data:,"><link rel="stylesheet" href="../style.css"><title>栗栗合成大栗子</title><style> canvas{display:block;width:100%;background:#fff8ea;border-radius:18px;touch-action:none}</style>
-<body class="game"><header class="page-head"><h1>🌰 栗栗合成大栗子</h1><div class="bar"><span>分数 <b id="score">0</b> · 最高 <b id="best">0</b></span><span>下一个 <b id="next"></b></span></div></header>
-<main><canvas id="cv" width="400" height="600"></canvas><div class="bar" style="margin-top:10px"><button id="restart" class="alt">重新开始</button><button id="pop">🔨 敲掉最小的（VIP）</button><select id="skin"><option value="0">秋日栗子</option><option value="1">樱花甜点 · VIP</option><option value="2">星空糖果 · VIP</option></select></div><p id="msg" role="status"></p><p class="hint">点按或滑动瞄准，松手落下。两个相同的会合成更大的，越过红线就结束啦。</p></main>
-<footer>需要定制可以闲鱼找我<br><a href="../tools.html">← 更多小工具</a></footer><script src="../ui.js"></script><script src="../vip.js"></script><script>
-const $=i=>document.getElementById(i),cv=$('cv'),x=cv.getContext('2d'),W=400,H=600,LINE=90;
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no"><link rel="icon" href="data:,"><link rel="stylesheet" href="../style.css"><title>栗栗合成大栗子</title><style> canvas{display:block;width:100%;background:#fff8ea;border-radius:18px;touch-action:none}</style>
+<link rel="stylesheet" href="../mobile-game.css"><body data-orientation="portrait" class="game"><header class="page-head"><h1>🌰 栗栗合成大栗子</h1><div class="bar"><span>分数 <b id="score">0</b> · 最高 <b id="best">0</b></span><span>下一个 <b id="next"></b></span></div></header>
+<main><div class="game-banner"><span data-mascot="li"></span><div><b>星糖萌娘社 · 今日陪伴</b>原创伙伴，陪你收集一点快乐。</div></div><canvas id="cv" width="400" height="600"></canvas><div class="bar" style="margin-top:10px"><button id="restart" class="alt">重新开始</button><button id="pop">🔨 敲掉最小的（VIP）</button><select id="skin"><option value="0">栗栗与伙伴</option><option value="1">樱糖萌娘 · VIP</option><option value="2">星河萌娘 · VIP</option></select></div><p id="msg" role="status"></p><p class="hint">点按或滑动瞄准，松手落下。两个相同的会合成更大的，越过红线就结束啦。</p></main>
+<footer>需要定制可以闲鱼找我<br><a href="../tools.html">← 更多小工具</a></footer><script>{const c=document.querySelector("canvas");if(c)c.height=Math.round(c.width*innerHeight/Math.min(innerWidth,620));}</script><script src="../data/content.js"></script><script src="../data/flavor.js"></script><script src="../content.js"></script><script src="../data/scenes.js"></script><script src="../game-art.js"></script><script src="../chars.js"></script><script src="../ui.js"></script><script src="../vip.js"></script><script>document.getElementById('skin').innerHTML=StarData.skins.map(s=>'<option value="'+s.id+'">'+s.name+(s.vip?' · VIP':' · 免费')+'</option>').join('');document.querySelectorAll("[data-mascot]").forEach(e=>e.innerHTML=Chars.render(e.dataset.mascot));</script><script>
+const $=i=>document.getElementById(i),cv=$('cv'),x=cv.getContext('2d'),W=400,H=cv.height,LINE=90;
 const R=[14,19,25,32,40,49,59,70,82,95,110];
 const SK=[['🌰','🥜','🍪','🥐','🍩','🥧','🎂','🍯','🌕','👑','🏆'],['🍡','🍓','🧁','🍰','🍮','🍑','🌸','💮','🎀','💝','🏰'],['⭐','🍬','🍭','🌙','🪐','☄️','🌟','🌌','🌈','💎','✨']];
 const COL=[['#e9c79a','#d9a46b','#c98b4f','#b8743a','#a86030','#f0b860','#e88a5a','#d4a020','#f4d070','#e6b800','#ffcc33'],['#ffd6e0','#ffb3c6','#ff9ebb','#f7a8c4','#f2c6de','#f9d5a7','#ffc2d1','#ff8fab','#fb6f92','#e5989b','#ffafcc'],['#c8d6ff','#b8c0ff','#bbd0ff','#9fa8ff','#a0c4ff','#8fb8ff','#cdb4db','#a2d2ff','#bde0fe','#7aa2ff','#e0c3fc']];
 let balls,score,next,aim=W/2,cool=0,over,danger,best=+localStorage.getItem('lili-merge-best')||0;$('best').textContent=best;
-function skin(){return VIP.active()?+$('skin').value:0}
+function skin(){return Content.skinValue($('skin').value)}
 function rnd(){return Math.floor(Math.random()*4)}
 function reset(){balls=[];score=0;over=false;danger=0;next=rnd();$('score').textContent=0;$('msg').textContent='';showNext()}
-function showNext(){$('next').textContent=SK[skin()][next]}
+function showNext(){$('next').innerHTML=Chars.render(Chars.cast[next%Chars.cast.length].id,skin(),true);$('next').style.cssText='display:inline-block;width:28px;height:25px;vertical-align:middle'}
 function drop(){if(over||cool>0)return;const r=R[next];balls.push({x:Math.max(r,Math.min(W-r,aim)),y:40,vx:0,vy:0,l:next,r,age:0});next=rnd();showNext();cool=30}
 function step(){for(const b of balls){b.vy+=0.35;b.vx*=0.99;b.x+=b.vx;b.y+=b.vy;b.age++;if(b.x<b.r){b.x=b.r;b.vx*=-0.4}if(b.x>W-b.r){b.x=W-b.r;b.vx*=-0.4}if(b.y>H-b.r){b.y=H-b.r;b.vy*=-0.3;b.vx*=0.9}}
  for(let k=0;k<4;k++)for(let i=0;i<balls.length;i++)for(let j=i+1;j<balls.length;j++){const a=balls[i],b=balls[j];if(!a||!b)continue;const dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy)||0.01,m=a.r+b.r;if(d<m){if(a.l===b.l&&a.l<R.length-1&&!a.dead&&!b.dead){a.dead=b.dead=true;const l=a.l+1;balls.push({x:(a.x+b.x)/2,y:(a.y+b.y)/2,vx:0,vy:-1,l,r:R[l],age:60});score+=(l+1)*(l+1);$('score').textContent=score;continue}const o=(m-d)/2,nx=dx/d,ny=dy/d;a.x-=nx*o;a.y-=ny*o;b.x+=nx*o;b.y+=ny*o;const rv=(b.vx-a.vx)*nx+(b.vy-a.vy)*ny;if(rv<0){const imp=rv*0.6;a.vx+=nx*imp;a.vy+=ny*imp;b.vx-=nx*imp;b.vy-=ny*imp}}}
  balls=balls.filter(b=>!b.dead);if(cool>0)cool--;
  const hi=balls.some(b=>b.age>90&&b.y-b.r<LINE&&Math.abs(b.vy)<1);danger=hi?danger+1:0;if(danger>90&&!over){over=true;if(score>best){best=score;localStorage.setItem('lili-merge-best',best);$('best').textContent=best}$('msg').textContent='游戏结束！得分 '+score+'，点「重新开始」再来一局'}}
-function draw(){const s=skin();x.clearRect(0,0,W,H);x.strokeStyle='#e66';x.setLineDash([8,6]);x.beginPath();x.moveTo(0,LINE);x.lineTo(W,LINE);x.stroke();x.setLineDash([]);
+function draw(){const s=skin();GameArt.background(x,'bg-garden',W,H,performance.now()/1000);x.fillStyle='#f5f7ff88';x.fillRect(0,0,W,H);x.strokeStyle='#e66';x.setLineDash([8,6]);x.beginPath();x.moveTo(0,LINE);x.lineTo(W,LINE);x.stroke();x.setLineDash([]);
  if(!over){x.globalAlpha=.35;x.fillStyle='#999';x.fillRect(aim-1,40,2,H);x.globalAlpha=1;ball({x:aim,y:40,r:R[next],l:next},s)}
  balls.forEach(b=>ball(b,s));if(over){x.fillStyle='#0008';x.fillRect(0,0,W,H);x.fillStyle='#fff';x.font='bold 32px sans-serif';x.textAlign='center';x.fillText('游戏结束',W/2,H/2);x.font='20px sans-serif';x.fillText('得分 '+score,W/2,H/2+36)}}
-function ball(b,s){x.fillStyle=COL[s][b.l];x.beginPath();x.arc(b.x,b.y,b.r,0,7);x.fill();x.font=(b.r*1.1|0)+'px sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillText(SK[s][b.l],b.x,b.y+2)}
+function ball(b,s){x.shadowColor='#a6d8ff';x.shadowBlur=8;x.fillStyle=(['#e7d9ff','#ffdbea','#d3eaff'][s]||'#e7d9ff');x.beginPath();x.arc(b.x,b.y,b.r,0,7);x.fill();x.shadowBlur=0;Chars.draw(x,Chars.cast[b.l%Chars.cast.length].id,b.x-b.r*.92,b.y-b.r*.9,b.r*1.84,s,true);x.font=Math.max(9,b.r*.3)+'px system-ui';x.textAlign='center';x.fillStyle='#6c5790';x.fillText(b.l+1,b.x,b.y+b.r*.78)}
 function pos(e){const r=cv.getBoundingClientRect(),p=e.touches?e.touches[0]||e.changedTouches[0]:e;return (p.clientX-r.left)*W/r.width}
 cv.addEventListener('pointermove',e=>{aim=pos(e)});cv.addEventListener('pointerdown',e=>{aim=pos(e)});cv.addEventListener('pointerup',e=>{aim=pos(e);drop()});
-$('restart').onclick=reset;$('skin').onchange=()=>{if(!VIP.active()&&$('skin').value!=='0'){$('msg').textContent='更多皮肤需要 VIP';VIP.open()}showNext()};
+$('restart').onclick=reset;$('skin').onchange=()=>{if(!Content.skinAllowed($('skin').value)){$('msg').textContent='更多皮肤需要 VIP';VIP.open()}showNext()};
 $('pop').onclick=()=>{if(!VIP.active()){VIP.open();return}if(over||!balls.length)return;let m=balls.reduce((a,b)=>b.l<a.l?b:a);balls.splice(balls.indexOf(m),1);$('msg').textContent='敲掉了一个小的～'};
 window.addEventListener('vipchange',showNext);
 reset();(function loop(){step();draw();requestAnimationFrame(loop)})();window.__game={drop,get balls(){return balls}};
 
 UI.gameOverlay(document.getElementById('cv'),{title:'栗栗合成大栗子',desc:'点按瞄准、松手落下，相同的栗子会合成更大的！',over:/结束/,restartId:"restart"});
-</script></html>
+</script><script src="../game-view.js"></script></html>

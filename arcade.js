@@ -1,0 +1,91 @@
+/* Three small original canvas games; shared offline input / skins / score shell. */
+(()=>{'use strict';
+const type=document.body.dataset.game,$=id=>document.getElementById(id),cv=$('arena'),ctx=cv.getContext('2d'),W=cv.width,H=cv.height;
+const titles={shooter:'萌娘打外星人',snake:'贪吃蓝蓝',fighter:'萌娘星光擂台'};
+let active=false,paused=false,ended=false,score=0,best=Number(localStorage.getItem('star-'+type+'-best'))||0,used=false,skin=0,who='lan',time=0,frame=0,world,notice='点击开始，和萌娘一起出发！';
+$('best').textContent=best;
+const keys=new Set();const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),rand=(a,b)=>a+Math.random()*(b-a),dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+function toast(t){$('msg').textContent=t}
+function points(n){score+=n;$('score').textContent=score;if(score>best){best=score;localStorage.setItem('star-'+type+'-best',best);$('best').textContent=best}}
+function stop(text){active=false;ended=true;notice=text+' · 得分 '+score;$('start').textContent='再来一局';keys.clear();toast(text)}
+function start(){keys.clear();score=0;time=0;frame=0;used=false;paused=false;ended=false;active=true;$('score').textContent='0';$('msg').textContent='';$('start').textContent='重新开始';$('pause').textContent='暂停';world=games[type].reset();}
+function pause(){if(!active)return;paused=!paused;keys.clear();$('pause').textContent=paused?'继续':'暂停'}
+function skinChange(){const n=+$('costume').value;if(!Content.skinAllowed(n)){$('costume').value='0';VIP.open();skin=0}else skin=n;}
+$('character').innerHTML=Chars.cast.map(c=>'<option value="'+c.id+'">'+c.name+'</option>').join('');
+$('character').value=type==='fighter'?'hu':type==='shooter'?'xing':'lan';who=$('character').value;
+$('character').onchange=()=>{who=$('character').value;$('buddy').innerHTML=Chars.render(who,skin)};
+$('costume').innerHTML=StarData.skins.map(s=>'<option value="'+s.id+'">'+s.name+(s.vip?' · VIP':' · 免费')+'</option>').join('');
+$('costume').onchange=()=>{skinChange();$('buddy').innerHTML=Chars.render(who,skin)};
+$('buddy').innerHTML=Chars.render(who);$('start').onclick=start;$('pause').onclick=pause;
+$('vipitem').onclick=()=>{if(!VIP.active())return VIP.open();if(!active||paused)return toast('请先开始游戏');if(used)return toast('本局道具已使用');used=true;games[type].item(world);toast(type==='snake'?'护符生效：抵挡一次碰撞':type==='fighter'?'星光护盾：抵挡下次攻击':'补充一颗生命，获得 4 秒护盾')};
+addEventListener('vipchange',()=>{if(!Content.skinAllowed(skin)){skin=0;$('costume').value='0';$('buddy').innerHTML=Chars.render(who)}});
+const mapping={ArrowLeft:'left',a:'left',A:'left',ArrowRight:'right',d:'right',D:'right',ArrowUp:'up',w:'up',W:'up',ArrowDown:'down',s:'down',S:'down',j:'punch',J:'punch',k:'kick',K:'kick',l:'special',L:'special',o:'ultimate',O:'ultimate',' ':'up'};
+function press(action){if(active&&!paused){if(type==='snake')games.snake.turn(world,action);if(type==='fighter'){if(['punch','kick','special','ultimate'].includes(action))games.fighter.attack(world,world.p,world.cpu,action);if(action==='up'&&world.p.y===0)world.p.vy=340}}keys.add(action)}
+addEventListener('keydown',e=>{if(/INPUT|SELECT|TEXTAREA/.test(e.target.tagName)||document.querySelector('dialog[open]'))return;const a=mapping[e.key];if(a){e.preventDefault();if(!e.repeat)press(a)}if(e.key==='p'||e.key==='P')pause();if(e.key==='Enter'&&!active)start()});
+addEventListener('keyup',e=>keys.delete(mapping[e.key]));
+addEventListener('blur',()=>{keys.clear();if(active&&!paused)pause()});document.addEventListener('visibilitychange',()=>{if(document.hidden&&active&&!paused)pause()});
+document.querySelectorAll('[data-action]').forEach(b=>{const a=b.dataset.action;b.addEventListener('pointerdown',e=>{e.preventDefault();b.setPointerCapture(e.pointerId);press(a)});['pointerup','pointercancel','lostpointercapture'].forEach(evt=>b.addEventListener(evt,()=>keys.delete(a)))});
+let swipe=null;
+cv.addEventListener('pointerdown',e=>{e.preventDefault();cv.setPointerCapture(e.pointerId);const r=cv.getBoundingClientRect();swipe={x:e.clientX,y:e.clientY};if(type==='shooter'&&active)world.p.x=clamp((e.clientX-r.left)*W/r.width,20,W-20)});
+cv.addEventListener('pointermove',e=>{if(type==='shooter'&&active&&e.buttons){const r=cv.getBoundingClientRect();world.p.x=clamp((e.clientX-r.left)*W/r.width,20,W-20)}});
+cv.addEventListener('pointerup',e=>{if(type==='snake'&&swipe&&active){const dx=e.clientX-swipe.x,dy=e.clientY-swipe.y;if(Math.max(Math.abs(dx),Math.abs(dy))>12)games.snake.turn(world,Math.abs(dx)>Math.abs(dy)?dx>0?'right':'left':dy>0?'down':'up')}swipe=null});
+function text(t,x,y,size=18,color='#6a578e'){ctx.fillStyle=color;ctx.font='700 '+size+'px system-ui';ctx.textAlign='center';ctx.fillText(t,x,y)}
+function circle(x,y,r,color){ctx.save();const g=ctx.createRadialGradient(x-r*.3,y-r*.3,0,x,y,r);g.addColorStop(0,'#ffffff');g.addColorStop(.4,color);g.addColorStop(1,color);ctx.fillStyle=g;ctx.shadowColor=color;ctx.shadowBlur=GameArt.reduced?0:7;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();ctx.restore()}
+function star(x,y,r,color){ctx.fillStyle=color;ctx.beginPath();for(let i=0;i<10;i++){const a=i*Math.PI/5-Math.PI/2,rr=i%2?r*.42:r;ctx.lineTo(x+Math.cos(a)*rr,y+Math.sin(a)*rr)}ctx.closePath();ctx.fill()}
+function bg(dark=false){GameArt.background(ctx,type==='shooter'?'bg-space':type==='fighter'?'bg-arena':'bg-garden',W,H,time);if(type==='snake'){ctx.fillStyle='#10223a55';ctx.fillRect(0,(H-W)/2,W,W)}}
+function avatar(id,x,y,w,s=skin,flip=false){ctx.save();if(flip){ctx.translate(x+w,y);ctx.scale(-1,1);Chars.draw(ctx,id,0,0,w,s)}else Chars.draw(ctx,id,x,y,w,s);ctx.restore()}
+function alien(x,y,size,boss=false){ctx.save();ctx.shadowColor=boss?'#e49cff':'#77e8ff';ctx.shadowBlur=12;GameArt.sprite(ctx,boss?'enemy-boss':'enemy-alien',x-size*1.2,y-size, size*2.4,size*2);ctx.restore()}
+const games={
+shooter:{reset(){return {p:{x:W/2,y:H-82},shots:[],enemies:[],bullets:[],loot:[],particles:[],wave:0,lives:3,shield:2,power:0,fire:0,spawn:0,boss:false,kills:0}},
+item(s){s.lives=Math.min(5,s.lives+StarData.arcadeItems.shooter.lives);s.shield=StarData.arcadeItems.shooter.duration},
+step(s,dt){s.shield=Math.max(0,s.shield-dt);s.power=Math.max(0,s.power-dt);s.p.x=clamp(s.p.x+((keys.has('right')?1:0)-(keys.has('left')?1:0))*260*dt,22,W-22);s.fire-=dt;
+if(s.fire<=0){s.fire=s.power>0?.13:.22;[-1,0,1].filter(n=>s.power>0||n===0).forEach(n=>s.shots.push({x:s.p.x,y:s.p.y-10,vx:n*85,vy:-430}))}
+if(!s.enemies.length&&s.spawn<=0){s.wave++;s.boss=s.wave%3===0;const count=s.boss?1:Math.min(5+s.wave,12);for(let i=0;i<count;i++)s.enemies.push({x:s.boss?W/2:W*.2+(i%6)*W*.12,y:s.boss?120:112-Math.floor(i/6)*58,hp:s.boss?45+s.wave*4:2+Math.floor(s.wave/5),max:s.boss?45+s.wave*4:2+Math.floor(s.wave/5),boss:s.boss,phase:i,fire:rand(.5,2),v:38+s.wave*3});s.spawn=2;toast(s.boss?'首领出现！躲开弹幕！':'第 '+s.wave+' 波 · 出发！')}
+s.spawn-=dt;
+s.enemies.forEach(e=>{if(e.boss){e.x=W/2+Math.sin(time*1.2)*115;e.y=120+Math.sin(time)*12}else{e.y+=e.v*dt;e.x+=Math.sin(time*2+e.phase)*22*dt}e.fire-=dt;if(e.fire<0){e.fire=e.boss?.75:Math.max(.75,2-s.wave*.06);if(e.boss){[-1,0,1].forEach(n=>s.bullets.push({x:e.x,y:e.y+22,vx:n*65,vy:120+s.wave*3}))}else s.bullets.push({x:e.x,y:e.y+14,vx:0,vy:130+s.wave*4})}});
+for(const b of [...s.shots,...s.bullets]){b.x+=b.vx*dt;b.y+=b.vy*dt}
+for(const b of s.shots)for(const e of s.enemies)if(!b.dead&&e.hp>0&&Math.hypot(b.x-e.x,b.y-e.y)<(e.boss?48:23)){b.dead=true;e.hp--;s.particles.push({x:b.x,y:b.y,t:.3});if(e.hp<=0){points(e.boss?500:30);s.kills++;if(e.boss||Math.random()<.26)s.loot.push({x:e.x,y:e.y,kind:Math.random()<.5?'power':'heart'})}}
+function hit(){if(s.shield>0)return;s.lives--;s.shield=1.5;if(s.lives<=0)stop('星舰返航！再挑战一次吧')}
+s.enemies=s.enemies.filter(e=>{if(e.hp<=0)return false;if(e.y>H+30){hit();return false}if(dist(e,s.p)<35){hit();if(!e.boss)return false}return true});
+s.bullets=s.bullets.filter(b=>{if(dist(b,s.p)<21){hit();return false}return b.y<H+10&&b.x>-20&&b.x<W+20});s.shots=s.shots.filter(b=>!b.dead&&b.y>-20);
+s.loot=s.loot.filter(l=>{l.y+=85*dt;if(dist(l,s.p)<35){if(l.kind==='heart')s.lives=Math.min(5,s.lives+1);else s.power=8;points(10);return false}return l.y<H+10});s.particles=s.particles.filter(p=>(p.t-=dt)>0);
+$('detail').textContent='第 '+s.wave+' 波 · 生命 '+s.lives+(s.power>0?' · 三连发':'');},
+draw(s){bg(true);if(!s)return;s.shots.forEach(b=>{ctx.save();ctx.fillStyle='#d8fbff';ctx.shadowColor='#68dfff';ctx.shadowBlur=GameArt.reduced?0:16;ctx.fillRect(b.x-2,b.y-10,4,21);ctx.fillStyle='#4bc7ff55';ctx.fillRect(b.x-3,b.y+11,6,13);ctx.restore()});s.bullets.forEach(b=>circle(b.x,b.y,5,'#ffb7d8'));s.enemies.forEach(e=>{alien(e.x,e.y,e.boss?50:24,e.boss);if(e.boss){ctx.fillStyle='#ffffff44';ctx.fillRect(e.x-48,e.y-42,96,5);ctx.fillStyle='#ffb8df';ctx.fillRect(e.x-48,e.y-42,96*e.hp/e.max,5)}});s.loot.forEach(l=>{circle(l.x,l.y,13,'#ffffffcc');GameArt.sprite(ctx,l.kind==='power'?'item-star':'item-heart',l.x-16,l.y-16,32,32)});s.particles.forEach(p=>GameArt.sparks(ctx,p.x,p.y,p.t,'#b9faff',25*p.t/.3));if(s.shield>0){ctx.strokeStyle='#aeebff';ctx.lineWidth=3;ctx.beginPath();ctx.arc(s.p.x,s.p.y+15,37,0,7);ctx.stroke()}avatar(who,s.p.x-28,s.p.y-25,56);GameArt.sparks(ctx,s.p.x,s.p.y+47,time,'#85efff',12);}},
+snake:{reset(){return {body:[{x:8,y:10},{x:7,y:10},{x:6,y:10}],dir:{x:1,y:0},queue:[],food:{x:13,y:10},item:{x:5,y:5},lastItemAt:0,tick:0,slow:0,shield:false,eaten:0}},
+item(s){s.shield=true},
+turn(s,a){const d={left:{x:-1,y:0},right:{x:1,y:0},up:{x:0,y:-1},down:{x:0,y:1}}[a];if(!d||s.queue.length>=2)return;const last=s.queue[s.queue.length-1]||s.dir;if(d.x===-last.x&&d.y===-last.y)return;if(d.x!==last.x||d.y!==last.y)s.queue.push(d)},
+place(s){const free=[];for(let x=0;x<20;x++)for(let y=0;y<20;y++)if(!s.body.some(b=>b.x===x&&b.y===y)&&!(s.item&&s.item.x===x&&s.item.y===y))free.push({x,y});return free[Math.random()*free.length|0]},
+step(s,dt){s.slow=Math.max(0,s.slow-dt);s.tick+=dt;const speed=(s.slow>0?.22:Math.max(.075,.16-s.eaten*.003));if(s.tick<speed)return;s.tick=0;if(s.queue.length)s.dir=s.queue.shift();const h={x:s.body[0].x+s.dir.x,y:s.body[0].y+s.dir.y};const eat=h.x===s.food.x&&h.y===s.food.y;const wall=h.x<0||h.x>=20||h.y<0||h.y>=20;const self=s.body.slice(0,eat?undefined:-1).some(b=>b.x===h.x&&b.y===h.y);
+if(wall||self){if(s.shield){s.shield=false;s.queue=[];s.slow=4;toast('护符挡住碰撞！转个方向再走');s.tick=-.5;return}stop('糖果旅行结束啦');return}
+s.body.unshift(h);if(eat){points(10);s.eaten++;s.food=this.place(s);if(!s.food){stop('全屏糖果！通关啦');return}}else s.body.pop();
+if(s.item&&h.x===s.item.x&&h.y===s.item.y){s.slow=6;s.item=null;points(25);toast('获得冰晶：减速 6 秒')}
+if(!s.item&&s.eaten%4===0&&s.eaten>0&&s.eaten!==s.lastItemAt){s.item=this.place(s);s.lastItemAt=s.eaten};
+$('detail').textContent='长度 '+s.body.length+(s.shield?' · 护符就绪':'')+(s.slow>0?' · 冰晶减速':'');},
+draw(s){bg();if(!s)return;ctx.save();ctx.translate(0,(H-W)/2);const cell=W/20;for(let y=0;y<20;y++)for(let x=0;x<20;x++){ctx.fillStyle=(x+y)%2?'#ffffff55':'#c8d9ed33';ctx.fillRect(x*cell,y*cell,cell,cell)}if(s.food){GameArt.sprite(ctx,'item-star',s.food.x*cell,s.food.y*cell,cell,cell)}if(s.item)GameArt.sprite(ctx,'item-ice',s.item.x*cell,s.item.y*cell,cell,cell);s.body.slice().reverse().forEach((b,i)=>{circle((b.x+.5)*cell,(b.y+.5)*cell,cell*.46,i%2?'#b5d8ec':'#bdb4eb')});const h=s.body[0];Chars.draw(ctx,who,h.x*cell-cell*.3,h.y*cell-cell*.28,cell*1.6,skin,true);if(s.shield){ctx.strokeStyle='#bc91de';ctx.lineWidth=3;ctx.strokeRect(h.x*cell-2,h.y*cell-2,cell+4,cell+4)}ctx.restore()}},
+fighter:{
+opponents:StarData.campaign,
+reset(){return {p:{x:310,y:0,vy:0,hp:100,face:1,cool:0,attack:null,shield:false,energy:0},cpu:{x:500,y:0,vy:0,hp:this.opponents[0].hp,face:-1,cool:1,attack:null,energy:0},sparks:[],camera:200,stage:1,combo:0,lastHit:-5,slow:0,shake:0,banner:2,transition:0}},
+item(s){s.p.shield=true},
+attack(s,a,b,kind){if(s.transition>0||b.hp<=0||a.cool>0||a.attack)return;const ultimate=kind==='ultimate',special=kind==='special',cost=ultimate?100:special?35:0;if(a.energy<cost)return;a.energy-=cost;const kick=kind==='kick';a.cool=ultimate?1.5:special?.9:kick?.6:.35;a.attack={kind,t:ultimate?.65:special?.4:.25,hit:false};const range=ultimate?300:special?195:kick?100:75;
+if(ultimate){s.slow=.5;s.shake=.6;s.banner=.9;for(let i=0;i<24;i++)s.sparks.push({x:a.x+rand(-170,170),y:rand(80,280),vx:rand(-180,180),vy:rand(-120,80),t:rand(.4,.9),color:'#fff0bd'})}
+if(Math.abs(a.x-b.x)<range&&Math.abs(a.y-b.y)<75&&Math.sign(b.x-a.x)===a.face){a.attack.hit=true;if(b.shield){b.shield=false;s.sparks.push({x:b.x,y:230-b.y,vx:0,vy:0,t:.4,color:'#a4e5f3'});return}if(a===s.p){s.combo=time-s.lastHit<1.5?s.combo+1:1;s.lastHit=time}
+const block=b===s.p&&keys.has('down'),op=this.opponents[s.stage-1];let damage=(ultimate?55:special?20:kick?12:7)*(a===s.p?1+Math.min(s.combo,10)*.045:op.damage)*(block?.3:1);b.hp=Math.max(0,b.hp-damage);a.energy=Math.min(100,a.energy+(ultimate?0:12));b.x=clamp(b.x+a.face*(ultimate?70:special?42:18),40,860);s.shake=Math.max(s.shake,ultimate?.6:special?.25:.1);if(special)s.slow=.12;
+for(let i=0;i<(ultimate?20:special?18:9);i++)s.sparks.push({x:b.x,y:230-b.y,vx:rand(-180,180),vy:rand(-180,60),t:rand(.15,.5),color:ultimate?'#fff4b5':special?'#b4f0ff':'#ffbde0'});if(a===s.p)points(Math.ceil(damage))}},
+step(s,rawdt){const p=s.p,c=s.cpu,op=this.opponents[s.stage-1];s.slow=Math.max(0,s.slow-rawdt);const dt=rawdt*(s.slow>0?.35:1);s.shake=Math.max(0,s.shake-rawdt);s.banner=Math.max(0,s.banner-rawdt);s.sparks=s.sparks.filter(v=>{v.x+=(v.vx||0)*dt;v.y+=(v.vy||0)*dt;return(v.t-=rawdt)>0});
+if(s.transition){s.transition-=rawdt;if(s.transition<=0){s.transition=0;s.stage++;const n=this.opponents[s.stage-1];Object.assign(c,{x:560,y:0,hp:n.hp,cool:1,energy:0,attack:null});Object.assign(p,{x:300,y:0,hp:Math.min(100,p.hp+35),attack:null});s.combo=0;s.banner=2;localStorage.setItem('star-fighter-stage',Math.max(s.stage,Number(localStorage.getItem('star-fighter-stage'))||1));toast('第 '+s.stage+' 关 · '+n.name)}return}
+[p,c].forEach(a=>{a.cool=Math.max(0,a.cool-dt);if(a.attack&&(a.attack.t-=dt)<=0)a.attack=null;a.vy-=850*dt;a.y=Math.max(0,a.y+a.vy*dt);if(a.y===0)a.vy=0});p.energy=Math.min(100,p.energy+dt*2);if(time-s.lastHit>1.5)s.combo=0;
+const move=(keys.has('right')?1:0)-(keys.has('left')?1:0);if(!keys.has('down')&&!p.attack)p.x=clamp(p.x+move*180*dt,40,860);p.face=c.x>=p.x?1:-1;c.face=p.x>=c.x?1:-1;if(keys.has('up')&&p.y===0)p.vy=340;
+if(keys.has('punch'))this.attack(s,p,c,'punch');if(keys.has('kick'))this.attack(s,p,c,'kick');if(keys.has('special'))this.attack(s,p,c,'special');if(keys.has('ultimate'))this.attack(s,p,c,'ultimate');
+const gap=Math.abs(c.x-p.x);if(gap>65&&!c.attack)c.x=clamp(c.x+c.face*op.speed*dt,40,860);if(c.cool<=0){if(s.stage===this.opponents.length&&c.energy>=100&&gap<300)this.attack(s,c,p,'ultimate');else if(c.energy>=35&&gap<195&&s.stage>=3)this.attack(s,c,p,'special');else if(gap<90)this.attack(s,c,p,Math.random()<.45?'kick':'punch')}
+if(Math.abs(c.x-p.x)<44){const mid=(c.x+p.x)/2;p.x=clamp(mid-p.face*22,40,860);c.x=clamp(mid+p.face*22,40,860)}s.camera=clamp(p.x-W*.4,0,900-W);
+$('hp').value=p.hp;$('enemyhp').max=op.hp;$('enemyhp').value=c.hp;$('enemyname').textContent=op.name;$('energy').value=p.energy;$('energyLabel').textContent=Math.floor(p.energy)+'/100';$('detail').textContent='闯关 '+s.stage+'/'+this.opponents.length+(s.combo>1?' · '+s.combo+' 连击！':'')+' · 最高 '+(localStorage.getItem('star-fighter-stage')||1)+' 关';
+if(c.hp<=0){points(150*s.stage);if(s.stage===this.opponents.length)stop('全部通关！你是星光冠军');else {s.transition=1.8;toast('过关！恢复 35 生命，下一位伙伴登场')}}else if(p.hp<=0)stop('切磋结束，闯到第 '+s.stage+' 关');},
+draw(s){bg();GameArt.ground(ctx,W,H,Math.max(285,H*.68),time);if(!s)return;ctx.save();ctx.translate(0,Math.max(0,H*.68-285));ctx.fillStyle='#5dd7ff22';ctx.fillRect(0,278,W,9);if(s.shake>0&&!GameArt.reduced)ctx.translate(rand(-1,1)*s.shake*14,rand(-1,1)*s.shake*9);for(let i=0;i<7;i++){const x=i*140-s.camera;ctx.strokeStyle='#a8edff33';ctx.lineWidth=2;ctx.strokeRect(x,242,38,36)}
+[s.cpu,s.p].forEach(a=>{const x=a.x-s.camera,y=182-a.y,op=this.opponents[s.stage-1];if(a.attack&&(a===s.p?who:op.id)==='lan'){ctx.save();if(a.face<0){ctx.translate(x+48,y);ctx.scale(-1,1);GameArt.sprite(ctx,'whale-attack',0,0,96,116)}else GameArt.sprite(ctx,'whale-attack',x-48,y,96,116);ctx.restore()}else avatar(a===s.p?who:op.id,x-42,y,84,a===s.p?skin:s.stage===this.opponents.length?2:0,a.face<0);if(a.shield){ctx.strokeStyle='#a7d9f2';ctx.lineWidth=3;ctx.beginPath();ctx.ellipse(x,y+55,48,65,0,0,7);ctx.stroke()}if(a===s.p&&keys.has('down')){ctx.strokeStyle='#a7dbea';ctx.lineWidth=6;ctx.beginPath();ctx.arc(x+a.face*35,y+60,35,-1.5,1.5);ctx.stroke()}if(a.attack){const k=a.attack.kind,ultimate=k==='ultimate',special=k==='special',r=ultimate?140:special?78:k==='kick'?45:30;ctx.save();ctx.globalAlpha=.7;ctx.strokeStyle=ultimate?'#fff0ba':special?'#a896fa':'#f1a1d6';ctx.lineWidth=ultimate?22:special?13:8;ctx.shadowColor=ctx.strokeStyle;ctx.shadowBlur=25;ctx.beginPath();ctx.arc(x+a.face*45,y+(k==='kick'?78:48),r,a.face===1?-1.2:1.9,a.face===1?1.2:4.3);ctx.stroke();if(ultimate)text('星 穹 绽 放',W/2,95,26,'#9270b7');ctx.restore()}});s.sparks.forEach(p=>star(p.x-s.camera,p.y,16*Math.min(1,p.t*3),p.color));ctx.restore();if(s.combo>1)text(s.combo+' COMBO!',W-95,104,25,'#b37bba');if(s.banner>0&&!s.p.attack&&!s.cpu.attack)text('第 '+s.stage+' 关 · '+this.opponents[s.stage-1].name,W/2,60,17);if(s.transition>0)text('过关！下一位伙伴准备中…',W/2,120,18);text('原创星糖练习场 · 友好切磋',W/2,H-24,12,'#9d88b5');}}
+};
+world=games[type].reset();let last=performance.now(),acc=0;
+function loop(now){if(active&&!paused&&document.querySelector('dialog[open]'))pause();const dt=Math.min(.05,(now-last)/1000);last=now;if(active&&!paused){acc+=dt;while(acc>=1/60&&active){time+=1/60;frame++;games[type].step(world,1/60);acc-=1/60}}else acc=0;
+ctx.clearRect(0,0,W,H);games[type].draw(world);
+if(!active||paused){ctx.fillStyle='#101d4077';ctx.fillRect(0,0,W,H);Chars.draw(ctx,who,W/2-48,H/2-118,96,skin);text(paused?'休息一下，星光等你':ended?'这一局也很精彩！':titles[type],W/2,H/2+40,23,'#ffffff');text(paused?'点「继续」回到游戏':ended?'得分 '+score+' · 点击「再来一局」':'点击下方「开始游戏」',W/2,H/2+74,14,'#d5eaff')}requestAnimationFrame(loop)}requestAnimationFrame(loop);
+window.__game={get state(){return world},get active(){return active},get score(){return score},get type(){return type},get paused(){return paused}};
+})();
