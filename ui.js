@@ -2,7 +2,7 @@
 window.UI=(()=>{const root=document.currentScript.src.replace(/ui\.js(\?.*)?$/,'');
 const MASCOT=window.Chars?Chars.render('li'):'';
 const isHub=/tools\.html$/.test(location.pathname);
-const bar=document.createElement('div');bar.className='topbar';bar.innerHTML='<div class="topbar-in"><a class="brand" href="'+root+'tools.html">'+MASCOT+'<span>星糖萌娘社</span></a>'+(isHub?'<span style="margin-left:auto"></span>':'<a class="back" href="'+root+'tools.html">← 全部工具</a>')+'<span class="vip-slot"></span></div>';
+const bar=document.createElement('div');bar.className='topbar';bar.innerHTML='<div class="topbar-in"><a class="brand" href="'+root+'tools.html">'+MASCOT+'<span>星糖宇宙</span></a>'+(isHub?'<span style="margin-left:auto"></span>':'<a class="back" href="'+root+'tools.html">← 全部工具</a>')+'<span class="vip-slot"></span></div>';
 document.body.prepend(bar);
 document.querySelectorAll('footer').forEach(f=>f.remove());
 const foot=document.createElement('footer');foot.className='site-foot';foot.innerHTML='<b>需要定制可以闲鱼找我</b><br>本地处理 · 内容不上传';document.body.append(foot);

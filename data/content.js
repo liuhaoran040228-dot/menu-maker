@@ -21,6 +21,8 @@ games:[
 {id:'monster-loot',name:'萌娘星糖远征',character:'li',desc:'自动战斗 · 装备掉落 · 合成升级',new:true},
 {id:'moe-runner',name:'萌娘星风跑酷',character:'lan',desc:'二段跳 · 金币衣橱 · 奇妙载具',new:true},
 {id:'lili-merge',name:'栗栗合成大栗子',character:'li',desc:'相同萌娘合成，收集大大快乐'},
+{id:'lili-dressup',name:'栗栗换装 · 星糖衣橱',character:'li',desc:'分层换装 · 华丽套装 · 拍照馆',new:true},
+{id:'xiuxian',name:'云阙问仙 · 修仙换装',character:'li',desc:'境界突破 · 渡劫秘境 · 仙衣法宝',new:true},
 {id:'lili-match',name:'萌娘森林消消',character:'mo',desc:'三枚相同伙伴，轻轻松松消掉'},
 {id:'lili-2048',name:'萌娘伙伴 2048',character:'hu',desc:'滑动集结伙伴，向 2048 前进'},
 {id:'lili-fortune',name:'星眠今日小运势',character:'xing',desc:'抽一张今日卡片，仅供娱乐'}

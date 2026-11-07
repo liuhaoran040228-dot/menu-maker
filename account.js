@@ -150,12 +150,12 @@ window.StarAccount = (() => {
   document.addEventListener('visibilitychange', () => {if (!document.hidden && user) sync().catch(()=>{});});
   setInterval(() => {emit(); if (user) sync().catch(()=>{});},60000);
   // Send only recent foreground game interactions; server enforces elapsed time and daily caps.
-  const gameId=location.pathname.split('/').filter(Boolean).find(x=>['space-shooter','snake','fighter','monster-loot','moe-runner','survivor','td','lili-merge','lili-match','lili-2048','lili-fortune','story'].includes(x));
+  const gameId=location.pathname.split('/').filter(Boolean).find(x=>['space-shooter','snake','fighter','monster-loot','moe-runner','survivor','td','lili-merge','lili-match','lili-2048','lili-fortune','lili-dressup','xiuxian','story'].includes(x));
   let lastInput=0,trackingUser=null,lastHeartbeat=0;
   function engaged(e){if(!gameId||!user||document.hidden||document.querySelector('dialog[open]')||e.target.closest?.('.account-trigger'))return;lastInput=Date.now();if(trackingUser!==user.id){trackingUser=user.id;lastHeartbeat=Date.now();activity('start',gameId).catch(()=>{trackingUser=null;});}}
   document.addEventListener('pointerdown',engaged,{passive:true});document.addEventListener('keydown',engaged);
   document.addEventListener('visibilitychange',()=>{if(document.hidden){trackingUser=null;lastInput=0;}});
   setInterval(()=>{if(document.querySelector('dialog[open]')){trackingUser=null;return;}if(gameId&&user&&trackingUser===user.id&&!document.hidden&&!document.querySelector('dialog[open]')&&Date.now()-lastInput<70000&&Date.now()-lastHeartbeat>=61000){lastHeartbeat=Date.now();activity('tick',gameId).catch(()=>{});}},5000);
   render();
-  return {active,open,ready:initialization,refresh:sync,tier:()=>active()?Number(accountState?.vip?.tier||1):0,level:()=>Number(accountState?.profile?.level||1),perks:()=>accountState?.entitlements||{},state:()=>accountState};
+  return {shopRequest:async(name,args={})=>{await initialization;if(!client||!user)throw Error('请先登录账号');if(!['get_shop_state','claim_daily','redeem_currency_code','buy_item','equip_item','get_tasks','report_task_event','claim_task','get_gacha_pool','get_gacha_state','draw_gacha','get_public_appearance','set_public_appearance'].includes(name))throw Error('商城操作无效');const requestedUser=user.id;const {data,error}=await client.rpc(name,args);if(user?.id!==requestedUser)throw Error('账号已切换，请刷新商城');if(error)throw Error(friendly(error));return data;},shopCatalog:async()=>{await initialization;if(!client)throw Error('账号组件未就绪');const {data,error}=await client.from('shop_catalog').select('id,name,category,price,min_tier,preview,asset_key,active').order('price');if(error)throw Error('商城还未开放或加载失败，请稍后重试');return data||[];},active,open,ready:initialization,refresh:sync,tier:()=>active()?Number(accountState?.vip?.tier||1):0,level:()=>Number(accountState?.profile?.level||1),perks:()=>accountState?.entitlements||{},state:()=>accountState};
 })();

@@ -523,9 +523,13 @@ function drawPlayer(ctx) {
   const starImg = FX.img('item-star');
 
   ctx.save();
+  ctx.filter = 'none';
+  if (starImg && starImg.naturalWidth) {
+    ctx.save(); ctx.translate(state.px, state.py - 6); ctx.rotate(state.starRot); ctx.scale(1, 0.45);
+    ctx.globalAlpha = .95; const sw = 96, sh = sw * starImg.naturalHeight / starImg.naturalWidth;
+    ctx.drawImage(starImg, -sw / 2, -sh / 2, sw, sh); ctx.restore();
+  }
   ctx.filter = sel?.skin?.filter || 'none';
-
-  FX.drawSprite(ctx, starImg, state.px, state.py + 20, 90, {rot: state.starRot, alpha: .8, glow: true});
 
   for (let i = 0; i < 4; i++) {
     const trailX = state.px - i * 12;
@@ -561,17 +565,17 @@ function drawBoss(ctx) {
 function drawBullet(ctx, b) {
   ctx.save();
   if (b.type === 'player') {
-    ctx.fillStyle = '#00ffff';
-    ctx.filter = 'drop-shadow(0 0 8px #00ffff) drop-shadow(0 0 4px #ffeb3b)';
-    ctx.beginPath();
-    ctx.arc(b.x, b.y, 7, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.filter = 'none'; ctx.globalCompositeOperation = 'lighter';
+    ctx.fillStyle = 'rgba(80,220,255,.35)'; ctx.beginPath(); ctx.ellipse(b.x - 8, b.y, 22, 9, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#7ff6ff'; ctx.beginPath(); ctx.ellipse(b.x, b.y, 12, 5, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(b.x + 3, b.y, 3, 0, Math.PI * 2); ctx.fill();
     FX.trail(b.x - 12, b.y, '#00ffff', 4);
   } else {
+    ctx.filter = 'none';
+    ctx.fillStyle = 'rgba(255,90,200,.3)'; ctx.beginPath(); ctx.arc(b.x, b.y, 15, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = '#ff80ff';
-    ctx.filter = 'drop-shadow(0 0 6px #ff80ff)';
     ctx.beginPath();
-    ctx.arc(b.x, b.y, 8, 0, Math.PI * 2);
+    ctx.arc(b.x, b.y, 9, 0, Math.PI * 2);
     ctx.fill();
     ctx.fillStyle = '#ffffff';
     ctx.beginPath();
@@ -656,3 +660,4 @@ window.__game = {
 };
 
 })();
+;FX.useSideSprites('idle');

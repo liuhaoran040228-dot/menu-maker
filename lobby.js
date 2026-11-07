@@ -25,7 +25,8 @@
     N: { color: '#9ca3af', glow: 'rgba(156,163,175,0.3)' },
     R: { color: '#3b82f6', glow: 'rgba(59,130,246,0.5)' },
     SR: { color: '#a855f7', glow: 'rgba(168,85,247,0.6)' },
-    SSR: { color: '#fbbf24', glow: 'rgba(251,191,36,0.8)' }
+    SSR: { color: '#fbbf24', glow: 'rgba(251,191,36,0.8)' },
+    UR: { color: '#ff4fd8', glow: 'rgba(255,79,216,0.9)' }
   };
 
   const CUTE_LINES = [
@@ -290,7 +291,10 @@
         -webkit-mask-composite: xor;
         mask-composite: exclude;
       }
-      .lobby-rarity-frame.ssr::after {
+      .lobby-rarity-frame.ur { box-shadow: 0 0 18px #ff4fd8, 0 0 34px #7af3ff; animation: urGlow 2.4s linear infinite; }
+      .lobby-rarity-frame.ur::before { background: conic-gradient(from 0deg, #ff4fd8, #ffd76a, #7af3ff, #b38cff, #ff4fd8) !important; }
+      @keyframes urGlow { 0%,100% { filter: hue-rotate(0deg); } 50% { filter: hue-rotate(40deg) brightness(1.15); } }
+      .lobby-rarity-frame.ur::after, .lobby-rarity-frame.ssr::after {
         content: '';
         position: absolute;
         inset: -100%;
@@ -635,10 +639,10 @@
       clearChildren(container);
 
       const char = config.chars.find(c => c.id === state.selectedChar) || config.chars[0];
-      const skin = (config.skins || []).find(s => s.id === state.selectedSkin);
+      const skin = (config.skins || []).find(s => s.id === state.selectedSkin && (!s.char || s.char === char.id));
 
       const charImg = createElement('img', '', container);
-      charImg.src = `../assets/${char.img}.webp`;
+      charImg.src = `../assets/${(skin && skin.img) || char.img}.webp`;
       charImg.style.cssText = `
         max-width: 100%;
         max-height: 100%;
@@ -889,7 +893,7 @@
       const selection = getSelection();
       if (config.onStart) {
         Lobby.hide();
-        config.onStart(selection);
+        (newRoundKey(), config.onStart(selection));
       }
     };
 
@@ -980,7 +984,7 @@
       const char = config.chars.find(c => c.id === state.selectedChar) || config.chars[0];
       const skin = (config.skins || []).find(s => s.id === skinId);
       
-      previewImg.src = `../assets/${char.img}.webp`;
+      previewImg.src = `../assets/${(skin && skin.img) || char.img}.webp`;
       previewImg.style.filter = (skin?.filter || 'none') + ' drop-shadow(0 20px 40px rgba(0,0,0,0.5))';
     }
 
@@ -997,7 +1001,16 @@
       overflow-y: auto;
     `;
 
-    const charSkins = (config.skins || []).filter(s => !s.char || s.char === state.selectedChar);
+    const tabs = createElement('div', 'lobby-style-tabs', grid);
+    tabs.style.cssText = 'grid-column: 1 / -1; display: flex; gap: 8px; flex-wrap: wrap;';
+    const styleF = renderWardrobePanel._style || 'all';
+    [['all','🌈'],['cute','🎀'],['glam','✨'],['elegant','👑'],['cool','🕶']].forEach(([k, ic]) => {
+      const b = createElement('button', 'lobby-icon-btn', tabs);
+      b.textContent = ic; b.dataset.style = k;
+      b.style.cssText = `width:48px;height:48px;font-size:22px;border-radius:50%;${k === styleF ? 'box-shadow:0 0 0 3px #fbbf24,0 0 16px #fbbf24;' : 'opacity:.75;'}`;
+      b.onclick = (e) => { e.stopPropagation(); Audio.tap(); renderWardrobePanel._style = k; clearChildren(parent); renderWardrobePanel(parent, overlay, panel); };
+    });
+    const charSkins = (config.skins || []).filter(s => (!s.char || s.char === state.selectedChar) && (styleF === 'all' || s.style === styleF));
     
     charSkins.forEach(skin => {
       const isOwned = state.ownedSkins.includes(skin.id);
@@ -1029,7 +1042,7 @@
       `;
 
       const chibiImg = createElement('img', '', cardInner);
-      chibiImg.src = `../assets/${char.chibi}.webp`;
+      chibiImg.src = `../assets/${skin.img || char.chibi}.webp`;
       chibiImg.style.cssText = `
         width: 64px;
         height: 64px;
@@ -1833,8 +1846,12 @@
     const settings = [
       { key: 'sound', label: '音效', icon: '🔊' },
       { key: 'vibration', label: '震动', icon: '📳' },
-      { key: 'quality', label: '画质', icon: '🎨', values: ['low', 'medium', 'high'] }
+      { key: 'quality', label: '画质', icon: '🎨', values: ['low', 'medium', 'high'] },
+      { key: 'control', label: '移动', icon: '👆', values: ['drag', 'joy'] },
+      { key: 'joySize', label: '摇杆', icon: '🕹', values: ['s', 'm', 'l'] }
     ];
+    if (window.FX && FX.controlMode) state.settings.control = FX.controlMode;
+    if (!state.settings.joySize) state.settings.joySize = 'm';
 
     settings.forEach(setting => {
       const row = createElement('div', 'lobby-card', container);
@@ -1870,13 +1887,15 @@
         setting.values.forEach(val => {
           const option = createElement('option', '', select);
           option.value = val;
-          option.textContent = { low: '低', medium: '中', high: '高' }[val] || val;
+          option.textContent = { low: '低', medium: '中', high: '高', drag: '拖动跟随', joy: '虚拟摇杆', s: '小', m: '中', l: '大' }[val] || val;
           if (state.settings[setting.key] === val) option.selected = true;
         });
 
         select.onchange = () => {
           Audio.tap();
           state.settings[setting.key] = select.value;
+          if (setting.key === 'control' && window.FX && FX.setControl) FX.setControl(select.value);
+          if (setting.key === 'joySize') document.documentElement.style.setProperty('--joy', { s: .8, m: 1, l: 1.25 }[select.value]);
           saveState();
         };
       } else {
@@ -1983,7 +2002,7 @@
           const selection = getSelection();
           if (config.onStart) {
             Lobby.hide();
-            config.onStart(selection);
+            (newRoundKey(), config.onStart(selection));
           }
         };
       }
@@ -2077,7 +2096,7 @@
       
       const selection = getSelection();
       if (config.onStart) {
-        config.onStart(selection);
+        (newRoundKey(), config.onStart(selection));
       }
     };
 
@@ -2175,6 +2194,19 @@
   }
 
   // ==================== Helper Functions ====================
+
+  // ---- Platform task events (low-trust, capped server-side). In-game items/currency stay local. ----
+  function newRoundKey() {
+    try { const k = (window.StarEconomy && StarEconomy.createEventKey) ? StarEconomy.createEventKey() : (crypto.randomUUID ? crypto.randomUUID() : ''); sessionStorage.setItem('se-round-' + config.id, k); } catch (e) {}
+  }
+  function reportGameFinished() {
+    let k = null; try { k = sessionStorage.getItem('se-round-' + config.id); } catch (e) {}
+    if (!k || !window.StarEconomy || !StarEconomy.enabled || !StarEconomy.enabled()) return;
+    const attempt = (n) => StarEconomy.reportTaskEvent('game_finished', k).then(() => { try { sessionStorage.removeItem('se-round-' + config.id); } catch (e) {} })
+      .catch(() => { if (n < 2) setTimeout(() => attempt(n + 1), 3000 * (n + 1)); });
+    attempt(0);
+  }
+
   function getSelection() {
     const char = config.chars.find(c => c.id === state.selectedChar) || config.chars[0];
     const skin = (config.skins || []).find(s => s.id === state.selectedSkin);
@@ -2200,6 +2232,7 @@
       char: char.id,
       skin: Object.assign({ id: '', name: '', filter: 'none', rarity: 'N' }, skin || {}),
       skinId: skin ? skin.id : '',
+      _map: (() => { const m = {}; if (skin && skin.img && window.FX) { [char.chibi || char.id + '-chibi', char.id + '-portrait'].concat(char.id === 'lan' ? ['whale-idle','whale-run','whale-jump','whale-attack','whale-cast','whale-ride'] : []).forEach(n => m[n] = skin.img); } try { if (window.FX) { FX.skinMap = m; if (skin && skin.img && FX.load) FX.load([skin.img]); } } catch (e) {} return undefined; })(),
       equip,
       stats
     };
@@ -2239,7 +2272,7 @@
   }
 
   function initializeOwnedSkins() {
-    const defaultSkins = (config.skins || []).filter(s => s.rarity === 'N' || s.rarity === 'R');
+    const defaultSkins = (config.skins || []).filter(s => s.rarity === 'N' || s.rarity === 'R' || (s.img && !s.vip));
     state.ownedSkins = [...new Set([...state.ownedSkins, ...defaultSkins.map(s => s.id)])];
     saveState();
   }
@@ -2248,7 +2281,7 @@
   const Lobby = {
     init(cfg) {
       config = cfg;
-      const RR = ['N','R','SR','SSR'];
+      const RR = ['N','R','SR','SSR','UR'];
       const ART = {'space-shooter':'bg-space','moe-runner':'bg-rail','monster-loot':'bg-forest','fighter':'bg-arena'};
       const fromPath = location.pathname.split('/').filter(Boolean).slice(-1)[0];
       let bgs = (Array.isArray(config.bg) ? config.bg : [config.bg]).map(b => typeof b === 'string' ? b : (b && (b.img || b.bg))).filter(Boolean);
@@ -2257,6 +2290,19 @@
       config.bg = [art, ...bgs.slice(0, 1)];
       const MI = ['item-star','item-ice','item-weapon','item-shield'];
       config.modes = (config.modes && config.modes.length ? config.modes : [{id:'story'},{id:'endless'}]).map((m, i) => Object.assign({}, m, { icon: (typeof m.icon === 'string' && !m.icon.includes(' ')) ? m.icon : MI[i % 4] }));
+      const STY = [['cute','甜心','R'],['glam','华彩','SSR'],['elegant','典雅','SR'],['cool','酷飒','SR']];
+      config.chars.forEach(ch => {
+        if (!['lan','mo','li','xing','hu'].includes(ch.id)) return;
+        STY.forEach(([st, nm, r]) => {
+          const id = ch.id + '-' + st;
+          const SF = { cute: 'saturate(1.25) brightness(1.06)', glam: 'saturate(1.3) drop-shadow(0 0 6px #ffd76a)', elegant: 'sepia(.15) saturate(1.1)', cool: 'contrast(1.12) saturate(.85) hue-rotate(-10deg)' };
+          if (!config.skins.some(k => k.id === id)) config.skins.push({ id, char: ch.id, name: nm, style: st, rarity: r, filter: SF[st], img: 'skin-' + ch.id + '-' + st, vip: false });
+        });
+        const URN = { lan: '沧海神姬', mo: '春樱妖精后', li: '星糖公主', xing: '银河女帝', hu: '九尾狐火' };
+        if (!config.skins.some(k => k.id === ch.id + '-ur')) config.skins.push({ id: ch.id + '-ur', char: ch.id, name: URN[ch.id], style: 'glam', rarity: 'UR', vip: true, img: 'vip-' + ch.id, filter: 'saturate(1.35) drop-shadow(0 0 10px #ff9bf0) drop-shadow(0 0 4px #fff)' });
+      });
+      config.skins.sort((a, b) => RR.indexOf(b.rarity) - RR.indexOf(a.rarity) || 0);
+      config.skins.forEach(k => { if (!k.style) k.style = k.rarity === 'SSR' ? 'glam' : k.rarity === 'SR' ? 'elegant' : 'cute'; });
       config.stages = (config.stages || []).map((st, i) => Object.assign({}, st, { id: st.id ?? ('s' + i), bg: typeof st.bg === 'string' ? st.bg : (st.bg && st.bg.img) || art }));
       config.chars = (config.chars || []).map((c, i) => Object.assign({ id: 'c' + i, name: '', stats: {} }, c, { img: c.img || ((c.id || 'lan') + '-portrait'), chibi: c.chibi || ((c.id || 'lan') + '-chibi') }));
       config.skins = (config.skins || []).map((k, i) => {
@@ -2274,7 +2320,7 @@
         }
       });
 
-      loadState();
+      loadState(); try { if (state.settings && state.settings.joySize) document.documentElement.style.setProperty("--joy", { s: .8, m: 1, l: 1.25 }[state.settings.joySize]); } catch (e) {}
 
       Audio.init();
       initializeInventory();
@@ -2319,8 +2365,11 @@
       saveState();
     },
 
+    reportFinished() { reportGameFinished(); },
+    newRound() { newRoundKey(); },
     reportResult(result) {
       result = Object.assign({}, result);
+      try { const lost = result.win === false || (result.win === undefined && !result.stars); if (!lost) reportGameFinished(); } catch (e) {}
       if (typeof result.stage === 'number') { 
         const st = (config.stages || [])[result.stage]; 
         result.stage = st ? st.id : String(result.stage); 

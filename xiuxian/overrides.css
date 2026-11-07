@@ -1,0 +1,18 @@
+/* integration overrides */
+.sc-gacha-results-modal{width:min(94vw,480px)!important;max-width:none!important;padding:18px!important;background:linear-gradient(160deg,rgba(14,32,30,.97),rgba(30,22,10,.97))!important;color:#fbe7b0}
+.sc-gacha-results-title{color:#ffd56a;text-align:center;font-size:22px;font-weight:900;letter-spacing:4px;margin-bottom:12px}
+.sc-gacha-results-grid.multi{gap:8px!important}
+.sc-gacha-results-grid.single .sc-gacha-card{width:150px}
+.sc-gacha-card{min-height:96px}
+.sc-gacha-item-img{width:100%;height:70%;object-fit:contain}
+.sc-gacha-item-name{font-size:10px;text-align:center;line-height:1.2;margin-top:2px}
+.sc-gacha-results-grid.multi{grid-template-columns:repeat(5,minmax(0,1fr))!important}
+
+.hl-break-btn{position:relative!important;flex-shrink:0;left:auto!important;top:auto!important;bottom:auto!important;transform:none!important;display:block;width:min(60%,240px)!important;margin:6px auto 8px!important;background:linear-gradient(135deg,rgba(150,105,10,.9),rgba(255,200,60,.8))!important;color:#fff8dc!important;text-shadow:0 0 8px #000}
+.hl-bottom{padding-bottom:64px!important;max-height:min(220px,30vh)!important}
+/* gacha results: roomy responsive grid */
+.sc-gacha-results-modal{width:min(96vw,500px)!important;max-height:92%!important;overflow-y:auto!important}
+.sc-gacha-results-grid.multi{grid-template-columns:repeat(auto-fill,minmax(84px,1fr))!important;gap:10px!important}
+.sc-gacha-results-grid.multi .sc-gacha-card{min-height:0;aspect-ratio:3/4}
+.sc-gacha-item-name{font-size:11px!important}
+.hl-doll-wrap{height:96%!important;width:auto!important;max-width:60%;aspect-ratio:640/960}

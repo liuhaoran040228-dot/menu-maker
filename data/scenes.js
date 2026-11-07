@@ -17,7 +17,7 @@
     'bg-moon': { name: '月桂海岸', weather: 'bubble', props: ['prop-coral', 'prop-sakura'] }
   };
 
-  const order=Object.keys(scenes), starts={'space-shooter':'bg-space',snake:'bg-garden',fighter:'bg-arena','monster-loot':'bg-forest','moe-runner':'bg-rail','lili-merge':'bg-sakura','lili-match':'bg-moon','lili-2048':'bg-neon','lili-fortune':'bg-snow',survivor:'bg-undersea',td:'bg-sky',story:'bg-station'};
+  const order=Object.keys(scenes), starts={'space-shooter':'bg-space',snake:'bg-garden',fighter:'bg-arena','monster-loot':'bg-forest','moe-runner':'bg-rail','lili-merge':'bg-sakura','lili-match':'bg-moon','lili-dressup':'bg-sakura',xiuxian:'bg-sky','lili-2048':'bg-neon','lili-fortune':'bg-snow',survivor:'bg-undersea',td:'bg-sky',story:'bg-station'};
   const routes=Object.fromEntries(Object.entries(starts).map(([route,key])=>{const at=order.indexOf(key);return [route,[...order.slice(at),...order.slice(0,at)]]}));
   const reducedMotion = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
   const particleCount = typeof window !== 'undefined' && window.matchMedia('(max-width: 600px)').matches ? 18 : 36;

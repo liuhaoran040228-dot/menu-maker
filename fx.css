@@ -52,3 +52,8 @@ body:not(.fx-hasjoy) .fx-joy{display:none}
 .fx-hud{padding-right:54px}.fx-hud>.fx-icon:last-child{position:absolute;right:0}
 #pz{display:none!important}
 .fx-hud .chip{white-space:nowrap;flex-shrink:0}
+/* drag-anywhere movement: no fixed base, faint finger indicator */
+.fx-drag .fx-joy{background:radial-gradient(circle,#ffffff10,#ffffff00 70%)}
+.fx-drag .fx-joy.idle{opacity:0}
+.fx-drag .fx-joy i{width:34px;height:34px;margin:-17px;opacity:.55;box-shadow:0 0 22px #ff9be0,0 0 0 10px #ffffff14}
+.fx-joy{scale:var(--joy,1)}

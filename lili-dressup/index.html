@@ -1,0 +1,1234 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="icon" href="data:,"><link rel="stylesheet" href="../qqshow.css"><title>栗栗换装 · 星糖衣橱</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{width:100%;height:100dvh;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,'Noto Sans',sans-serif,'Apple Color Emoji','Segoe UI Emoji';-webkit-font-smoothing:antialiased;background:#1a0a1e;color:#fff;position:relative;user-select:none;-webkit-user-select:none}
+body{display:flex;flex-direction:column}
+#app{flex:1;position:relative;overflow:hidden}
+.screen{position:absolute;inset:0;opacity:0;pointer-events:none;transition:opacity 450ms cubic-bezier(0.4,0,0.2,1)}
+.screen.active{opacity:1;pointer-events:auto}
+.scene-bg{position:absolute;inset:0;background-size:cover;background-position:center;transition:opacity 400ms ease}
+.scene-bg img{width:100%;height:100%;object-fit:cover}
+#sparkle-canvas{position:absolute;inset:0;pointer-events:none;z-index:9999}
+.doll-stage{position:absolute;left:50%;bottom:18%;transform:translateX(-50%);width:90%;max-width:480px;height:82vh;display:flex;align-items:flex-end;justify-content:center;pointer-events:none;z-index:10}
+.doll-container{position:relative;width:100%;padding-bottom:150%;transform-origin:bottom center;transition:transform 350ms cubic-bezier(0.34,1.56,0.64,1)}
+.doll-container.breathing{animation:breathe 3s ease-in-out infinite}
+@keyframes breathe{0%,100%{transform:scaleY(1)}50%{transform:scaleY(1.008)}}
+.doll-container img{position:absolute;pointer-events:none;image-rendering:-webkit-optimize-contrast;image-rendering:crisp-edges}
+.top-hud{position:absolute;top:0;left:0;right:0;padding:env(safe-area-inset-top,0) env(safe-area-inset-right,0) 0 env(safe-area-inset-left,0);z-index:100;display:flex;align-items:center;justify-content:space-between;padding-top:calc(env(safe-area-inset-top,0) + 12px);padding-left:calc(env(safe-area-inset-left,0) + 12px);padding-right:calc(env(safe-area-inset-right,0) + 12px);gap:8px}
+.hud-btn{min-width:40px;height:40px;border-radius:20px;background:rgba(255,255,255,0.15);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.25);display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;transition:all 250ms cubic-bezier(0.4,0,0.2,1);padding:0 12px;gap:4px;color:#fff;box-shadow:0 4px 16px rgba(0,0,0,0.2)}
+.hud-btn:active{transform:scale(0.92);background:rgba(255,255,255,0.25)}
+.hud-btn span{font-size:13px;font-weight:600}
+.player-info{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.15);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.25);padding:6px 12px 6px 6px;border-radius:20px;box-shadow:0 4px 16px rgba(0,0,0,0.2)}
+.player-avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#ff6ec7,#a855f7);border:2px solid rgba(255,255,255,0.4)}
+.player-stat{display:flex;align-items:center;gap:3px;font-size:12px;font-weight:600}
+.bottom-panel{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(180deg,rgba(26,10,30,0.95),rgba(26,10,30,0.98));backdrop-filter:blur(20px);border-top-left-radius:28px;border-top-right-radius:28px;border:1px solid rgba(255,255,255,0.15);box-shadow:0 -8px 32px rgba(0,0,0,0.4);transition:transform 350ms cubic-bezier(0.4,0,0.2,1);z-index:50;padding-bottom:env(safe-area-inset-bottom,0)}
+.panel-handle{width:48px;height:4px;background:rgba(255,255,255,0.3);border-radius:2px;margin:12px auto 8px;cursor:pointer}
+.panel-content{padding:0 16px 16px}
+.tabs-row{display:flex;gap:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;margin-bottom:12px;padding:4px 0}
+.tabs-row::-webkit-scrollbar{display:none}
+.tab-btn{min-width:68px;height:64px;border-radius:16px;background:rgba(255,255,255,0.08);border:2px solid transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;transition:all 280ms cubic-bezier(0.4,0,0.2,1);flex-shrink:0}
+.tab-btn.active{background:rgba(255,110,199,0.2);border-color:rgba(255,110,199,0.6);box-shadow:0 0 16px rgba(255,110,199,0.4)}
+.tab-btn:active{transform:scale(0.94)}
+.tab-icon{font-size:28px}
+.tab-label{font-size:11px;font-weight:600;color:rgba(255,255,255,0.8)}
+.tab-btn.active .tab-label{color:#fff}
+.filter-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.filter-chip{padding:6px 12px;border-radius:16px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);font-size:12px;font-weight:600;cursor:pointer;transition:all 250ms ease}
+.filter-chip.active{background:rgba(168,85,247,0.3);border-color:rgba(168,85,247,0.6);box-shadow:0 0 12px rgba(168,85,247,0.4)}
+.filter-chip:active{transform:scale(0.92)}
+.color-dot{width:32px;height:32px;border-radius:50%;border:2px solid rgba(255,255,255,0.3);cursor:pointer;transition:all 250ms ease;box-shadow:0 2px 8px rgba(0,0,0,0.3)}
+.color-dot.active{border-width:3px;border-color:#fff;transform:scale(1.1);box-shadow:0 0 16px currentColor}
+.items-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:12px;max-height:40vh;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:4px}
+.item-tile{aspect-ratio:3/4;border-radius:16px;position:relative;overflow:hidden;cursor:pointer;transition:all 300ms cubic-bezier(0.34,1.56,0.64,1);background:#000}
+.item-tile:active{transform:scale(0.96)}
+.item-tile img{width:100%;height:100%;object-fit:contain}
+.item-frame{position:absolute;inset:0;border-radius:16px;pointer-events:none;transition:opacity 300ms ease}
+.rarity-N .item-frame{background:linear-gradient(135deg,rgba(156,163,175,0.3),rgba(156,163,175,0.1));border:2px solid rgba(156,163,175,0.4)}
+.rarity-R .item-frame{background:linear-gradient(135deg,rgba(96,165,250,0.3),rgba(96,165,250,0.1));border:2px solid rgba(96,165,250,0.5)}
+.rarity-SR .item-frame{background:linear-gradient(135deg,rgba(168,85,247,0.3),rgba(168,85,247,0.1));border:2px solid rgba(168,85,247,0.6);box-shadow:0 0 20px rgba(168,85,247,0.4)}
+.rarity-SSR .item-frame{background:linear-gradient(135deg,rgba(251,191,36,0.4),rgba(251,191,36,0.1));border:2px solid rgba(251,191,36,0.7);box-shadow:0 0 24px rgba(251,191,36,0.5);animation:glow-ssr 2s ease-in-out infinite}
+.rarity-UR .item-frame{background:linear-gradient(135deg,rgba(255,110,199,0.4),rgba(168,85,247,0.2));border:3px solid rgba(255,110,199,0.8);box-shadow:0 0 32px rgba(255,110,199,0.6);animation:glow-ur 2s ease-in-out infinite}
+@keyframes glow-ssr{0%,100%{box-shadow:0 0 24px rgba(251,191,36,0.5)}50%{box-shadow:0 0 36px rgba(251,191,36,0.8)}}
+@keyframes glow-ur{0%,100%{box-shadow:0 0 32px rgba(255,110,199,0.6)}50%{box-shadow:0 0 48px rgba(255,110,199,0.9)}}
+.rarity-badge{position:absolute;top:4px;right:4px;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;border:1px solid rgba(255,255,255,0.3);z-index:2}
+.equipped-mark{position:absolute;top:4px;left:4px;width:24px;height:24px;background:rgba(96,165,250,0.9);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;z-index:2;box-shadow:0 2px 8px rgba(96,165,250,0.6)}
+.item-name{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(0deg,rgba(0,0,0,0.85),transparent);padding:6px 4px 4px;font-size:11px;font-weight:600;text-align:center;z-index:2;line-height:1.2}
+.locked-overlay{position:absolute;inset:0;background:rgba(0,0,0,0.75);backdrop-filter:blur(8px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;z-index:3}
+.locked-overlay .lock-icon{font-size:32px}
+.locked-overlay .vip-text{font-size:10px;font-weight:700;color:#fbbf24}
+.big-btn{min-height:56px;border-radius:28px;background:linear-gradient(135deg,#ff6ec7,#a855f7);border:none;color:#fff;font-size:16px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all 300ms cubic-bezier(0.34,1.56,0.64,1);box-shadow:0 8px 24px rgba(255,110,199,0.4);position:relative;overflow:hidden}
+.big-btn::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,transparent,rgba(255,255,255,0.2),transparent);transform:translateX(-100%);transition:transform 600ms ease}
+.big-btn:hover::before{transform:translateX(100%)}
+.big-btn:active{transform:scale(0.96);box-shadow:0 4px 16px rgba(255,110,199,0.3)}
+.lobby-title{text-align:center;margin-top:calc(env(safe-area-inset-top,0) + 80px);animation:shimmer 3s ease-in-out infinite}
+@keyframes shimmer{0%,100%{filter:brightness(1) drop-shadow(0 0 20px rgba(255,110,199,0.6))}50%{filter:brightness(1.2) drop-shadow(0 0 40px rgba(255,110,199,0.9))}}
+.lobby-title h1{font-size:48px;font-weight:900;background:linear-gradient(135deg,#ff6ec7,#fbbf24,#a855f7);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:8px;letter-spacing:2px}
+.lobby-title h2{font-size:20px;font-weight:600;color:rgba(255,255,255,0.7);letter-spacing:4px}
+.lobby-buttons{position:absolute;bottom:calc(env(safe-area-inset-bottom,0) + 24px);left:16px;right:16px;display:flex;flex-direction:column;gap:12px;z-index:20}
+.side-buttons{position:absolute;right:16px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:12px;z-index:20}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;z-index:1000;opacity:0;pointer-events:none;transition:opacity 300ms ease}
+.modal-overlay.active{opacity:1;pointer-events:auto}
+.modal{background:linear-gradient(180deg,rgba(26,10,30,0.98),rgba(26,10,30,0.95));border-radius:24px;border:2px solid rgba(255,255,255,0.2);box-shadow:0 16px 64px rgba(0,0,0,0.6);max-width:90vw;max-height:80vh;overflow:auto;padding:24px;animation:modal-in 350ms cubic-bezier(0.34,1.56,0.64,1)}
+@keyframes modal-in{0%{transform:scale(0.8);opacity:0}100%{transform:scale(1);opacity:1}}
+.modal h3{font-size:24px;font-weight:700;margin-bottom:16px;text-align:center;background:linear-gradient(135deg,#ff6ec7,#a855f7);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.modal-buttons{display:flex;gap:12px;margin-top:20px}
+.modal-buttons .big-btn{flex:1}
+.score-display{text-align:center;padding:24px}
+.score-rank{font-size:72px;font-weight:900;background:linear-gradient(135deg,#fbbf24,#ff6ec7);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:12px;animation:rank-pulse 1s ease-in-out}
+@keyframes rank-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
+.score-stars{font-size:36px;margin-bottom:16px}
+.score-detail{font-size:14px;color:rgba(255,255,255,0.7);line-height:1.6}
+.set-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:16px;max-height:70vh;overflow-y:auto;padding:8px}
+.set-card{aspect-ratio:3/4;border-radius:20px;position:relative;overflow:hidden;cursor:pointer;transition:all 300ms cubic-bezier(0.34,1.56,0.64,1);background:rgba(0,0,0,0.6)}
+.set-card:active{transform:scale(0.96)}
+.set-card-bg{position:absolute;inset:0;background-size:cover;background-position:center;opacity:0.4;transition:opacity 300ms ease}
+.set-card:hover .set-card-bg{opacity:0.6}
+.set-card-content{position:relative;z-index:2;padding:12px;height:100%;display:flex;flex-direction:column;justify-content:space-between}
+.set-card-header{display:flex;align-items:center;justify-content:space-between}
+.set-card-name{font-size:14px;font-weight:700;margin-top:auto;text-shadow:0 2px 8px rgba(0,0,0,0.8)}
+.set-card-info{font-size:11px;color:rgba(255,255,255,0.7);margin-top:4px}
+.set-detail-modal .modal{max-width:85vw;padding:20px}
+.set-preview-doll{width:200px;height:300px;margin:0 auto 16px;position:relative;background:rgba(0,0,0,0.3);border-radius:16px;overflow:hidden}
+.set-preview-doll .doll-container{width:100%;height:100%;position:relative;padding-bottom:0}
+.set-items-list{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:12px 0;font-size:12px}
+.set-items-list span{background:rgba(255,255,255,0.1);padding:4px 10px;border-radius:12px}
+.photo-controls{position:absolute;bottom:env(safe-area-inset-bottom,0);left:0;right:0;background:linear-gradient(0deg,rgba(26,10,30,0.95),transparent);padding:16px;z-index:60}
+.photo-picker-row{display:flex;gap:8px;overflow-x:auto;margin-bottom:12px;padding:4px 0}
+.photo-picker-row::-webkit-scrollbar{display:none}
+.photo-thumb{width:64px;height:64px;border-radius:12px;border:2px solid transparent;cursor:pointer;transition:all 250ms ease;flex-shrink:0;background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center;font-size:24px;background-color:rgba(255,255,255,0.1)}
+.photo-thumb.active{border-color:#ff6ec7;box-shadow:0 0 16px rgba(255,110,199,0.6);transform:scale(1.05)}
+.photo-thumb:active{transform:scale(0.95)}
+.photo-action-row{display:flex;gap:12px}
+.photo-action-row .big-btn{flex:1}
+.preview-banner{position:absolute;top:50%;left:0;right:0;transform:translateY(-50%);background:rgba(0,0,0,0.85);backdrop-filter:blur(12px);padding:16px;text-align:center;z-index:100;border-top:2px solid rgba(255,110,199,0.6);border-bottom:2px solid rgba(255,110,199,0.6);animation:banner-slide 400ms cubic-bezier(0.34,1.56,0.64,1)}
+@keyframes banner-slide{0%{transform:translateY(-50%) translateX(-100%);opacity:0}100%{transform:translateY(-50%) translateX(0);opacity:1}}
+.preview-banner h3{font-size:18px;font-weight:700;color:#fbbf24;margin-bottom:8px}
+.preview-banner p{font-size:14px;color:rgba(255,255,255,0.8);margin-bottom:12px}
+.loading-screen{position:fixed;inset:0;background:linear-gradient(135deg,#1a0a1e,#2d1b3d);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:10000}
+.loading-title{font-size:36px;font-weight:900;background:linear-gradient(135deg,#ff6ec7,#fbbf24);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:32px}
+.loading-bar{width:240px;height:8px;background:rgba(255,255,255,0.1);border-radius:4px;overflow:hidden;position:relative}
+.loading-progress{height:100%;background:linear-gradient(90deg,#ff6ec7,#a855f7);border-radius:4px;transition:width 300ms ease;box-shadow:0 0 16px rgba(255,110,199,0.6)}
+.loading-text{margin-top:16px;font-size:14px;color:rgba(255,255,255,0.6)}
+.daily-card{background:rgba(255,255,255,0.1);backdrop-filter:blur(12px);border-radius:20px;border:2px solid rgba(255,110,199,0.3);padding:16px;margin:16px;text-align:center;box-shadow:0 8px 24px rgba(255,110,199,0.2);position:absolute;bottom:200px;left:0;right:0;z-index:15;animation:float 3s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.daily-card h3{font-size:16px;font-weight:700;margin-bottom:8px;background:linear-gradient(135deg,#ff6ec7,#fbbf24);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.daily-card .set-name{font-size:14px;color:rgba(255,255,255,0.9);margin-bottom:4px}
+.daily-card .set-desc{font-size:12px;color:rgba(255,255,255,0.6)}
+@media (min-width:768px){.items-grid{grid-template-columns:repeat(auto-fill,minmax(120px,1fr))}.set-grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr))}}
+.transformation-overlay{position:fixed;inset:0;background:rgba(255,255,255,0.95);z-index:9998;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity 300ms ease}
+.transformation-overlay.active{opacity:1;pointer-events:auto}
+.transformation-rays{position:absolute;inset:0;background:conic-gradient(from 0deg,transparent,rgba(255,110,199,0.4),transparent,rgba(168,85,247,0.4),transparent);animation:rotate-rays 2s linear infinite}
+@keyframes rotate-rays{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+.transformation-text{font-size:32px;font-weight:900;background:linear-gradient(135deg,#ff6ec7,#fbbf24,#a855f7);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;z-index:2;text-shadow:0 4px 16px rgba(0,0,0,0.3);animation:text-pulse 0.5s ease-in-out}
+@keyframes text-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.2)}}
+
+.doll-stage{bottom:auto;top:auto;height:auto;width:100%;max-width:none;left:0;transform:none}
+#screen-lobby .doll-stage{top:calc(env(safe-area-inset-top,0px) + 150px);bottom:200px}
+#screen-wardrobe .doll-stage{top:calc(env(safe-area-inset-top,0px) + 58px);bottom:calc(47vh - 10px)}
+#screen-photo .doll-stage{top:calc(env(safe-area-inset-top,0px) + 40px);bottom:120px}
+.doll-container{height:100%;width:auto;aspect-ratio:2/3;padding-bottom:0;filter:drop-shadow(0 10px 18px rgba(40,0,40,.35))}
+.set-preview-doll .doll-container{height:100%;width:auto;margin:0 auto}
+.doll-container img{image-rendering:auto}
+.doll-container img.pop-in{animation:popin 480ms cubic-bezier(.2,.9,.3,1.2)}
+@keyframes popin{0%{opacity:0;transform:scale(1.06);filter:blur(4px) brightness(1.8)}60%{filter:blur(0) brightness(1.3)}100%{opacity:1;transform:none;filter:none}}
+.daily-card{bottom:auto;top:calc(env(safe-area-inset-top,0px) + 64px);left:auto;right:0;margin:0 12px;padding:8px 12px;width:150px;border-radius:16px}
+.daily-card h3{font-size:12px;margin-bottom:2px}.daily-card .set-name{font-size:13px;margin:0}
+.lobby-title{position:absolute;left:0;right:0;top:auto;bottom:calc(env(safe-area-inset-bottom,0px) + 168px);margin:0;z-index:12;pointer-events:none}
+.lobby-title h1{font-size:44px;margin:0;filter:drop-shadow(0 2px 0 #fff)}.lobby-title h2{font-size:15px;color:#fff;text-shadow:0 2px 8px #a0306f}
+.lobby-buttons{bottom:calc(env(safe-area-inset-bottom,0px) + 20px);right:16px}
+.lobby-buttons .big-btn{min-height:50px}
+.big-btn{background:linear-gradient(135deg,#ff7ac6,#c26bff 60%,#ffcf6b);box-shadow:0 8px 24px rgba(255,110,199,.45),inset 0 2px 0 rgba(255,255,255,.5);border:1px solid rgba(255,255,255,.6)}
+.big-btn::before{animation:btnshine 3.2s ease-in-out infinite}
+@keyframes btnshine{0%,60%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+.photo-controls{padding:8px 10px 10px;transition:transform .35s cubic-bezier(.4,0,.2,1)}
+.photo-controls.hide{transform:translateY(calc(100% - 64px))}
+.photo-picker-row{margin-bottom:6px;align-items:center}
+.photo-thumb{width:48px;height:48px;font-size:20px;border-radius:12px}
+.row-label{flex-shrink:0;font-size:11px;font-weight:700;width:30px;color:#ffd6f0;text-align:center}
+.items-grid{grid-template-columns:repeat(4,1fr);gap:8px;max-height:none;flex:1}
+.item-tile{background:radial-gradient(circle at 50% 30%,#fff7fd,#f2dcff 70%,#d9c3f3)}
+.item-tile img{object-fit:contain;padding:6px 4px 18px}
+.bottom-panel{display:flex;flex-direction:column;background:linear-gradient(180deg,rgba(60,20,70,.88),rgba(26,10,30,.96))}
+.panel-content{display:flex;flex-direction:column;flex:1;min-height:0;padding:0 12px 10px}
+.items-grid{overflow-y:auto;min-height:0}
+.tabs-row{margin-bottom:4px}.filter-chip{padding:4px 10px}.panel-handle{margin:8px auto 6px}.tab-btn{min-width:56px;height:52px}.tab-icon{font-size:22px}
+.filter-row{flex-wrap:nowrap;overflow-x:auto;margin-bottom:6px;scrollbar-width:none}.filter-row::-webkit-scrollbar{display:none}
+.filter-chip{flex-shrink:0}.color-dot{width:24px;height:24px;flex-shrink:0}
+.bottom-panel.collapsed{transform:translateY(calc(100% - 34px))}
+.set-card{border:2px solid rgba(255,255,255,.25)}.set-card.rarity-UR{border-color:#ff5fa2;box-shadow:0 0 20px rgba(255,95,162,.6)}.set-card.rarity-SSR{border-color:#f5b942;box-shadow:0 0 16px rgba(245,185,66,.5)}
+.set-card-bg{opacity:.75}.set-card .mini{position:absolute;left:0;right:0;bottom:0;top:8%;z-index:1;display:flex;justify-content:center}.set-card .mini .doll-container{height:100%}
+.set-card.locked .mini{filter:grayscale(.6) brightness(.55)}
+.set-card .lockbadge{position:absolute;inset:auto 8px 44px auto;z-index:3;background:linear-gradient(135deg,#ffd76b,#ff8fc8);color:#4a1640;font-weight:900;font-size:11px;padding:3px 8px;border-radius:10px}
+.set-card-content{z-index:2;background:linear-gradient(0deg,rgba(20,5,25,.85),transparent 40%)}
+.vip-ribbon{position:absolute;top:8px;left:-4px;background:linear-gradient(90deg,#ffcf6b,#ff7ac6);color:#3a0c33;font-weight:900;font-size:11px;padding:2px 10px;border-radius:0 10px 10px 0;z-index:3}
+.item-tile.locked img{filter:grayscale(.5) brightness(.7)}
+.locked-overlay{background:rgba(20,5,30,.45);backdrop-filter:blur(2px)}
+.float-sparkle{position:absolute;pointer-events:none;z-index:11;color:#fff;text-shadow:0 0 8px #ff9be0,0 0 14px #fff;animation:fsp 4s ease-in-out infinite}
+@keyframes fsp{0%{opacity:0;transform:translateY(10px) scale(.6)}50%{opacity:1}100%{opacity:0;transform:translateY(-60px) scale(1.1)}}
+.transformation-overlay{background:radial-gradient(circle,rgba(255,255,255,.95),rgba(255,200,240,.85) 50%,rgba(170,90,255,.7))}
+.transformation-text{font-size:36px;letter-spacing:4px;animation:tt 1.2s cubic-bezier(.2,.9,.3,1)}
+@keyframes tt{0%{transform:translateX(-120%) scale(.8);opacity:0}30%{transform:none;opacity:1}100%{transform:scale(1.05)}}
+.trans-ring{position:absolute;width:40vmin;height:40vmin;border-radius:50%;border:4px solid #fff;box-shadow:0 0 30px #ff7ac6,inset 0 0 30px #c26bff;animation:ring 1.2s ease-out forwards}
+@keyframes ring{0%{transform:scale(.2);opacity:1}100%{transform:scale(3);opacity:0}}
+.photo-hide-btn{position:absolute;right:12px;top:calc(env(safe-area-inset-top,0px) + 12px);z-index:101}
+.items-grid{grid-auto-rows:118px;padding-bottom:64px}.item-tile{aspect-ratio:auto;height:118px}#screen-wardrobe .top-hud .hud-btn{min-width:36px;height:36px;padding:0 8px;font-size:17px}#screen-wardrobe .top-hud>div{flex-wrap:nowrap!important;gap:6px!important}.blink-l{opacity:0;animation:blinkk 4.6s infinite}@keyframes blinkk{0%,93%,100%{opacity:0}95%,97%{opacity:1}}@media (prefers-reduced-motion:reduce){.blink-l{animation:none}}html.qa .preview-banner,html.qa .account-trigger,html.qa #account-widget,html.qa .account-float{display:none!important}</style>
+</head>
+<body>
+<script src="dressup-data.js"></script><script src="../qqshow.js"></script><script src="../vip.js"></script>
+<div id="app"></div>
+<canvas id="sparkle-canvas"></canvas>
+<div class="loading-screen" id="loading">
+<div class="loading-title">栗栗换装</div>
+<div class="loading-bar"><div class="loading-progress" id="loading-progress"></div></div>
+<div class="loading-text" id="loading-text">加载中...</div>
+</div>
+<script>
+(function(){
+'use strict';
+const DATA=window.DressData;
+const QA=new URLSearchParams(location.search).has('qa');if(QA)document.documentElement.classList.add('qa');
+if(!DATA){alert('DressData not loaded');return}
+const W=DATA.W,H=DATA.H;
+let state={equipped:{},coins:1000,gems:50,level:5,avatar:'🦄',sound:true,lastDaily:null};
+let undoStack=[];
+let currentScreen='lobby';
+let currentSlot='全部';
+let currentStyle='全部';
+let currentRarity='全部';
+let currentColor='全部';
+let currentScene='bg_studio';
+let currentPose='站姿';
+let currentExpr=null;
+let currentFrame='无';
+let currentFilter='原片';
+let stickerOn=true;
+let previewTimeout=null;
+let previewItem=null;
+const audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+function playSound(freq=800,dur=0.1){
+if(!state.sound)return;
+const osc=audioCtx.createOscillator();
+const gain=audioCtx.createGain();
+osc.connect(gain);
+gain.connect(audioCtx.destination);
+osc.frequency.value=freq;
+gain.gain.setValueAtTime(0.1,audioCtx.currentTime);
+gain.gain.exponentialRampToValueAtTime(0.01,audioCtx.currentTime+dur);
+osc.start();
+osc.stop(audioCtx.currentTime+dur);
+}
+function saveState(){
+try{if(window.StarShow&&StarShow.save){const it={};Object.entries(state.equipped).forEach(([k,v])=>{const x=getItem(v);if(x&&isUnlocked(x))it[k]=v});StarShow.save({v:1,items:it,set:state.set||null});}}catch(e){}
+try{
+localStorage.setItem('lili-dressup-v1',JSON.stringify(state));
+}catch(e){}
+}
+function loadState(){
+try{
+const saved=localStorage.getItem('lili-dressup-v1');
+if(saved){
+const loaded=JSON.parse(saved);
+state={...state,...loaded};
+}
+}catch(e){}
+}
+loadState();
+if(!state.equipped||!Object.keys(state.equipped).length){state.equipped={};(DATA.defaultOutfit||[]).forEach(id=>{const it=DATA.items.find(x=>x.id===id);if(it)state.equipped[it.slot]=id;});}
+function isVip(){
+return!!(window.VIP&&window.VIP.active&&window.VIP.active());
+}
+function tier(){
+return window.VIP&&window.VIP.tier?window.VIP.tier()||0:0;
+}
+function isUnlocked(item){
+if(!item.vip)return true;
+const params=new URLSearchParams(location.search);
+if(params.get('vip')==='preview')return false;
+return isVip()&&tier()>=(item.minTier||0);
+}
+function render(){renderDoll();if(currentScreen==='wardrobe')renderWardrobe();if(currentScreen==='collection')renderCollection();}
+window.addEventListener('vipchange',()=>{if(window.LiliDress)render();});
+const params=new URLSearchParams(location.search);
+if(params.get('screen')){
+currentScreen=params.get('screen');
+}
+if(params.get('set')){
+setTimeout(()=>{
+const setId=params.get('set');
+showSetDetail(setId);
+},500);
+}
+function getItem(id){
+return DATA.items.find(it=>it.id===id);
+}
+function getSet(id){
+return DATA.sets.find(s=>s.id===id);
+}
+function getScene(id){
+return DATA.scenes.find(sc=>sc.id===id);
+}
+function equipItem(id,silent=false){
+const item=getItem(id);
+if(!item)return;
+if(!isUnlocked(item)){
+showPreview(item);
+return;
+}
+if(previewItem){
+clearTimeout(previewTimeout);
+previewItem=null;
+document.querySelectorAll('.preview-banner').forEach(el=>el.remove());
+}
+undoStack.push({...state.equipped});
+if(undoStack.length>30)undoStack.shift();
+state.set=null;
+if(state.equipped[item.slot]===id){
+delete state.equipped[item.slot];
+}else{
+state.equipped[item.slot]=id;
+}
+saveState();
+if(!silent){
+playSound(1000,0.08);
+burstSparkles();
+}
+renderDoll();
+}
+function equipSet(setId,silent=false){
+const set=getSet(setId);
+if(!set)return;
+const allUnlocked=set.items.every(id=>isUnlocked(getItem(id)));
+if(!allUnlocked){
+showSetPreview(set);
+return;
+}
+undoStack.push({...state.equipped});
+state.equipped={};state.set=setId;
+set.items.forEach(id=>{
+const item=getItem(id);
+if(item)state.equipped[item.slot]=id;
+});
+if(set.bg){
+currentScene=set.bg;
+}
+saveState();
+if(!silent){
+showTransformation(set.name);
+}
+renderDoll();
+renderScene();
+}
+function undo(){
+if(undoStack.length===0)return;
+state.equipped=undoStack.pop();
+saveState();
+playSound(700,0.08);
+renderDoll();
+}
+function randomOutfit(){
+const unlocked=DATA.items.filter(it=>isUnlocked(it));
+const slots=[...new Set(unlocked.map(it=>it.slot))].filter(s=>s!=='expr');
+undoStack.push({...state.equipped});
+state.equipped={};
+let delay=0;
+slots.forEach(slot=>{
+const choices=unlocked.filter(it=>it.slot===slot);
+if(choices.length>0){
+setTimeout(()=>{
+const pick=choices[Math.floor(Math.random()*choices.length)];
+state.equipped[slot]=pick.id;
+playSound(1200+Math.random()*400,0.06);
+burstSparkles();
+renderDoll();
+},delay);
+delay+=120;
+}
+});
+saveState();
+}
+function clearOutfit(){
+undoStack.push({...state.equipped});
+state.equipped={};
+saveState();
+playSound(600,0.1);
+renderDoll();
+}
+function showScore(){
+const slots=['hair','top','bottom','shoes','head','jewel','hand','makeup'];
+const equipped=slots.map(s=>state.equipped[s]).filter(Boolean).map(getItem).filter(Boolean);
+let score=0;
+const styleCounts={};
+equipped.forEach(it=>{
+if(it.style)styleCounts[it.style]=(styleCounts[it.style]||0)+1;
+const rarityScore={'N':1,'R':2,'SR':3,'SSR':4,'UR':5}[it.rarity]||0;
+score+=rarityScore*10;
+});
+const maxStyle=Object.values(styleCounts).sort((a,b)=>b-a)[0]||0;
+score+=maxStyle*15;
+let rank='C';
+let stars='⭐';
+if(score>=150){rank='S';stars='⭐⭐⭐⭐⭐'}
+else if(score>=100){rank='A';stars='⭐⭐⭐⭐'}
+else if(score>=60){rank='B';stars='⭐⭐⭐'}
+else if(score>=30){rank='C';stars='⭐⭐'}
+playSound(1400,0.15);
+burstSparkles();
+showModal(`
+<div class="score-display">
+<div class="score-rank">${rank}</div>
+<div class="score-stars">${stars}</div>
+<div class="score-detail">
+总分: ${score}<br>
+风格一致性: ${maxStyle} 件<br>
+稀有度加成: ${equipped.length} 件装备
+</div>
+</div>
+`,[{text:'✨ 继续搭配',cb:closeModal}]);
+}
+function showPreview(item){
+if(!item)return;
+previewItem=item;
+const prev=state.equipped[item.slot];
+state.equipped[item.slot]=item.id;
+renderDoll();
+const banner=document.createElement('div');
+banner.className='preview-banner';
+banner.innerHTML=`
+<h3>试穿预览</h3>
+<p>VIP 专属 · 开通后永久解锁</p>
+<div class="big-btn" style="max-width:200px;margin:0 auto" onclick="window.VIP&&window.VIP.open&&window.VIP.open()">💎 开通 VIP</div>
+`;
+document.getElementById('app').appendChild(banner);
+clearTimeout(previewTimeout);
+previewTimeout=setTimeout(()=>{
+if(prev!==undefined)state.equipped[item.slot]=prev;
+else delete state.equipped[item.slot];
+renderDoll();
+banner.remove();
+previewItem=null;
+},2500);
+}
+function showSetPreview(set){
+const allItems=set.items.map(getItem).filter(Boolean);
+const lockedItems=allItems.filter(it=>!isUnlocked(it));
+showModal(`
+<h3>${set.name}</h3>
+<p style="color:rgba(255,255,255,0.7);margin-bottom:12px">${set.desc||''}</p>
+<div class="set-preview-doll">
+<div class="doll-container" id="set-preview-doll-temp"></div>
+</div>
+<div class="set-items-list">
+${allItems.map(it=>`<span>${it.name}</span>`).join('')}
+</div>
+<p style="color:#fbbf24;font-size:14px;margin:12px 0">🔒 ${lockedItems.length} 件需要 VIP${set.minTier||''}</p>
+`,[
+{text:'✨ 试穿预览',cb:()=>{
+closeModal();
+const prev={...state.equipped};const prevSet0=state.set;
+state.equipped={};state.set=set.id;set.items.forEach(id=>{
+const item=getItem(id);
+if(item)state.equipped[item.slot]=id;
+});
+if(set.bg)currentScene=set.bg;
+renderDoll();
+renderScene();
+const banner=document.createElement('div');
+banner.className='preview-banner';
+banner.innerHTML=`
+<h3>VIP 套装试穿</h3>
+<p>开通 VIP${set.minTier||''} 永久解锁</p>
+<div class="big-btn" style="max-width:200px;margin:0 auto" onclick="window.VIP&&window.VIP.open&&window.VIP.open()">💎 开通 VIP</div>
+`;
+document.getElementById('app').appendChild(banner);
+const prevSet=prevSet0;setTimeout(()=>{
+state.equipped=prev;state.set=prevSet;
+renderDoll();
+banner.remove();
+},QA?60000:3000);
+}},
+{text:'💎 开通 VIP',cb:()=>{
+closeModal();
+window.VIP&&window.VIP.open&&window.VIP.open();
+}}
+]);
+setTimeout(()=>{
+const tempDoll=document.getElementById('set-preview-doll-temp');
+if(tempDoll){
+const tempEquipped={};
+set.items.forEach(id=>{
+const item=getItem(id);
+if(item)tempEquipped[item.slot]=id;
+});
+renderDollTo(tempDoll,tempEquipped,set.id);
+}
+},100);
+}
+function showSetDetail(setId){
+const set=getSet(setId);
+if(!set)return;
+const allItems=set.items.map(getItem).filter(Boolean);
+const unlocked=allItems.filter(isUnlocked);
+const owned=allItems.filter(it=>state.equipped[it.slot]===it.id||isUnlocked(it));
+const isLocked=unlocked.length<allItems.length;
+showModal(`
+<h3>${set.name}</h3>
+<p style="color:rgba(255,255,255,0.7);margin-bottom:12px">${set.desc||''}</p>
+<div class="set-preview-doll">
+<div class="doll-container" id="set-detail-doll-temp"></div>
+</div>
+<div class="set-items-list">
+${allItems.map(it=>`<span>${it.name}${isUnlocked(it)?'':'🔒'}</span>`).join('')}
+</div>
+<p style="font-size:12px;color:rgba(255,255,255,0.6);margin:8px 0">拥有进度: ${owned.length}/${allItems.length}</p>
+${isLocked?`<p style="color:#fbbf24;font-size:14px;margin:8px 0">需要 VIP${set.minTier||''} 解锁全套</p>`:''}
+`,[
+{text:isLocked?'💎 开通 VIP':'✨ 一键穿戴',cb:()=>{
+closeModal();
+if(isLocked){
+window.VIP&&window.VIP.open&&window.VIP.open();
+}else{
+equipSet(setId);
+showScreen('wardrobe');
+}
+}},
+{text:'❌ 关闭',cb:closeModal}
+]);
+setTimeout(()=>{
+const tempDoll=document.getElementById('set-detail-doll-temp');
+if(tempDoll){
+const tempEquipped={};
+set.items.forEach(id=>{
+const item=getItem(id);
+if(item)tempEquipped[item.slot]=id;
+});
+renderDollTo(tempDoll,tempEquipped,set.id);
+}
+},100);
+}
+function showTransformation(name){
+const overlay=document.createElement('div');
+overlay.className='transformation-overlay active';
+overlay.innerHTML=`
+<div class="transformation-rays"></div><div class="trans-ring"></div><div class="trans-ring" style="animation-delay:.25s"></div>
+<div class="transformation-text">${name}</div>
+`;
+document.body.appendChild(overlay);
+playSound(1600,0.3);
+burstSparkles();
+setTimeout(()=>{
+overlay.classList.remove('active');
+setTimeout(()=>overlay.remove(),300);
+},1200);
+}
+function showModal(content,buttons=[]){
+const existing=document.querySelector('.modal-overlay');
+if(existing)existing.remove();
+const overlay=document.createElement('div');
+overlay.className='modal-overlay active';
+const btnsHTML=buttons.map(b=>`<div class="big-btn" onclick="window._modalCb_${buttons.indexOf(b)}()">${b.text}</div>`).join('');
+overlay.innerHTML=`<div class="modal">${content}<div class="modal-buttons">${btnsHTML}</div></div>`;
+document.body.appendChild(overlay);
+buttons.forEach((b,i)=>{
+window[`_modalCb_${i}`]=()=>{
+if(b.cb)b.cb();
+};
+});
+overlay.addEventListener('click',e=>{
+if(e.target===overlay)closeModal();
+});
+}
+function closeModal(){
+const overlay=document.querySelector('.modal-overlay');
+if(overlay){
+overlay.classList.remove('active');
+setTimeout(()=>overlay.remove(),300);
+}
+}
+function showScreen(screen){
+currentScreen=screen;
+document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+const target=document.getElementById(`screen-${screen}`);
+if(target){
+target.classList.add('active');
+if(screen==='lobby'){if(window.__lobbyShow)setTimeout(window.__lobbyShow,0);
+const doll=target.querySelector('.doll-container');
+if(doll)doll.classList.add('breathing');
+}else{
+document.querySelectorAll('.doll-container').forEach(d=>d.classList.remove('breathing'));
+}
+}
+if(screen==='wardrobe'){
+renderWardrobe();
+}else if(screen==='collection'){
+renderCollection();
+}else if(screen==='photo'){
+renderPhoto();
+}
+}
+function renderDoll(container){
+const cont=container||document.querySelectorAll('.screen:not(#screen-lobby)>.doll-stage>.doll-container');
+cont.forEach(c=>{
+renderDollTo(c,state.equipped);
+});
+}
+const IMC={};function im(src){if(!IMC[src]){const i=new Image();i.src=src;IMC[src]=i}return IMC[src]}
+function ready(i){return i.complete&&i.naturalWidth?Promise.resolve(i):new Promise(r=>{i.onload=()=>r(i);i.onerror=()=>r(i)})}
+function baseCanvas(eq){const c=document.createElement('canvas');c.width=W;c.height=H;const b=DATA.base;const er=Object.values(eq).map(getItem).filter(it=>it&&it.erase&&(it.slot!=='bottom'||!(getItem(eq.top)||{}).full)).map(it=>it.erase);Promise.all([b,...er].map(x=>ready(im(x.src)))).then(()=>{const g=c.getContext('2d');g.drawImage(im(b.src),b.x,b.y,b.w,b.h);g.globalCompositeOperation='destination-out';er.forEach(e=>g.drawImage(im(e.src),e.x,e.y,e.w,e.h));});return c}
+function baseFor(eq){return DATA.base;const t=getItem(eq.top),b=getItem(eq.bottom);if(t&&t.baseAlt)return t.baseAlt;if(b&&b.baseAlt&&!(t&&t.full))return b.baseAlt;return DATA.base}
+function withDefaults(eq){eq={...eq};const df=DATA.defaults||{};if(!eq.top&&df.top)eq.top=df.top;const t=getItem(eq.top);if(!eq.bottom&&df.bottom&&!(t&&t.full))eq.bottom=df.bottom;return eq}
+function renderDollTo(container,equipped,setId){
+setId=setId===undefined?(equipped===state.equipped?state.set:null):setId;const ST=setId&&getSet(setId);
+if(ST&&ST.illus&&ST.items.every(id=>equipped[getItem(id).slot]===id)){const had=container.querySelector('.illus');container.innerHTML='';const im=document.createElement('img');im.className='illus'+(had?'':' pop-in');im.src=ST.illus.src;Object.assign(im.style,{left:ST.illus.x/W*100+'%',top:ST.illus.y/H*100+'%',width:ST.illus.w/W*100+'%',height:ST.illus.h/H*100+'%',zIndex:20});container.appendChild(im);return}
+const prevSrc=new Set([...container.querySelectorAll('img')].map(i=>i.getAttribute('src')));const first=!container.children.length;
+container.innerHTML='';
+const layers=[];
+layers.push({isBase:true,z:20});
+Object.values(equipped).forEach(id=>{
+const item=getItem(id);
+if(!item)return;
+if(item.slot==='bottom'){
+const topItem=getItem(equipped.top);
+if(topItem&&topItem.full)return;
+}
+if(item.layers){
+item.layers.forEach(l=>layers.push(l));
+}
+});
+equipped=withDefaults(equipped);
+if(DATA.blink)layers.push({...DATA.blink,blink:true});
+layers.sort((a,b)=>(a.z||0)-(b.z||0));
+layers.forEach(l=>{
+if(l.isBase){const c=baseCanvas(equipped);c.className='base-cv';c.style.cssText='position:absolute;left:0;top:0;width:100%;height:100%;z-index:20;pointer-events:none';container.appendChild(c);return}
+const img=document.createElement('img');
+img.src=l.src;
+img.style.left=(l.x/W*100)+'%';
+img.style.top=(l.y/H*100)+'%';
+img.style.width=(l.w/W*100)+'%';
+img.style.height=(l.h/H*100)+'%';
+img.style.zIndex=l.z||0;
+img.onerror=()=>img.style.display='none';
+if(!first&&!prevSrc.has(l.src))img.className='pop-in';
+if(l.blink)img.className='blink-l';
+container.appendChild(img);
+});
+}
+function renderScene(){
+document.querySelectorAll('#screen-wardrobe .scene-bg,#screen-photo .scene-bg').forEach(sceneBg=>{
+if(currentScene){
+const scene=getScene(currentScene);
+if(scene){
+sceneBg.innerHTML=`<img src="${scene.src}" alt="${scene.name}">`;
+sceneBg.style.opacity='1';
+return;
+}
+}
+sceneBg.innerHTML='';
+sceneBg.style.opacity='0';
+});
+}
+function renderWardrobe(){
+const panel=document.getElementById('wardrobe-panel');
+if(!panel)return;
+const slots=DATA.slots;
+const slotId=currentSlot==='全部'?null:slots.find(s=>s.name===currentSlot)?.id;
+let items=DATA.items.filter(it=>!slotId||it.slot===slotId);
+if(currentStyle!=='全部'){
+const styleId=currentStyle;
+items=items.filter(it=>it.style===styleId);
+}
+if(currentRarity!=='全部'){
+items=items.filter(it=>it.rarity===currentRarity);
+}
+if(currentColor!=='全部'){
+const colorId=DATA.colors.find(c=>c.name===currentColor)?.id;
+items=items.filter(it=>it.color===colorId);
+}
+const grid=panel.querySelector('.items-grid');
+if(!grid)return;
+grid.innerHTML='';
+items.forEach(item=>{
+const tile=document.createElement('div');
+const equipped=state.equipped[item.slot]===item.id;
+const locked=!isUnlocked(item);
+tile.className=`item-tile rarity-${item.rarity}${locked?' locked':''}`;
+const mainLayer=item.layers&&item.layers[0];
+const imgSrc=mainLayer?mainLayer.src:DATA.base.src;
+tile.innerHTML=`
+${locked?`<div class="locked-overlay"><div class="lock-icon">🔒</div><div class="vip-text">VIP${item.minTier||''}</div></div>`:''}
+<img src="${imgSrc}" loading="lazy">
+<div class="item-frame"></div>
+<div class="rarity-badge">${item.rarity}</div>
+${equipped?'<div class="equipped-mark">✓</div>':''}
+<div class="item-name">${item.name}</div>
+`;
+tile.addEventListener('click',()=>{
+equipItem(item.id);
+renderWardrobe();
+});
+grid.appendChild(tile);
+});
+}
+function renderCollection(){
+const modal=document.getElementById('collection-grid');
+if(!modal)return;
+modal.innerHTML='';
+DATA.sets.forEach(set=>{
+const allItems=set.items.map(getItem).filter(Boolean);
+const owned=allItems.filter(it=>isUnlocked(it));
+const unlocked=allItems.length>0&&allItems.every(isUnlocked);
+const card=document.createElement('div');
+card.className=`set-card rarity-${set.rarity}${unlocked?'':' locked'}`;
+const scene=set.bg?getScene(set.bg):null;
+const bgStyle=scene?`background-image:url(${scene.src})`:'';
+const styleIcon=DATA.styles.find(s=>s.id===set.style)?.icon||'✨';
+card.innerHTML=`
+<div class="set-card-bg" style="${bgStyle}"></div><div class="mini"><div class="doll-container"></div></div>${set.vip?`<div class="vip-ribbon">VIP${set.minTier||''}</div>`:''}${unlocked?'':'<div class="lockbadge">🔒 未解锁</div>'}
+<div class="set-card-content">
+<div class="set-card-header">
+<span style="font-size:24px">${styleIcon}</span>
+${set.vip&&!unlocked?`<span style="font-size:20px">🔒</span>`:''}
+</div>
+<div>
+<div class="set-card-name">${set.name}</div>
+<div class="set-card-info">${owned.length}/${allItems.length} | ${set.rarity}</div>
+</div>
+</div>
+`;
+card.addEventListener('click',()=>{
+showSetDetail(set.id);
+});
+modal.appendChild(card);
+const te={};allItems.forEach(it=>te[it.slot]=it.id);renderDollTo(card.querySelector('.mini .doll-container'),te,set.id);
+});
+}
+function renderPhoto(){
+renderDoll();
+renderScene();
+applyPose();
+}
+function applyPose(){
+const doll=document.querySelector('#screen-photo .doll-container');
+if(!doll)return;
+doll.style.transform='';
+if(currentPose==='俏皮'){
+doll.style.transform='rotate(-6deg)';
+}else if(currentPose==='回眸'){
+doll.style.transform='scaleX(-1)';
+}else if(currentPose==='跃动'){
+doll.style.animation='bounce 0.6s ease-in-out infinite';
+}else if(currentPose==='特写'){
+doll.style.transform='scale(1.6) translateY(-15%)';
+}else if(currentPose==='远景'){
+doll.style.transform='scale(0.8)';
+}
+}
+function takePhoto(){
+playSound(1800,0.05);
+const flash=document.createElement('div');
+flash.style.cssText='position:fixed;inset:0;background:#fff;z-index:9999;pointer-events:none';
+document.body.appendChild(flash);
+setTimeout(()=>flash.remove(),100);
+setTimeout(()=>{
+const canvas=document.createElement('canvas');
+canvas.width=1080;
+canvas.height=1620;
+const ctx=canvas.getContext('2d');
+const FIL={'原片':'none','柔光':'brightness(1.08) saturate(1.2) contrast(.95)','胶片':'sepia(.35) contrast(1.1) saturate(.9)','梦幻':'saturate(1.3) hue-rotate(-12deg) brightness(1.06)','夜色':'brightness(.85) saturate(.85) hue-rotate(195deg)'};
+ctx.filter=FIL[currentFilter]||'none';
+const sceneBg=document.querySelector('#screen-photo .scene-bg img');
+if(sceneBg&&sceneBg.naturalWidth){const r=Math.max(1080/sceneBg.naturalWidth,1620/sceneBg.naturalHeight),sw=sceneBg.naturalWidth*r,sh=sceneBg.naturalHeight*r;ctx.drawImage(sceneBg,(1080-sw)/2,(1620-sh)/2,sw,sh);}
+else{const g=ctx.createLinearGradient(0,0,0,1620);g.addColorStop(0,'#ffd6ef');g.addColorStop(1,'#b993ff');ctx.fillStyle=g;ctx.fillRect(0,0,1080,1620);}
+const dh=1500,dw=dh*W/H,dx=(1080-dw)/2,dy=1620-dh-30,k=dh/H;
+ctx.save();
+const cx=540,cy=dy+dh;ctx.translate(cx,cy);
+if(currentPose==='俏皮')ctx.rotate(-6*Math.PI/180);
+else if(currentPose==='回眸')ctx.scale(-1,1);
+else if(currentPose==='跃动'){ctx.translate(0,-40);ctx.rotate(3*Math.PI/180);}
+else if(currentPose==='特写'){ctx.translate(0,dh*0.62);ctx.scale(1.9,1.9);}
+else if(currentPose==='远景')ctx.scale(0.78,0.78);
+ctx.translate(-cx,-cy);
+const doll=document.querySelector('#screen-photo .doll-container');
+const map={};if(doll)doll.querySelectorAll('img').forEach(i=>map[i.getAttribute('src')]=i);
+const eq=withDefaults(state.equipped);const L=[{isBase:true,z:20}];Object.values(eq).forEach(id=>{const it=getItem(id);if(!it||!isUnlocked(it))return;if(it.slot==='bottom'){const t=getItem(eq.top);if(t&&t.full)return}L.push(...it.layers)});
+const bcv=doll&&doll.querySelector('canvas.base-cv');
+const ilm=doll&&doll.querySelector('img.illus');const STI=state.set&&getSet(state.set);if(ilm&&STI&&STI.illus&&ilm.naturalWidth){ctx.drawImage(ilm,dx+STI.illus.x*k,dy+STI.illus.y*k,STI.illus.w*k,STI.illus.h*k);L.length=0;}
+L.sort((p,q)=>p.z-q.z).forEach(l=>{if(l.isBase){if(bcv)ctx.drawImage(bcv,dx,dy,W*k,H*k);return}const im=map[l.src];if(im&&im.complete&&im.naturalWidth)ctx.drawImage(im,dx+l.x*k,dy+l.y*k,l.w*k,l.h*k)});
+ctx.restore();
+if(stickerOn){for(let i=0;i<60;i++){const x=Math.random()*1080,y=Math.random()*1620,r=2+Math.random()*7;ctx.fillStyle=`rgba(255,${200+Math.random()*55|0},255,${.5+Math.random()*.5})`;ctx.beginPath();for(let j=0;j<8;j++){const a=j*Math.PI/4,rr=j%2?r*.35:r*1.6;ctx.lineTo(x+Math.cos(a)*rr,y+Math.sin(a)*rr)}ctx.fill()}}
+ctx.filter='none';
+
+if(currentFrame!=='无'){
+ctx.strokeStyle='rgba(255,215,0,0.8)';
+ctx.lineWidth=20;
+if(currentFrame==='金色花框'){
+ctx.strokeRect(40,40,1000,1540);
+ctx.strokeStyle='rgba(255,215,0,0.5)';
+ctx.lineWidth=10;
+ctx.strokeRect(60,60,960,1500);
+}else if(currentFrame==='星光框'){
+ctx.strokeStyle='rgba(255,110,199,0.8)';
+ctx.lineWidth=15;
+ctx.strokeRect(30,30,1020,1560);
+for(let i=0;i<20;i++){
+const x=Math.random()*1080;
+const y=Math.random()*1620;
+ctx.fillStyle='rgba(255,255,255,0.8)';
+ctx.beginPath();
+ctx.arc(x,y,3,0,Math.PI*2);
+ctx.fill();
+}
+}else if(currentFrame==='胶片框'){
+ctx.fillStyle='#000';
+ctx.fillRect(0,0,1080,80);
+ctx.fillRect(0,1540,1080,80);
+for(let i=0;i<10;i++){
+ctx.fillRect(i*108,0,54,80);
+ctx.fillRect(i*108,1540,54,80);
+}
+}else if(currentFrame==='拍立得'){
+ctx.fillStyle='#fff';
+ctx.fillRect(0,1420,1080,200);
+}
+}
+ctx.fillStyle='rgba(255,255,255,0.6)';
+ctx.font='bold 20px sans-serif';
+ctx.textAlign='right';
+ctx.fillText('栗栗换装',1050,1600);
+canvas.toBlob(blob=>{
+const url=URL.createObjectURL(blob);
+showModal(`
+<h3>照片预览</h3>
+<img src="${url}" style="max-width:100%;border-radius:12px;margin:12px 0">
+`,[
+{text:'💾 保存图片',cb:()=>{
+const a=document.createElement('a');
+a.href=url;
+a.download=`栗栗换装_${Date.now()}.png`;
+a.click();
+closeModal();
+}},
+{text:'📷 重拍',cb:closeModal}
+]);
+});
+},200);
+}
+function dailySignIn(){
+const today=new Date().toDateString();
+if(state.lastDaily===today){
+showModal('<p>今日已签到</p>',[{text:'确定',cb:closeModal}]);
+return;
+}
+state.lastDaily=today;
+state.coins+=100;
+saveState();
+playSound(1400,0.2);
+burstSparkles();
+showModal('<h3>签到成功!</h3><p style="font-size:18px;margin:16px 0">💰 +100 金币</p>',[{text:'太棒了!',cb:closeModal}]);
+renderTopHud();
+}
+function renderTopHud(){
+const hud=document.querySelectorAll('.player-info');
+hud.forEach(h=>{
+const coins=h.querySelector('.coins-display');
+const gems=h.querySelector('.gems-display');
+if(coins)coins.textContent=state.coins;
+if(gems)gems.textContent=state.gems;
+});
+}
+function init(){
+const app=document.getElementById('app');
+app.innerHTML=`
+<div class="screen active" id="screen-lobby">
+<div class="scene-bg" style="background-image:url(${DATA.lobbyBg})"></div>
+<div class="lobby-title">
+<h1>栗栗换装</h1>
+<h2>星糖衣橱</h2>
+</div>
+<div class="doll-stage">
+<div class="doll-container breathing"></div>
+</div>
+<div class="daily-card" id="daily-card"></div>
+<div class="side-buttons">
+<div class="hud-btn" onclick="LiliDress.dailySignIn()">🎁</div>
+<div class="hud-btn" onclick="LiliDress.show('collection')">📖</div>
+<div class="hud-btn" onclick="LiliDress.show('photo')">📸</div>
+<div class="hud-btn" onclick="LiliDress.toggleSound()">${state.sound?'🔊':'🔇'}</div>
+</div>
+<div class="lobby-buttons">
+<div class="big-btn" onclick="LiliDress.show('wardrobe')">👗 进入衣橱</div>
+<div style="display:flex;gap:12px">
+<div class="big-btn" style="flex:1" onclick="LiliDress.show('collection')">✨ 套装图鉴</div>
+<div class="big-btn" style="flex:1" onclick="LiliDress.show('photo')">📸 拍照馆</div>
+</div>
+</div>
+<div class="top-hud">
+<div class="player-info">
+<div class="player-avatar">${state.avatar}</div>
+<div>
+<div style="font-size:11px;font-weight:600">Lv.${state.level}</div>
+<div style="display:flex;gap:8px;margin-top:2px">
+<div class="player-stat"><span>💰</span><span class="coins-display">${state.coins}</span></div>
+<div class="player-stat"><span>💎</span><span class="gems-display">${state.gems}</span></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="screen" id="screen-wardrobe">
+<div class="scene-bg"></div>
+<div class="doll-stage">
+<div class="doll-container"></div>
+</div>
+<div class="top-hud">
+<div class="hud-btn" onclick="LiliDress.show('lobby')">🏠</div>
+<div style="display:flex;gap:8px;flex:1;justify-content:flex-end;flex-wrap:wrap">
+<div class="hud-btn" onclick="LiliDress.undo()"><span>↶</span></div>
+<div class="hud-btn" onclick="LiliDress.random()"><span>🎲</span></div>
+<div class="hud-btn" onclick="LiliDress.clear()"><span>🧹</span></div>
+<div class="hud-btn" onclick="LiliDress.score()"><span>⭐</span></div>
+<div class="hud-btn" onclick="LiliDress.show('collection')" title="套装">👗</div>
+<div class="hud-btn" onclick="LiliDress.show('photo')" title="拍照">📸</div>
+<div class="hud-btn" onclick="LiliDress.cycleScene()" title="场景">🖼️</div>
+</div>
+</div>
+<div class="bottom-panel" id="wardrobe-panel" style="height:47vh">
+<div class="panel-handle" onclick="LiliDress.togglePanel()"></div>
+<div class="panel-content">
+<div class="tabs-row" id="slot-tabs"></div>
+<div class="filter-row" id="style-filters"></div>
+<div class="filter-row"><div id="rarity-filters" style="display:flex;gap:6px"></div><div id="color-filters" style="display:flex;gap:6px;align-items:center;margin-left:6px"></div></div>
+<div class="items-grid"></div>
+</div>
+</div>
+</div>
+<div class="screen" id="screen-collection">
+<div class="scene-bg" style="background-image:url(${DATA.lobbyBg})"></div>
+<div class="top-hud">
+<div class="hud-btn" onclick="LiliDress.show('lobby')">🏠</div>
+<h2 style="flex:1;text-align:center;font-size:20px;font-weight:700">✨ 套装图鉴</h2>
+<div style="width:40px"></div>
+</div>
+<div style="padding:calc(env(safe-area-inset-top,0) + 70px) 16px calc(env(safe-area-inset-bottom,0) + 16px)">
+<div class="set-grid" id="collection-grid"></div>
+</div>
+</div>
+<div class="screen" id="screen-photo">
+<div class="scene-bg"></div>
+<div class="doll-stage">
+<div class="doll-container"></div>
+</div>
+<div class="top-hud">
+<div class="hud-btn" onclick="LiliDress.show('wardrobe')">↩</div><div class="hud-btn" onclick="LiliDress.togglePhotoUI()">👁</div>
+</div>
+<div class="photo-controls">
+<div class="photo-picker-row"><span class="row-label">场景</span><div id="scene-picker" style="display:flex;gap:8px"></div></div>
+<div class="photo-picker-row"><span class="row-label">姿势</span><div id="pose-picker" style="display:flex;gap:8px"></div></div>
+<div class="photo-picker-row"><span class="row-label">表情</span><div id="expr-picker" style="display:flex;gap:8px"></div></div>
+<div class="photo-picker-row"><span class="row-label">相框</span><div id="frame-picker" style="display:flex;gap:8px"></div></div>
+<div class="photo-picker-row"><span class="row-label">滤镜</span><div id="filter-picker" style="display:flex;gap:8px"></div></div>
+<div class="photo-action-row">
+<div class="big-btn" style="flex:0 0 72px" onclick="LiliDress.toggleSticker(this)">✨ 开</div><div class="big-btn" onclick="LiliDress.takePhoto()">📷 拍照</div>
+</div>
+</div>
+</div>
+<div class="transformation-overlay" id="transformation"></div>
+`;
+const slotTabs=document.getElementById('slot-tabs');
+const allTab=document.createElement('div');
+allTab.className='tab-btn active';
+allTab.innerHTML='<div class="tab-icon">✨</div><div class="tab-label">全部</div>';
+allTab.addEventListener('click',()=>{
+currentSlot='全部';
+document.querySelectorAll('#slot-tabs .tab-btn').forEach(t=>t.classList.remove('active'));
+allTab.classList.add('active');
+renderWardrobe();
+});
+slotTabs.appendChild(allTab);
+DATA.slots.forEach(slot=>{
+const tab=document.createElement('div');
+tab.className='tab-btn';
+tab.innerHTML=`<div class="tab-icon">${slot.icon}</div><div class="tab-label">${slot.name}</div>`;
+tab.addEventListener('click',()=>{
+currentSlot=slot.name;
+document.querySelectorAll('#slot-tabs .tab-btn').forEach(t=>t.classList.remove('active'));
+tab.classList.add('active');
+renderWardrobe();
+});
+slotTabs.appendChild(tab);
+});
+const styleFilters=document.getElementById('style-filters');
+['全部',...DATA.styles.map(s=>s.id)].forEach(name=>{
+const chip=document.createElement('div');
+chip.className='filter-chip'+(name==='全部'?' active':'');
+chip.textContent=name==='全部'?'🌈 全部':(DATA.styles.find(s=>s.id===name).icon+' '+name);
+chip.addEventListener('click',()=>{
+currentStyle=name;
+document.querySelectorAll('#style-filters .filter-chip').forEach(c=>c.classList.remove('active'));
+chip.classList.add('active');
+renderWardrobe();
+});
+styleFilters.appendChild(chip);
+});
+const rarityFilters=document.getElementById('rarity-filters');
+['全部',...DATA.rarities.map(r=>r.id)].forEach(id=>{
+const chip=document.createElement('div');
+chip.className='filter-chip'+(id==='全部'?' active':'');
+chip.textContent=id;
+chip.addEventListener('click',()=>{
+currentRarity=id;
+document.querySelectorAll('#rarity-filters .filter-chip').forEach(c=>c.classList.remove('active'));
+chip.classList.add('active');
+renderWardrobe();
+});
+rarityFilters.appendChild(chip);
+});
+const colorFilters=document.getElementById('color-filters');
+['全部',...DATA.colors.map(c=>c.name)].forEach(name=>{
+const dot=document.createElement('div');
+dot.className='color-dot'+(name==='全部'?' active':'');
+if(name==='全部'){
+dot.style.background='linear-gradient(135deg,#ff6ec7,#a855f7,#fbbf24)';
+}else{
+const color=DATA.colors.find(c=>c.name===name);
+if(color)dot.style.background=color.hex;
+}
+dot.addEventListener('click',()=>{
+currentColor=name;
+document.querySelectorAll('#color-filters .color-dot').forEach(d=>d.classList.remove('active'));
+dot.classList.add('active');
+renderWardrobe();
+});
+colorFilters.appendChild(dot);
+});
+const scenePicker=document.getElementById('scene-picker');
+const noneScene=document.createElement('div');
+noneScene.className='photo-thumb active';
+noneScene.textContent='无';
+noneScene.addEventListener('click',()=>{
+currentScene=null;
+renderScene();
+document.querySelectorAll('#scene-picker .photo-thumb').forEach(t=>t.classList.remove('active'));
+noneScene.classList.add('active');
+});
+scenePicker.appendChild(noneScene);
+DATA.scenes.forEach(sc=>{
+const thumb=document.createElement('div');
+thumb.className='photo-thumb';
+thumb.style.backgroundImage=`url(${sc.src})`;
+thumb.addEventListener('click',()=>{
+currentScene=sc.id;
+renderScene();
+document.querySelectorAll('#scene-picker .photo-thumb').forEach(t=>t.classList.remove('active'));
+thumb.classList.add('active');
+});
+scenePicker.appendChild(thumb);
+});
+const posePicker=document.getElementById('pose-picker');
+['站姿','俏皮','回眸','跃动','特写','远景'].forEach(pose=>{
+const thumb=document.createElement('div');
+thumb.className='photo-thumb'+(pose==='站姿'?' active':'');
+thumb.textContent={'站姿':'🧍','俏皮':'😊','回眸':'👀','跃动':'💃','特写':'🔍','远景':'🌄'}[pose];
+thumb.addEventListener('click',()=>{
+currentPose=pose;
+applyPose();
+document.querySelectorAll('#pose-picker .photo-thumb').forEach(t=>t.classList.remove('active'));
+thumb.classList.add('active');
+});
+posePicker.appendChild(thumb);
+});
+const exprPicker=document.getElementById('expr-picker');
+const defaultExpr=document.createElement('div');
+defaultExpr.className='photo-thumb active';
+defaultExpr.textContent='默认';
+defaultExpr.addEventListener('click',()=>{
+currentExpr=null;
+delete state.equipped.expr;
+renderDoll();
+document.querySelectorAll('#expr-picker .photo-thumb').forEach(t=>t.classList.remove('active'));
+defaultExpr.classList.add('active');
+});
+exprPicker.appendChild(defaultExpr);
+DATA.items.filter(it=>it.slot==='expr').forEach(item=>{
+const thumb=document.createElement('div');
+thumb.className='photo-thumb';
+const mainLayer=item.layers&&item.layers[0];
+if(mainLayer){
+thumb.innerHTML=`<img src="${mainLayer.src}" style="width:100%;height:100%;object-fit:contain">`;
+}
+thumb.addEventListener('click',()=>{
+currentExpr=item.id;
+state.equipped.expr=item.id;
+renderDoll();
+document.querySelectorAll('#expr-picker .photo-thumb').forEach(t=>t.classList.remove('active'));
+thumb.classList.add('active');
+});
+exprPicker.appendChild(thumb);
+});
+const framePicker=document.getElementById('frame-picker');
+['无','金色花框','星光框','胶片框','拍立得'].forEach(frame=>{
+const thumb=document.createElement('div');
+thumb.className='photo-thumb'+(frame==='无'?' active':'');
+thumb.textContent={'无':'🚫','金色花框':'🖼️','星光框':'✨','胶片框':'🎞️','拍立得':'📷'}[frame];
+thumb.addEventListener('click',()=>{
+currentFrame=frame;
+document.querySelectorAll('#frame-picker .photo-thumb').forEach(t=>t.classList.remove('active'));
+thumb.classList.add('active');
+});
+framePicker.appendChild(thumb);
+});
+const filterPicker=document.getElementById('filter-picker');
+['原片','柔光','胶片','梦幻','夜色'].forEach(filter=>{
+const thumb=document.createElement('div');
+thumb.className='photo-thumb'+(filter==='原片'?' active':'');
+thumb.textContent={'原片':'📷','柔光':'☀️','胶片':'🎞️','梦幻':'🌈','夜色':'🌙'}[filter];
+thumb.addEventListener('click',()=>{
+currentFilter=filter;
+document.querySelectorAll('#filter-picker .photo-thumb').forEach(t=>t.classList.remove('active'));
+thumb.classList.add('active');
+});
+filterPicker.appendChild(thumb);
+});
+const dailyCard=document.getElementById('daily-card');
+if(DATA.sets.length>0){
+const dailySet=DATA.sets[Math.floor(Math.random()*DATA.sets.length)];
+const styleIcon=DATA.styles.find(s=>s.id===dailySet.style)?.icon||'✨';
+dailyCard.innerHTML=`
+<h3>✨ 今日推荐套装</h3>
+<div class="set-name">${styleIcon} ${dailySet.name}</div>
+<div class="set-desc">${dailySet.desc||''}</div>
+`;
+dailyCard.addEventListener('click',()=>{
+showSetDetail(dailySet.id);
+});
+}
+renderDoll();
+renderScene();
+showScreen(currentScreen);
+window.__lobbyShow=()=>{const host=document.querySelector('#screen-lobby .doll-container');if(!(window.StarShow&&host))return;host.classList.remove('breathing');host.innerHTML='';StarShow.render(host,{v:1,items:{...state.equipped},set:state.set||null},{size:'full',lazy:false,dataUrl:new URL('dressup-data.js',location.href).href}).catch(()=>renderDollTo(host,state.equipped));};window.__lobbyShow();
+initSparkles();
+{const lb=document.getElementById('screen-lobby');for(let i=0;i<18;i++){const e=document.createElement('div');e.className='float-sparkle';e.textContent=['✦','✧','❀','✨'][i%4];e.style.left=Math.random()*100+'%';e.style.top=(15+Math.random()*65)+'%';e.style.fontSize=(10+Math.random()*16)+'px';e.style.animationDelay=(Math.random()*4)+'s';lb.appendChild(e)}}
+window.LiliDress={
+equip:equipItem,
+equipSet:equipSet,showSetDetail:showSetDetail,togglePanel:()=>document.getElementById('wardrobe-panel').classList.toggle('collapsed'),togglePhotoUI:()=>document.querySelector('.photo-controls').classList.toggle('hide'),
+show:showScreen,
+state:()=>({...state}),
+undo:undo,
+random:randomOutfit,
+clear:clearOutfit,
+score:showScore,
+dailySignIn:dailySignIn,
+cycleScene:()=>{
+const scenes=[null,...DATA.scenes.map(s=>s.id)];
+const idx=scenes.indexOf(currentScene);
+currentScene=scenes[(idx+1)%scenes.length];
+renderScene();
+playSound(900,0.08);
+},
+takePhoto:takePhoto,toggleSticker:(el)=>{stickerOn=!stickerOn;el.textContent=stickerOn?'✨ 开':'✨ 关';document.getElementById('screen-photo').classList.toggle('stk',stickerOn)},
+toggleSound:()=>{
+state.sound=!state.sound;
+saveState();
+document.querySelectorAll('.side-buttons .hud-btn').forEach((btn,i)=>{
+if(i===3)btn.textContent=state.sound?'🔊':'🔇';
+});
+}
+};
+}
+function initSparkles(){
+const canvas=document.getElementById('sparkle-canvas');
+const ctx=canvas.getContext('2d');
+canvas.width=window.innerWidth;
+canvas.height=window.innerHeight;
+const particles=[];
+function addParticle(x,y){
+for(let i=0;i<46;i++){
+particles.push({
+x:x,
+y:y,
+vx:(Math.random()-0.5)*9,
+vy:(Math.random()-0.5)*9-3,star:Math.random()<.6,
+life:1,
+size:Math.random()*4+2,
+color:`hsl(${Math.random()*60+300},100%,${Math.random()*30+60}%)`
+});
+}
+}
+function animate(){
+ctx.clearRect(0,0,canvas.width,canvas.height);
+for(let i=particles.length-1;i>=0;i--){
+const p=particles[i];
+p.x+=p.vx;
+p.y+=p.vy;
+p.vy+=0.12;p.vx*=.98;
+p.life-=0.02;
+if(p.life<=0){
+particles.splice(i,1);
+continue;
+}
+ctx.globalAlpha=p.life;
+ctx.fillStyle=p.color;
+ctx.beginPath();if(p.star){for(let j=0;j<8;j++){const a=j*Math.PI/4+p.life*3,rr=j%2?p.size*.4:p.size*1.8;ctx.lineTo(p.x+Math.cos(a)*rr,p.y+Math.sin(a)*rr)}}else ctx.arc(p.x,p.y,p.size*.6,0,Math.PI*2);
+ctx.shadowColor='#fff';ctx.shadowBlur=8;ctx.fill();ctx.shadowBlur=0;
+}
+ctx.globalAlpha=1;
+requestAnimationFrame(animate);
+}
+animate();
+window.burstSparkles=()=>{
+const d=document.querySelector('.screen.active .doll-container');let x=innerWidth/2,y=innerHeight*.4;if(d){const r=d.getBoundingClientRect();x=r.left+r.width/2;y=r.top+r.height*.42}addParticle(x,y);
+};
+}
+function preload(){
+const loading=document.getElementById('loading');
+const progress=document.getElementById('loading-progress');
+const text=document.getElementById('loading-text');
+const toLoad=[];
+toLoad.push(DATA.base.src);
+DATA.items.forEach(item=>{
+if(item.layers){
+item.layers.forEach(l=>toLoad.push(l.src));
+}
+});
+DATA.scenes.forEach(sc=>toLoad.push(sc.src));
+toLoad.push(DATA.lobbyBg);
+let loaded=0;
+let total=Math.min(toLoad.length,50);
+const imagesToPreload=toLoad.slice(0,total);
+function updateProgress(){
+progress.style.width=((loaded/total)*100)+'%';
+text.textContent=`加载中... ${loaded}/${total}`;
+if(loaded>=total){
+setTimeout(()=>{
+loading.style.opacity='0';
+setTimeout(()=>{
+loading.remove();
+init();
+},300);
+},300);
+}
+}
+imagesToPreload.forEach(src=>{
+const img=new Image();
+img.onload=img.onerror=()=>{
+loaded++;
+updateProgress();
+};
+img.src=src;
+});
+if(total===0){
+loaded=total;
+updateProgress();
+}
+}
+preload();
+})();
+</script>
+</body>
+</html>

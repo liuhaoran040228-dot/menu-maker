@@ -149,13 +149,23 @@
   }
   
   // Assets
-  FX.img = name => images[name];
+  FX.skinMap = {};
+  FX.baseMap = {};
+  // Side-view sprites (all face RIGHT). pose for chibi in this game: 'idle' | 'run'
+  FX.useSideSprites = (pose = 'idle') => {
+    const ids = ['lan', 'mo', 'li', 'xing', 'hu'], m = {};
+    ids.forEach(c => { m[c + '-chibi'] = 'side-' + c + '-' + pose; });
+    Object.assign(m, { 'whale-idle': 'side-lan-idle', 'whale-run': 'side-lan-run', 'whale-jump': 'side-lan-jump', 'whale-attack': 'side-lan-attack', 'whale-cast': 'side-lan-attack' });
+    FX.baseMap = m;
+    FX.load([...new Set(Object.values(m))].concat(ids.flatMap(c => ['side-' + c + '-run', 'side-' + c + '-jump', 'side-' + c + '-attack'])));
+  };
+  FX.img = name => { const b = FX.baseMap[name]; const bi = b && images[b]; if (bi && bi.naturalWidth) return bi; const m = FX.skinMap[name]; const im = m && images[m]; return (im && im.complete && im.naturalWidth) ? im : images[name]; };
   FX.load = function(names) {
     return Promise.all(names.map(name => {
       return new Promise((resolve, reject) => {
         const img = new Image();
         img.onload = () => { images[name] = img; resolve(); };
-        img.onerror = reject;
+        img.onerror = () => resolve();
         img.src = `../assets/${name}.webp`;
       });
     }));
@@ -279,7 +289,8 @@
   function onPointerDown(e) {
     const rect = stage.getBoundingClientRect();
     const x = e.clientX - rect.left, y = e.clientY - rect.top;
-    const isLeft = x < rect.width / 2;
+    const dragMode = FX.controlMode === 'drag';
+    const isLeft = (dragMode && !tapHandler) ? true : x < rect.width / 2;
     
     let hitBtn = false;
     for (const btn of buttons) {
@@ -319,6 +330,10 @@
       if (dist > JOY_RADIUS) {
         joyTargetX = dx / dist;
         joyTargetY = dy / dist;
+        if (FX.controlMode === 'drag') { // relative drag: base follows finger (leash)
+          joyBaseX += joyTargetX * (dist - JOY_RADIUS);
+          joyBaseY += joyTargetY * (dist - JOY_RADIUS);
+        }
       } else {
         joyTargetX = dx / JOY_RADIUS;
         joyTargetY = dy / JOY_RADIUS;
@@ -511,9 +526,10 @@
   };
   
   FX.vignette = function(ctx) {
-    const grad = ctx.createRadialGradient(W / 2, H / 2, H * 0.3, W / 2, H / 2, H * 0.7);
+    const R = Math.hypot(W, H) / 2;
+    const grad = ctx.createRadialGradient(W / 2, H / 2, R * 0.62, W / 2, H / 2, R);
     grad.addColorStop(0, 'rgba(0,0,0,0)');
-    grad.addColorStop(1, 'rgba(0,0,0,0.5)');
+    grad.addColorStop(1, 'rgba(10,8,40,0.38)');
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, W, H);
   };
@@ -532,11 +548,36 @@
     if (opts.alpha !== undefined) ctx.globalAlpha = opts.alpha;
     if (opts.glow) ctx.globalCompositeOperation = 'lighter';
     ctx.scale(sx, sy);
-    ctx.drawImage(img, -w / 2, -h, w, h);
+    let src = img;
+    const f = ctx.filter;
+    if (f && f !== 'none' && img.src) { src = tintCache(img, f); ctx.filter = 'none'; }
+    ctx.drawImage(src, -w / 2, -h, w, h);
     ctx.restore();
   };
+  // Cache filtered sprites (canvas filters are very slow per-draw on mobile)
+  const _tint = new Map();
+  function tintCache(img, f) {
+    const k = img.src + '|' + f;
+    let c = _tint.get(k);
+    if (!c) {
+      if (_tint.size > 300) _tint.clear();
+      c = document.createElement('canvas');
+      const sc = Math.min(1, 512 / Math.max(img.naturalWidth, img.naturalHeight));
+      c.width = Math.max(1, Math.round(img.naturalWidth * sc)); c.height = Math.max(1, Math.round(img.naturalHeight * sc));
+      const g = c.getContext('2d'); g.filter = f; g.drawImage(img, 0, 0, c.width, c.height);
+      _tint.set(k, c);
+    }
+    return c;
+  }
   
 
+  FX.controlMode = (() => { try { return localStorage.getItem('fx-ctrl') || 'drag'; } catch (e) { return 'drag'; } })();
+  document.documentElement.classList.toggle('fx-drag', FX.controlMode === 'drag');
+  FX.setControl = m => { FX.controlMode = m; try { localStorage.setItem('fx-ctrl', m); } catch (e) {} document.documentElement.classList.toggle('fx-drag', m === 'drag'); };
+  FX.clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  FX.dist = (ax, ay, bx, by) => Math.hypot(bx - ax, by - ay);
+  FX.randInt = (a, b) => Math.floor(a + Math.random() * (b - a + 1));
+  FX.pick = arr => arr[Math.floor(Math.random() * arr.length)];
   // Crisp spinning gold coin
   FX.coin = function(ctx, x, y, r, t) {
     const sx = Math.max(0.12, Math.abs(Math.cos(t * 4)));

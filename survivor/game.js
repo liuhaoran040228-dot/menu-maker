@@ -1,52 +1,1194 @@
-(()=>{'use strict';
- const U=A2.util,D=A2.survivor,$=s=>document.querySelector(s),canvas=$('#game'),{ctx}=U.setup(canvas,540,Math.round(540*innerHeight/Math.min(innerWidth,620))),w=540,h=Math.round(540*innerHeight/Math.min(innerWidth,620)),aw=D.arena.w,ah=D.arena.h,fx=new U.FX();
- const B=D.skills.find(s=>s.id==='bolt'),O=D.skills.find(s=>s.id==='orbit'),N=D.skills.find(s=>s.id==='nova'),HASTE=D.skills.find(s=>s.id==='haste'),HEART=D.skills.find(s=>s.id==='heart');
- let S,skin=A2.skins[0],last=0,keys={},stick=null,trail=0;
- const record=U.load('survivor-record',{kills:0,time:0,wins:0});
- const fmt=t=>`${String(Math.floor(t/60)).padStart(2,'0')}:${String(Math.floor(t%60)).padStart(2,'0')}`;
- function recordUI(){$('#record').textContent=`最长坚持 ${fmt(record.time)} · 最佳击退 ${record.kills} · 成功 ${record.wins} 次`}
- function fresh(){S={mode:'ready',time:0,p:{x:aw/2,y:ah/2,hp:D.baseHP,maxHP:D.baseHP,inv:0},enemies:[],shots:[],danger:[],gems:[],skills:{bolt:1},level:1,xp:0,need:5,kills:0,spawn:D.spawn.initial,bolt:0,nova:3,combo:0,comboAt:-5,stop:0,bossSpawned:false,bossDead:false,pulseUsed:false,reviveUsed:false};fx.particles=[];fx.texts=[];fx.rings=[];stick=null;keys={};skillUI();updateHUD()}
- function evolved(id){const d=D.skills.find(s=>s.id===id);return !!(d?.evolveRequires&&(S.skills[id]||0)>=d.max&&(S.skills[d.evolveRequires]||0)>0)}
- function skillUI(){$('#skills').replaceChildren();Object.entries(S.skills).forEach(([id,n])=>{const s=D.skills.find(s=>s.id===id),el=document.createElement('span');el.className='a2-skill-tag';el.style.color=s.color;el.textContent=`${s.icon} ${s.name} ${n}${evolved(id)?' ✧ 进化':''}`;$('#skills').append(el)})}
- function updateHUD(){$('#time').textContent=fmt(S.time);$('#hp').textContent=Math.ceil(Math.max(0,S.p.hp))+' / '+S.p.maxHP;$('#hp').style.color=S.p.hp<30?'#ff9fae':'#f0ebff';$('#level').textContent=S.level+' / '+S.xp;$('#kills').textContent=S.kills;$('#pause').textContent=S.mode==='paused'?'继续':'暂停';$('#pulse').disabled=S.pulseUsed;}
- function start(){fresh();S.mode='play';$('#overlay').hidden=true;$('#levelup').hidden=true;$('#state').textContent='收集星屑，保持移动。';canvas.focus({preventScroll:true})}
- function modal(title,note,label,fn){$('#overlay').innerHTML=`<div class="a2-modal"><img src="../assets/xing-chibi.webp" alt="星眠"><div class="a2-eyebrow">STARFIELD JOURNAL</div><h2>${title}</h2><p>${note}</p><button class="primary" id="modal-action">${label}</button></div>`;$('#modal-action').onclick=fn;$('#overlay').hidden=false}
- function pause(){if(S.mode==='play'){S.mode='paused';stick=null;keys={};modal('把星光暂存一下','喝口水，休息一会儿。<br>你的梦境冒险会在这里等你。','继续冒险',()=>{S.mode='play';$('#overlay').hidden=true;canvas.focus({preventScroll:true})})}else if(S.mode==='paused'){S.mode='play';$('#overlay').hidden=true;canvas.focus({preventScroll:true})}updateHUD()}
- function finish(win){S.mode='over';stick=null;record.kills=Math.max(record.kills,S.kills);record.time=Math.max(record.time,Math.floor(S.time));if(win)record.wins++;U.save('survivor-record',record);recordUI();modal(win?'星野回到好梦里':'先睡个好觉再出发',`坚持 ${fmt(S.time)} · 击退 ${S.kills} · 等级 ${S.level}<br>${win?'你把失眠大团子也哄睡了！':'每次出发，都会找到新的技能组合。'}`,'再来一次',start);$('#state').textContent=win?'挑战成功，记录已保存。':'本局结束，记录已保存。'}
- function levelUp(){S.mode='upgrade';stick=null;keys={};const pool=D.skills.filter(s=>(S.skills[s.id]||0)<s.max);if(!pool.length){S.p.hp=Math.min(S.p.maxHP,S.p.hp+25);S.mode='play';return}const offers=[...pool].sort(()=>Math.random()-.5).slice(0,3),box=$('#upgrades');box.replaceChildren();offers.forEach(def=>{const b=document.createElement('button');b.className='a2-choice';b.innerHTML=`<b style="color:${def.color}">${def.icon} ${def.name}　Lv.${(S.skills[def.id]||0)+1}</b><small>${def.desc}</small>`;b.onclick=()=>{const before=evolved(def.id);S.skills[def.id]=(S.skills[def.id]||0)+1;if(def.id==='heart'){S.p.maxHP+=HEART.hpPerLevel;S.p.hp=Math.min(S.p.maxHP,S.p.hp+HEART.heal)}if(!before&&evolved(def.id)){fx.text('技能进化！',S.p.x,S.p.y-70,'#ffe2a9',24);$('#state').textContent=def.name+'已进化！'}S.mode='play';$('#levelup').hidden=true;skillUI();canvas.focus({preventScroll:true})};box.append(b)});$('#levelup').hidden=false;updateHUD()}
- function spawn(boss=false){const a=U.rand(0,7),p=S.p;let def;if(boss)def=D.boss;else{const choices=D.enemies.filter(e=>!(e.after>S.time));const bag=choices.flatMap(e=>Array(e.weight).fill(e));def=bag[Math.floor(Math.random()*bag.length)]}const e={...def,x:U.clamp(p.x+Math.cos(a)*D.spawn.radiusX,40,aw-40),y:U.clamp(p.y+Math.sin(a)*D.spawn.radiusY,40,ah-40),hp:def.hp*(boss?1:1+S.time/160),max:def.hp*(boss?1:1+S.time/160),boss,hit:0,touch:0,attack:2};S.enemies.push(e);if(boss){fx.text('失眠大团子 · 登场',p.x,p.y-90,'#e9b8ff',25);$('#state').textContent='首领出现了！保持距离，收集星屑继续升级。'}}
- function damage(e,d){if(e.hp<=0||S.mode!=='play')return;e.hp-=d;e.hit=.11;if(e.hp<=0){S.kills++;S.combo=S.time-S.comboAt<2.5?S.combo+1:1;S.comboAt=S.time;fx.burst(e.x,e.y,e.color,e.boss?50:10);S.stop=fx.enabled?.025:0;if(S.gems.length<250)S.gems.push({x:e.x,y:e.y,v:e.xp||1});if(S.combo%5===0)fx.text(S.combo+' 连击',e.x,e.y-25,'#ffdfa0',22);if(e.boss){S.bossDead=true;finish(true)}}}
- function harm(value){if(S.mode!=='play'||S.p.inv>0)return;if(S.p.hp<=value&&VIP.active()&&!S.reviveUsed){S.reviveUsed=true;S.p.hp=S.p.maxHP*.65;S.p.inv=3;fx.ring(S.p.x,S.p.y,220,'#ffd2e7');fx.text('暖心护符 · 复苏',S.p.x,S.p.y-40,'#ffd2e7',22);return}S.p.hp-=value;S.p.inv=.75;if(fx.enabled)fx.shake=10;fx.burst(S.p.x,S.p.y,'#ff8daa',10);if(S.p.hp<=0)finish(false)}
- function update(dt){if(S.mode!=='play')return;if(S.stop>0){S.stop-=dt;return}S.time+=dt;S.p.inv=Math.max(0,S.p.inv-dt);S.spawn-=dt;
-  if(S.spawn<=0){if(S.enemies.length<D.spawn.maxEnemies){spawn();if(S.time>D.spawn.doubleAfter)spawn()}S.spawn=Math.max(D.spawn.minInterval,D.spawn.interval-S.time*D.spawn.acceleration)}
-  if(!S.bossSpawned&&S.time>=D.bossAt){S.bossSpawned=true;spawn(true)}
-  let dx=(keys.ArrowRight||keys.KeyD?1:0)-(keys.ArrowLeft||keys.KeyA?1:0),dy=(keys.ArrowDown||keys.KeyS?1:0)-(keys.ArrowUp||keys.KeyW?1:0);if(stick){dx=stick.dx/48;dy=stick.dy/48}const len=Math.hypot(dx,dy);if(len>1){dx/=len;dy/=len}const speed=D.speed*(1+(S.skills.haste||0)*HASTE.speedPerLevel);S.p.x=U.clamp(S.p.x+dx*speed*dt,25,aw-25);S.p.y=U.clamp(S.p.y+dy*speed*dt,25,ah-25);trail-=dt;if(len&&trail<0){trail=.1;if(fx.enabled)fx.particles.push({x:S.p.x,y:S.p.y+12,vx:0,vy:10,l:.4,max:.4,r:3,color:skin.color})}
-  for(const e of S.enemies){const a=Math.atan2(S.p.y-e.y,S.p.x-e.x),dist=U.dist(e,S.p);e.x+=Math.cos(a)*e.speed*dt;e.y+=Math.sin(a)*e.speed*dt;e.hit=Math.max(0,e.hit-dt);e.touch=Math.max(0,e.touch-dt);if(dist<e.r+15)harm(e.boss?24:12);if(e.boss){e.attack-=dt;if(e.attack<=0){e.attack=D.bossProjectile.interval;for(let i=0;i<D.bossProjectile.count;i++){const a=i/D.bossProjectile.count*Math.PI*2+S.time;S.danger.push({x:e.x,y:e.y,vx:Math.cos(a)*D.bossProjectile.speed,vy:Math.sin(a)*D.bossProjectile.speed,l:D.bossProjectile.lifetime})}fx.ring(e.x,e.y,100,'#e4b9ff')}}}
-  S.bolt-=dt;if(S.bolt<=0){S.bolt=Math.max(.2,B.cooldownBase-(S.skills.bolt||1)*B.cooldownPerLevel);const targets=[...S.enemies].filter(e=>e.hp>0).sort((a,b)=>U.dist(a,S.p)-U.dist(b,S.p));const n=evolved('bolt')?B.evolveCount:S.skills.bolt>=3?3:S.skills.bolt>=2?2:1;for(let i=0;i<Math.min(n,targets.length);i++){const e=targets[i];if(e&&U.dist(e,S.p)<B.range)S.shots.push({x:S.p.x,y:S.p.y,target:e,l:1.6,d:(B.damageBase+S.skills.bolt*B.damagePerLevel)*(evolved('bolt')?B.evolveDamage:1)})}}
-  for(const b of S.shots){b.l-=dt;const target=b.target;if(target.hp<=0){b.l=0;continue}const a=Math.atan2(target.y-b.y,target.x-b.x);b.x+=Math.cos(a)*B.projectileSpeed*dt;b.y+=Math.sin(a)*B.projectileSpeed*dt;if(U.dist(b,target)<target.r+9){damage(target,b.d);fx.burst(b.x,b.y,skin.color,3);b.l=0}}
-  S.shots=S.shots.filter(b=>b.l>0);
-  if(S.skills.orbit){const n=O.countBase+S.skills.orbit,rad=evolved('orbit')?O.evolveRadius:O.radius;for(let i=0;i<n;i++){const a=S.time*O.rotationSpeed+i/n*7,x=S.p.x+Math.cos(a)*rad,y=S.p.y+Math.sin(a)*rad;for(const e of S.enemies)if(e.touch<=0&&Math.hypot(e.x-x,e.y-y)<e.r+13){damage(e,O.damageBase+S.skills.orbit*O.damagePerLevel);e.touch=.35}}}
-  if(S.skills.nova){S.nova-=dt;if(S.nova<=0){S.nova=evolved('nova')?N.evolveCooldown:N.cooldown;const r=N.radiusBase+S.skills.nova*N.radiusPerLevel;fx.ring(S.p.x,S.p.y,r*2,'#ffcf8c');for(const e of S.enemies)if(U.dist(e,S.p)<r+e.r)damage(e,N.damageBase+S.skills.nova*N.damagePerLevel)}}
-  S.enemies=S.enemies.filter(e=>e.hp>0);for(const d of S.danger){d.l-=dt;d.x+=d.vx*dt;d.y+=d.vy*dt;if(U.dist(d,S.p)<20){harm(D.bossProjectile.damage);d.l=0}}S.danger=S.danger.filter(d=>d.l>0);
-  for(const gem of S.gems){const distance=U.dist(gem,S.p),pull=D.pickupRadius+(S.skills.haste||0)*HASTE.pickupPerLevel;if(distance<pull){const a=Math.atan2(S.p.y-gem.y,S.p.x-gem.x);gem.x+=Math.cos(a)*320*dt;gem.y+=Math.sin(a)*320*dt}if(distance<22){S.xp+=gem.v;gem.v=0;fx.burst(gem.x,gem.y,'#97ffdd',3)}}S.gems=S.gems.filter(g=>g.v>0);
-  if(S.mode==='play'&&S.xp>=S.need){S.xp-=S.need;S.level++;S.need=Math.min(38,5+S.level*3);fx.ring(S.p.x,S.p.y,160,'#f0d4ff');levelUp()}
-  updateHUD();
- }
- function draw(){ctx.clearRect(0,0,w,h);const p=S.p,cam={x:p.x-w/2,y:p.y-h/2};GameArt.background(ctx,'bg-space',w,h,S.time);ctx.fillStyle='#0e162a99';ctx.fillRect(0,0,w,h);const nebula=ctx.createRadialGradient(w*.78,h*.22,10,w*.6,h*.4,h*.72);nebula.addColorStop(0,'#4a2d5938');nebula.addColorStop(.5,'#20465b2a');nebula.addColorStop(1,'#10172b00');ctx.fillStyle=nebula;ctx.fillRect(0,0,w,h);ctx.save();const shake=fx.enabled?fx.shake:0;ctx.translate(-cam.x+U.rand(-shake,shake),-cam.y+U.rand(-shake,shake));ctx.strokeStyle='#7184b315';ctx.lineWidth=1;for(let x=Math.floor(cam.x/64)*64;x<cam.x+w+64;x+=64){ctx.beginPath();ctx.moveTo(x,cam.y);ctx.lineTo(x,cam.y+h);ctx.stroke()}for(let y=Math.floor(cam.y/64)*64;y<cam.y+h+64;y+=64){ctx.beginPath();ctx.moveTo(cam.x,y);ctx.lineTo(cam.x+w,y);ctx.stroke()}
-  ctx.strokeStyle='#8f89ff40';ctx.lineWidth=4;ctx.strokeRect(10,10,aw-20,ah-20);for(let i=0;i<30;i++){const x=(i*173+79)%aw,y=(i*227+49)%ah;ctx.fillStyle='#8a95d433';ctx.beginPath();ctx.arc(x,y,2+Math.sin(S.time+i),0,7);ctx.fill()}
-  for(const g of S.gems){ctx.save();ctx.translate(g.x,g.y);ctx.rotate(Math.PI/4);ctx.fillStyle='#80f6d2';ctx.shadowColor='#80f6d2';ctx.shadowBlur=fx.enabled?12:0;ctx.fillRect(-4,-4,8,8);ctx.restore()}
-  for(const e of S.enemies){if(e.x<cam.x-80||e.x>cam.x+w+80||e.y<cam.y-80||e.y>cam.y+h+80)continue;ctx.globalAlpha=e.hit>.01?.45:1;U.puff(ctx,e,S.time);ctx.globalAlpha=1;if(e.boss||e.hp<e.max){ctx.fillStyle='#24263e';ctx.fillRect(e.x-e.r,e.y-e.r-12,e.r*2,4);ctx.fillStyle=e.boss?'#e7b6ff':'#a3e2da';ctx.fillRect(e.x-e.r,e.y-e.r-12,e.r*2*Math.max(0,e.hp/e.max),4)}}
-  if(S.skills.orbit){const n=O.countBase+S.skills.orbit,rad=evolved('orbit')?O.evolveRadius:O.radius;ctx.strokeStyle='#8bf3b222';ctx.beginPath();ctx.arc(p.x,p.y,rad,0,7);ctx.stroke();for(let i=0;i<n;i++){const a=S.time*O.rotationSpeed+i/n*7,x=p.x+Math.cos(a)*rad,y=p.y+Math.sin(a)*rad;ctx.save();ctx.translate(x,y);ctx.rotate(a);ctx.fillStyle='#93efba';ctx.shadowColor='#93efba';ctx.shadowBlur=fx.enabled?16:0;ctx.beginPath();ctx.ellipse(0,0,15,7,0,0,7);ctx.fill();ctx.restore()}}
-  ctx.save();ctx.strokeStyle=skin.color;ctx.shadowColor=skin.color;ctx.shadowBlur=fx.enabled?20:0;ctx.lineWidth=2;ctx.globalAlpha=.65;ctx.beginPath();ctx.ellipse(p.x,p.y+20,25,10,0,0,7);ctx.stroke();ctx.restore();ctx.globalAlpha=p.inv>0&&Math.sin(S.time*40)>0?.4:1;U.sprite(ctx,'xing',p.x,p.y-6,55,67);ctx.globalAlpha=1;
-  for(const b of S.shots){ctx.save();ctx.fillStyle=skin.color;ctx.shadowBlur=fx.enabled?18:0;ctx.shadowColor=skin.color;ctx.beginPath();ctx.arc(b.x,b.y,5,0,7);ctx.fill();ctx.restore()}
-  for(const b of S.danger){ctx.fillStyle='#faabd9';ctx.beginPath();ctx.arc(b.x,b.y,7,0,7);ctx.fill()}
-  fx.draw(ctx);ctx.restore();
-  ctx.fillStyle='#ffffff10';ctx.fillRect(18,18,w-36,5);ctx.fillStyle='#c5a6ff';ctx.shadowColor='#b890ff';ctx.shadowBlur=fx.enabled?10:0;ctx.fillRect(18,18,(w-36)*S.xp/S.need,5);ctx.shadowBlur=0;
-  if(!S.bossSpawned)U.pill(ctx,'下一波 '+(Math.floor(S.time/20)+1)+'　·　首领 '+fmt(Math.max(0,D.bossAt-S.time)),w/2,46,'#a6abc8',12);else U.pill(ctx,'✦ 击败失眠大团子',w/2,46,'#e2b8ff',15);
-  if(stick){ctx.save();ctx.fillStyle='#acb4ff12';ctx.strokeStyle='#b6ccff60';ctx.lineWidth=2;ctx.beginPath();ctx.arc(stick.x,stick.y,48,0,7);ctx.fill();ctx.stroke();ctx.fillStyle='#c6dfff55';ctx.beginPath();ctx.arc(stick.x+stick.dx,stick.y+stick.dy,20,0,7);ctx.fill();ctx.restore()}else if(S.mode==='play'&&S.time<8){U.pill(ctx,'按住画面拖动移动',w/2,h-60,'#b3b7d3',14)}
- }
- function loop(t){const dt=Math.min(.04,(t-last)/1000||.016);last=t;update(dt);fx.update(S.mode==='play'?dt:dt*.4);draw();requestAnimationFrame(loop)}
- canvas.addEventListener('pointerdown',e=>{if(S.mode!=='play')return;e.preventDefault();canvas.setPointerCapture(e.pointerId);const p=U.point(canvas,e,w,h);stick={...p,dx:0,dy:0,id:e.pointerId}});canvas.addEventListener('pointermove',e=>{if(!stick||stick.id!==e.pointerId)return;const p=U.point(canvas,e,w,h),dx=p.x-stick.x,dy=p.y-stick.y,len=Math.hypot(dx,dy),k=Math.min(1,48/len);stick.dx=dx*k;stick.dy=dy*k});['pointerup','pointercancel','lostpointercapture'].forEach(type=>canvas.addEventListener(type,()=>stick=null));
- document.addEventListener('keydown',e=>{if(/INPUT|TEXTAREA/.test(e.target.tagName)||document.querySelector('dialog[open]'))return;if(e.target.tagName==='BUTTON'&&!['KeyW','KeyA','KeyS','KeyD','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','KeyP'].includes(e.code))return;if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code))e.preventDefault();keys[e.code]=true;if(e.code==='KeyP')pause()});document.addEventListener('keyup',e=>delete keys[e.code]);window.addEventListener('blur',()=>{if(S.mode==='play')pause();keys={};stick=null});document.addEventListener('visibilitychange',()=>{if(document.hidden&&S.mode==='play')pause()});$('#start').onclick=start;$('#pause').onclick=pause;$('#restart').onclick=async()=>{if(S.mode==='ready'||S.mode==='over')start();else if(await UI.confirm('要重新开始这次星野冒险吗？'))start()};$('#pulse').onclick=()=>{if(!VIP.active()){VIP.open();return}if(S.mode!=='play'||S.pulseUsed)return;S.pulseUsed=true;for(const e of S.enemies)if(!e.boss)damage(e,99999);S.enemies=S.enemies.filter(e=>e.hp>0);fx.ring(S.p.x,S.p.y,750,'#d9bbff');$('#state').textContent='星糖清场已使用；不影响首领。';updateHUD()};U.skins($('#skins'),s=>skin=s);U.bindFX($('#effects'),fx);fresh();recordUI();requestAnimationFrame(loop);
- window.A2Game={kind:'survivor',snapshot:()=>({mode:S.mode,time:S.time,player:{...S.p},enemies:S.enemies.length,gems:S.gems.length,level:S.level,kills:S.kills,skills:{...S.skills},boss:S.bossSpawned,gemTargets:S.gems.map(g=>({x:g.x,y:g.y})),enemyTargets:S.enemies.map(e=>({x:e.x,y:e.y,r:e.r,boss:e.boss,hp:e.hp}))})};
+// 星野幸存者 - game.js (portrait survivor)
+(function() {
+'use strict';
+
+const {cv, ctx, W, H} = FX.init({landscape: false, logicalH: 540});
+
+// === STATE ===
+let gameMode = 'ready';
+let gameTime = 0;
+let currentSel = null;
+
+let player = null;
+let enemies = [];
+let projectiles = [];
+let gems = [];
+let vfx = [];
+
+let level = 1;
+let xp = 0;
+let xpNeeded = 50;
+let kills = 0;
+let combo = 0;
+let comboLastTime = 0;
+
+let skills = {};
+let upgradingLevel = 0;
+let levelUpPending = false;
+
+let bossSpawned = false;
+let bossDead = false;
+
+let spawnTimer = 0;
+let spawnInterval = 0.8;
+let waveNum = 0;
+let miniBossTimer = 0;
+let miniBossInterval = 60;
+
+let invulnTimer = 0;
+
+const store = FX.store('star-survivor', {bestTime: 0, bestKills: 0, wins: 0});
+
+const baseStats = {hp: 100, maxHP: 100, speed: 300, vamp: 0};
+
+// === GROUND TILE CACHE ===
+let groundTile = null;
+let groundBgName = 'bg-garden';
+
+function buildGroundTile(bgName) {
+  const size = 512;
+  const offCanvas = document.createElement('canvas');
+  offCanvas.width = size;
+  offCanvas.height = size;
+  const octx = offCanvas.getContext('2d');
+  
+  const bgImg = FX.img(bgName);
+  const scale = Math.max(size / bgImg.width, size / bgImg.height);
+  const sw = size / scale;
+  const sh = size / scale;
+  const sx = (bgImg.width - sw) / 2;
+  const sy = (bgImg.height - sh) / 2;
+  
+  octx.drawImage(bgImg, sx, sy, sw, sh, 0, 0, size, size);
+  
+  octx.save();
+  octx.translate(size, 0);
+  octx.scale(-1, 1);
+  octx.globalAlpha = 0.3;
+  octx.drawImage(bgImg, sx, sy, sw, sh, 0, 0, size, size);
+  octx.restore();
+  
+  octx.fillStyle = 'rgba(80, 120, 100, 0.15)';
+  for (let i = 0; i < 200; i++) {
+    const gx = Math.random() * size;
+    const gy = Math.random() * size;
+    const gsize = 1 + Math.random() * 2;
+    octx.fillRect(gx, gy, gsize, gsize);
+  }
+  
+  octx.fillStyle = 'rgba(60, 90, 70, 0.1)';
+  for (let i = 0; i < 8; i++) {
+    const px = Math.random() * size;
+    const py = Math.random() * size;
+    const pr = 20 + Math.random() * 40;
+    octx.beginPath();
+    octx.ellipse(px, py, pr, pr * 0.4, 0, 0, Math.PI * 2);
+    octx.fill();
+  }
+  
+  return offCanvas;
+}
+
+function hashCell(cx, cy) {
+  return ((cx * 73856093) ^ (cy * 19349663)) >>> 0;
+}
+
+// === WEAPON DATA ===
+const weaponData = {
+  bolt: {
+    name: '星芒',
+    desc: '发射追踪光弹',
+    icon: 'item-star',
+    color: '#ffd700',
+    rarity: 'N',
+    dmgBase: 20,
+    dmgPer: 8,
+    coolBase: 0.33,
+    coolPer: -0.02,
+    maxLv: 5
+  },
+  heart: {
+    name: '星环',
+    desc: '旋转心形护盾',
+    icon: 'item-heart',
+    color: '#ff66cc',
+    rarity: 'N',
+    dmgBase: 15,
+    dmgPer: 6,
+    countBase: 3,
+    countPer: 1,
+    radiusBase: 80,
+    radiusPer: 15,
+    maxLv: 5
+  },
+  nova: {
+    name: '冰爆',
+    desc: '周期冰冻爆发',
+    icon: 'item-ice',
+    color: '#66ddff',
+    rarity: 'R',
+    dmgBase: 30,
+    dmgPer: 12,
+    coolBase: 3,
+    coolPer: -0.2,
+    radiusBase: 120,
+    radiusPer: 20,
+    maxLv: 5
+  },
+  lightning: {
+    name: '雷链',
+    desc: '敌人间跳跃放电',
+    icon: 'item-weapon',
+    color: '#ffdd00',
+    rarity: 'R',
+    dmgBase: 25,
+    dmgPer: 10,
+    chainCount: 4,
+    coolBase: 1.5,
+    coolPer: -0.1,
+    maxLv: 5
+  },
+  wave: {
+    name: '浪潮',
+    desc: '正面冲击波',
+    icon: 'item-shield',
+    color: '#66ccff',
+    rarity: 'SR',
+    dmgBase: 40,
+    dmgPer: 15,
+    coolBase: 2,
+    coolPer: -0.1,
+    maxLv: 5
+  },
+  mine: {
+    name: '花雷',
+    desc: '撒布地雷',
+    icon: 'prop-flowers',
+    color: '#ffb3d9',
+    rarity: 'SR',
+    dmgBase: 35,
+    dmgPer: 12,
+    coolBase: 1.8,
+    coolPer: -0.1,
+    maxLv: 5
+  },
+  spear: {
+    name: '晶枪',
+    desc: '直线冰晶射击',
+    icon: 'prop-crystal',
+    color: '#aaddff',
+    rarity: 'SR',
+    dmgBase: 28,
+    dmgPer: 11,
+    coolBase: 1.2,
+    coolPer: -0.08,
+    countBase: 2,
+    countPer: 1,
+    maxLv: 5
+  },
+  bomb: {
+    name: '点心弹',
+    desc: '爆炸甜蜜炮弹',
+    icon: 'item-chest',
+    color: '#ffaa99',
+    rarity: 'SSR',
+    dmgBase: 50,
+    dmgPer: 18,
+    coolBase: 2.5,
+    coolPer: -0.12,
+    radiusBase: 100,
+    radiusPer: 15,
+    maxLv: 5
+  }
+};
+
+const passiveData = {
+  haste: {name: '轻盈', desc: '移速+15%', icon: 'item-ice', effect: s => s.speed *= 1.15},
+  leech: {name: '吸血', desc: '伤害转生命5%', icon: 'item-heart', effect: s => s.vamp = 0.05},
+  pickup: {name: '吸金', desc: '拾取范围+80%', icon: 'item-star', effect: () => {}},
+  regen: {name: '恢复', desc: '每秒回复最大血量1%', icon: 'item-shield', effect: () => {}},
+  armor: {name: '盔甲', desc: '受伤-20%', icon: 'item-armor', effect: () => {}},
+  crit: {name: '暴击', desc: '30%概率双倍伤害', icon: 'item-weapon', effect: () => {}}
+};
+
+// === ENEMY DATA ===
+const enemyTypes = {
+  slime: {
+    name: '史莱姆',
+    img: 'enemy-slime',
+    hp: 20,
+    speed: 80,
+    dmg: 8,
+    xp: 5,
+    radius: 15,
+    spawn: 0
+  },
+  bat: {
+    name: '蝙蝠',
+    img: 'enemy-bat',
+    hp: 15,
+    speed: 140,
+    dmg: 6,
+    xp: 4,
+    radius: 12,
+    spawn: 30
+  },
+  alien: {
+    name: '外星人',
+    img: 'enemy-alien',
+    hp: 30,
+    speed: 100,
+    dmg: 10,
+    xp: 8,
+    radius: 14,
+    spawn: 60
+  },
+  elite: {
+    name: '精英',
+    img: 'enemy-boss',
+    hp: 60,
+    speed: 110,
+    dmg: 15,
+    xp: 20,
+    radius: 18,
+    spawn: 120,
+    mini: true
+  }
+};
+
+// === INIT ===
+function resetGame() {
+  gameMode = 'play';
+  gameTime = 0;
+  level = 1;
+  xp = 0;
+  xpNeeded = 50;
+  kills = 0;
+  combo = 0;
+  comboLastTime = 0;
+  
+  skills = {bolt: 1};
+  upgradingLevel = 0;
+  levelUpPending = false;
+  
+  player = {
+    x: FX.W / 2,
+    y: FX.H / 2,
+    ...baseStats,
+    hp: baseStats.maxHP,
+    vx: 0,
+    vy: 0,
+    weaponCds: {},
+    _face: 1
+  };
+  
+  enemies = [];
+  projectiles = [];
+  gems = [];
+  vfx = [];
+  
+  bossSpawned = false;
+  bossDead = false;
+  
+  spawnTimer = 0;
+  spawnInterval = 0.8;
+  waveNum = 0;
+  miniBossTimer = 0;
+  miniBossInterval = 60;
+  
+  invulnTimer = 0;
+  
+  const stageBgs = ['bg-garden', 'bg-forest', 'bg-snow', 'bg-moon'];
+  groundBgName = stageBgs[currentSel?.stage || 0] || 'bg-garden';
+  groundTile = buildGroundTile(groundBgName);
+  
+  FX.hud(`
+    <a class="fx-icon" href="../tools.html">‹</a>
+    <span class="chip">⏱ <span id="time">0:00</span></span>
+    <span class="chip">❤️ <span id="hp">100</span></span>
+    <span class="chip">Lv.<span id="level">1</span></span>
+    <span class="chip">💀 <span id="kills">0</span></span>
+    <span class="grow"></span>
+  `);
+}
+
+function startGame(sel) {
+  currentSel = sel;
+  resetGame();
+  FX.running = true;
+  FX.loop(update, draw);
+}
+
+// === SPAWNING ===
+function spawnEnemy() {
+  const types = Object.entries(enemyTypes).filter(([_, t]) => gameTime >= t.spawn);
+  if (types.length === 0) return;
+  
+  const [typeKey, typeDef] = types[Math.floor(Math.random() * types.length)];
+  
+  const angle = Math.random() * Math.PI * 2;
+  const dist = 350;
+  const ex = player.x + Math.cos(angle) * dist;
+  const ey = player.y + Math.sin(angle) * dist;
+  
+  const e = {
+    type: typeKey,
+    x: ex,
+    y: ey,
+    vx: 0,
+    vy: 0,
+    hp: typeDef.hp * (1 + gameTime / 120),
+    maxHP: typeDef.hp * (1 + gameTime / 120),
+    speed: typeDef.speed,
+    dmg: typeDef.dmg,
+    xp: typeDef.xp,
+    radius: typeDef.radius,
+    hit: 0,
+    hitT: 0,
+    elite: Math.random() < 0.1 && !typeDef.mini,
+    mini: typeDef.mini
+  };
+  
+  if (e.elite) {
+    e.hp *= 1.5;
+    e.maxHP *= 1.5;
+    e.dmg *= 1.3;
+    e.xp *= 2;
+    e.radius *= 1.2;
+  }
+  
+  enemies.push(e);
+}
+
+function spawnMiniBoss() {
+  const e = {
+    type: 'elite',
+    x: player.x + FX.rand(-150, 150),
+    y: player.y - 250,
+    vx: 0,
+    vy: 0,
+    hp: 150 * (1 + gameTime / 100),
+    maxHP: 150 * (1 + gameTime / 100),
+    speed: 120,
+    dmg: 20,
+    xp: 50,
+    radius: 20,
+    mini: true,
+    hit: 0,
+    hitT: 0,
+    boss: false
+  };
+  enemies.push(e);
+  FX.banner('⚠ 精英敌人');
+}
+
+function spawnBoss() {
+  const e = {
+    type: 'boss',
+    x: FX.W / 2,
+    y: FX.H / 2 - 150,
+    vx: 0,
+    vy: 0,
+    hp: 500,
+    maxHP: 500,
+    speed: 100,
+    dmg: 30,
+    radius: 30,
+    boss: true,
+    hit: 0,
+    hitT: 0,
+    shootT: 0,
+    shootInterval: 1.5,
+    projectiles: []
+  };
+  enemies.push(e);
+  FX.banner('👑 幻梦首领');
+  FX.shake(15);
+}
+
+// === WEAPONS ===
+function fireWeapon(weaponKey, dt) {
+  const cd = player.weaponCds[weaponKey] || 0;
+  const weaponDef = weaponData[weaponKey];
+  if (!weaponDef || !skills[weaponKey]) return;
+  
+  if (cd > 0) {
+    player.weaponCds[weaponKey] = cd - dt;
+    return;
+  }
+  
+  const lv = skills[weaponKey];
+  const dmg = weaponDef.dmgBase + lv * weaponDef.dmgPer;
+  const coolNext = Math.max(0.1, weaponDef.coolBase + lv * weaponDef.coolPer);
+  player.weaponCds[weaponKey] = coolNext;
+  
+  if (weaponKey === 'bolt') {
+    const targets = enemies.filter(e => !e.boss).sort((a, b) => Math.hypot(a.x - player.x, a.y - player.y) - Math.hypot(b.x - player.x, b.y - player.y)).slice(0, 1);
+    targets.forEach(t => {
+      projectiles.push({
+        type: 'bolt',
+        x: player.x,
+        y: player.y,
+        target: t,
+        dmg: dmg,
+        speed: 500,
+        life: 5
+      });
+    });
+  } else if (weaponKey === 'nova') {
+    const rad = weaponDef.radiusBase + lv * weaponDef.radiusPer;
+    FX.ring(player.x, player.y, {color: '#66ddff', r: rad, life: 0.4});
+    enemies.forEach(e => {
+      if (Math.hypot(e.x - player.x, e.y - player.y) < rad + e.radius) {
+        damageEnemy(e, dmg);
+      }
+    });
+  } else if (weaponKey === 'heart') {
+    // Orbiting hearts handled in update
+  } else if (weaponKey === 'lightning') {
+    const targets = enemies.filter(e => Math.hypot(e.x - player.x, e.y - player.y) < 250).slice(0, 2);
+    targets.forEach(t => {
+      projectiles.push({
+        type: 'lightning',
+        x: player.x,
+        y: player.y,
+        target: t,
+        dmg: dmg,
+        chains: 3,
+        life: 0.5
+      });
+      FX.trail(t.x, t.y, '#ffdd00', 8);
+    });
+  } else if (weaponKey === 'wave') {
+    projectiles.push({
+      type: 'wave',
+      x: player.x,
+      y: player.y,
+      vx: FX.rand(-200, 200),
+      vy: FX.rand(-300, -200),
+      dmg: dmg,
+      radius: 80,
+      life: 1.0
+    });
+  } else if (weaponKey === 'mine') {
+    for (let i = 0; i < 3; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      projectiles.push({
+        type: 'mine',
+        x: player.x + Math.cos(angle) * 60,
+        y: player.y + Math.sin(angle) * 60,
+        dmg: dmg,
+        armed: 0.3,
+        radius: 100,
+        life: 8
+      });
+    }
+  } else if (weaponKey === 'spear') {
+    for (let i = 0; i < (lv >= 3 ? 2 : 1); i++) {
+      const angle = Math.random() * Math.PI * 2;
+      projectiles.push({
+        type: 'spear',
+        x: player.x,
+        y: player.y,
+        vx: Math.cos(angle) * 400,
+        vy: Math.sin(angle) * 400,
+        dmg: dmg,
+        life: 3
+      });
+    }
+  } else if (weaponKey === 'bomb') {
+    projectiles.push({
+      type: 'bomb',
+      x: player.x,
+      y: player.y,
+      vx: FX.rand(-150, 150),
+      vy: FX.rand(-200, 0),
+      dmg: dmg,
+      radius: weaponDef.radiusBase + lv * weaponDef.radiusPer,
+      life: 2
+    });
+  }
+}
+
+// === DAMAGE ===
+function damageEnemy(e, dmg, fromX, fromY) {
+  if (e.hp <= 0) return;
+  
+  const roll = Math.random();
+  const isCrit = skills.crit && roll < 0.3;
+  const actualDmg = isCrit ? dmg * 2 : dmg;
+  
+  e.hp -= actualDmg;
+  e.hit = 0.1;
+  e.hitT = 0.1;
+  
+  FX.trail(e.x, e.y, currentSel?.skin?.filter || '#ffd700', 6);
+  if (isCrit) {
+    FX.text(e.x, e.y - 30, 'CRIT!', {color: '#ff0', size: 24, crit: true});
+  }
+  
+  if (player.vamp > 0) {
+    player.hp = Math.min(player.maxHP, player.hp + actualDmg * player.vamp);
+  }
+  
+  if (e.hp <= 0) {
+    killEnemy(e);
+  }
+}
+
+function killEnemy(e) {
+  kills++;
+  combo++;
+  comboLastTime = gameTime;
+  
+  if (combo % 5 === 0) {
+    FX.text(player.x, player.y - 80, combo + 'x', {color: '#ffdd00', size: 26, crit: true});
+  }
+  
+  xp += e.xp * (1 + combo * 0.1);
+  
+  FX.burst(e.x, e.y, {n: 12, color: '#ffaa99', speed: 150, life: 0.6, size: 5});
+  FX.shake(Math.min(8, combo));
+  
+  if (Math.random() < 0.4 + (combo * 0.02)) {
+    gems.push({x: e.x, y: e.y, value: 1, life: 8});
+  }
+  
+  if (e.mini) {
+    miniBossTimer = 0;
+  }
+  if (e.boss) {
+    bossDead = true;
+    FX.banner('✨ 幻梦粉碎');
+    FX.ring(e.x, e.y, {color: '#ff66ff', r: 300, life: 1});
+    gameMode = 'gameover';
+    FX.running = false;
+    store.bestTime = Math.max(store.bestTime, gameTime);
+    store.bestKills = Math.max(store.bestKills, kills);
+    store.wins++;
+    store.save();
+    Lobby.reportResult({
+      stage: currentSel ? currentSel.stage : 0,
+      stars: Math.min(3, Math.floor(kills / 50)),
+      coins: kills,
+      gems: Math.floor(gameTime),
+      win: true
+    });
+  }
+}
+
+function hurtPlayer(dmg) {
+  if (invulnTimer > 0 || gameMode !== 'play') return;
+  
+  const actualDmg = skills.armor ? dmg * 0.8 : dmg;
+  player.hp -= actualDmg;
+  invulnTimer = 1.0;
+  FX.shake(10);
+  FX.flash('#ff0000', 0.3);
+  FX.burst(player.x, player.y, {n: 20, color: '#ff4444', speed: 200, life: 0.7, size: 6});
+  
+  if (player.hp <= 0) {
+    gameMode = 'gameover';
+    FX.running = false;
+    store.bestTime = Math.max(store.bestTime, gameTime);
+    store.bestKills = Math.max(store.bestKills, kills);
+    store.save();
+    Lobby.reportResult({
+      stage: currentSel ? currentSel.stage : 0,
+      stars: Math.min(3, Math.floor(kills / 50)),
+      coins: kills,
+      gems: Math.floor(gameTime),
+      win: false
+    });
+  }
+}
+
+// === LEVEL UP ===
+function levelUp() {
+  level++;
+  xpNeeded = Math.floor(50 * Math.pow(1.4, level - 1));
+  upgradingLevel = level;
+  levelUpPending = true;
+  gameMode = 'levelup';
+  FX.ring(player.x, player.y, {color: '#ffdd00', r: 150, life: 0.8});
+  FX.banner('✨ 等级提升！');
+  
+  const pool = Object.keys(weaponData).filter(k => !skills[k] || skills[k] < weaponData[k].maxLv);
+  const passivePool = Object.keys(passiveData).filter(k => !skills[k]);
+  
+  const opts = [];
+  for (let i = 0; i < 2 && pool.length > 0; i++) {
+    const idx = Math.floor(Math.random() * pool.length);
+    opts.push(pool.splice(idx, 1)[0]);
+  }
+  if (passivePool.length > 0) {
+    const idx = Math.floor(Math.random() * passivePool.length);
+    opts.push(passivePool.splice(idx, 1)[0]);
+  }
+  
+  showLevelupOverlay(opts.slice(0, 3));
+}
+
+function showLevelupOverlay(opts) {
+  const cards = opts.map((key, idx) => {
+    let def, isPassive = false;
+    if (weaponData[key]) {
+      def = weaponData[key];
+    } else {
+      def = passiveData[key];
+      isPassive = true;
+    }
+    
+    const currentLv = skills[key] || 0;
+    const rarity = isPassive ? '#aaa' : {N: '#999', R: '#66f', SR: '#f66', SSR: '#ff0'}[def.rarity];
+    
+    return `
+      <button class="a2-choice" data-key="${key}" style="border-color: ${rarity}; padding: 12px; margin: 6px; background: rgba(0,0,0,0.4); border: 2px solid ${rarity}; border-radius: 8px; color: white; cursor: pointer; font-size: 0.9em; text-align: left;">
+        <div style="color: ${def.color || '#aaa'}; font-size: 1.2em; font-weight: bold; margin-bottom: 4px;">${def.name}</div>
+        <div style="font-size: 0.8em; opacity: 0.9; margin-bottom: 4px;">${def.desc}</div>
+        <div style="color: ${rarity}; font-size: 0.75em;">${isPassive ? '被动' : '✦ ' + def.rarity} ${currentLv > 0 ? '(Lv.' + currentLv + ')' : '(新)'}</div>
+      </button>
+    `;
+  });
+  
+  FX.overlay({
+    title: '升级选择',
+    html: '<div style="display: flex; flex-direction: column; gap: 0;">' + cards.join('') + '</div>',
+    button: null,
+    onStart: () => {}
+  });
+  
+  document.querySelectorAll('.a2-choice').forEach((btn, idx) => {
+    btn.onclick = () => selectSkill(btn.dataset.key, idx);
+  });
+}
+
+function selectSkill(key, idx) {
+  if (weaponData[key]) {
+    skills[key] = (skills[key] || 0) + 1;
+  } else if (passiveData[key]) {
+    passiveData[key].effect(player);
+    skills[key] = 1;
+  }
+  gameMode = 'play';
+  FX.hideOverlay();
+  FX.running = true;
+  levelUpPending = false;
+}
+
+// === UPDATE ===
+function update(dt) {
+  if (!FX.running || gameMode !== 'play') return;
+  
+  gameTime += dt;
+  invulnTimer = Math.max(0, invulnTimer - dt);
+  
+  // XP level up check
+  if (xp >= xpNeeded && !levelUpPending) {
+    xp -= xpNeeded;
+    levelUp();
+    return;
+  }
+  
+  // Player movement
+  const joy = FX.joystick({side: 'left'});
+  const len = Math.hypot(joy.x, joy.y);
+  let px = 0, py = 0;
+  if (len > 0.12) {
+    px = joy.x;
+    py = joy.y;
+  }
+  
+  const speed = player.speed * (skills.haste ? 1.15 : 1);
+  player.x = FX.lerp(player.x, player.x + px * speed * dt, 0.9);
+  player.y = FX.lerp(player.y, player.y + py * speed * dt, 0.9);
+  player.x = Math.max(50, Math.min(FX.W - 50, player.x));
+  player.y = Math.max(50, Math.min(FX.H - 50, player.y));
+  
+  // Firing weapons
+  Object.keys(skills).forEach(k => {
+    if (weaponData[k]) fireWeapon(k, dt);
+  });
+  
+  // Update projectiles
+  projectiles = projectiles.filter(p => {
+    p.life -= dt;
+    
+    if (p.type === 'bolt') {
+      if (p.target.hp <= 0) {
+        p.life = 0;
+        return false;
+      }
+      const a = Math.atan2(p.target.y - p.y, p.target.x - p.x);
+      p.x += Math.cos(a) * p.speed * dt;
+      p.y += Math.sin(a) * p.speed * dt;
+      
+      if (Math.hypot(p.x - p.target.x, p.y - p.target.y) < p.target.radius + 8) {
+        damageEnemy(p.target, p.dmg, p.x, p.y);
+        FX.burst(p.x, p.y, {n: 5, color: '#ffd700', speed: 100, life: 0.3, size: 3});
+        p.life = 0;
+      }
+    } else if (p.type === 'wave') {
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.vy += 200 * dt;
+      
+      enemies.forEach(e => {
+        if (Math.hypot(p.x - e.x, p.y - e.y) < p.radius + e.radius) {
+          damageEnemy(e, p.dmg, p.x, p.y);
+        }
+      });
+    } else if (p.type === 'mine') {
+      p.armed -= dt;
+      if (p.armed <= 0) {
+        enemies.forEach(e => {
+          if (Math.hypot(p.x - e.x, p.y - e.y) < p.radius + e.radius) {
+            damageEnemy(e, p.dmg, p.x, p.y);
+            FX.burst(p.x, p.y, {n: 20, color: '#ffb3d9', speed: 180, life: 0.6, size: 5});
+          }
+        });
+        p.life = 0;
+      }
+    } else if (p.type === 'spear') {
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      
+      enemies.forEach(e => {
+        if (Math.hypot(p.x - e.x, p.y - e.y) < e.radius + 8) {
+          damageEnemy(e, p.dmg, p.x, p.y);
+          FX.trail(p.x, p.y, '#aaddff', 5);
+        }
+      });
+    } else if (p.type === 'bomb') {
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.vy += 300 * dt;
+      
+      if (p.life <= 0) {
+        enemies.forEach(e => {
+          if (Math.hypot(p.x - e.x, p.y - e.y) < p.radius + e.radius) {
+            damageEnemy(e, p.dmg, p.x, p.y);
+          }
+        });
+        FX.burst(p.x, p.y, {n: 30, color: '#ffaa99', speed: 250, life: 0.8, size: 8, glow: true});
+      }
+    } else if (p.type === 'boss_proj') {
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      
+      if (Math.hypot(p.x - player.x, p.y - player.y) < 15 && invulnTimer <= 0) {
+        hurtPlayer(p.dmg);
+        p.life = 0;
+      }
+    }
+    
+    return p.life > 0;
+  });
+  
+  // Heart orbits
+  if (skills.heart) {
+    const n = 3 + (skills.heart - 1);
+    const rad = 80 + (skills.heart - 1) * 15;
+    for (let i = 0; i < n; i++) {
+      const a = gameTime * 2 + (i / n) * Math.PI * 2;
+      const hx = player.x + Math.cos(a) * rad;
+      const hy = player.y + Math.sin(a) * rad;
+      
+      enemies.forEach(e => {
+        if (Math.hypot(hx - e.x, hy - e.y) < e.radius + 12) {
+          damageEnemy(e, weaponData.heart.dmgBase + (skills.heart - 1) * weaponData.heart.dmgPer);
+        }
+      });
+    }
+  }
+  
+  // XP gems
+  const pickupRad = 100 + (skills.pickup ? 80 : 0);
+  gems.forEach(g => {
+    g.life -= dt;
+    const d = Math.hypot(g.x - player.x, g.y - player.y);
+    if (d < pickupRad) {
+      const a = Math.atan2(player.y - g.y, player.x - g.x);
+      g.x += Math.cos(a) * 400 * dt;
+      g.y += Math.sin(a) * 400 * dt;
+    }
+    if (d < 20) {
+      xp += g.value;
+      g.life = 0;
+      FX.burst(g.x, g.y, {n: 8, color: '#80f6d2', speed: 100, life: 0.4, size: 3, glow: true});
+    }
+  });
+  gems = gems.filter(g => g.life > 0);
+  
+  // Enemy update
+  enemies.forEach(e => {
+    const d = Math.hypot(e.x - player.x, e.y - player.y);
+    const a = Math.atan2(player.y - e.y, player.x - e.x);
+    
+    if (!e.boss) {
+      e.x += Math.cos(a) * e.speed * dt;
+      e.y += Math.sin(a) * e.speed * dt;
+    } else {
+      const phase = Math.floor(gameTime / 4) % 4;
+      const targetX = player.x + Math.cos(phase) * 150;
+      const targetY = player.y + Math.sin(phase) * 150;
+      const angle = Math.atan2(targetY - e.y, targetX - e.x);
+      e.x += Math.cos(angle) * e.speed * dt;
+      e.y += Math.sin(angle) * e.speed * dt;
+      
+      e.shootT -= dt;
+      if (e.shootT <= 0) {
+        for (let i = 0; i < 8; i++) {
+          const aa = (i / 8) * Math.PI * 2 + gameTime;
+          projectiles.push({
+            type: 'boss_proj',
+            x: e.x,
+            y: e.y,
+            vx: Math.cos(aa) * 200,
+            vy: Math.sin(aa) * 200,
+            life: 5,
+            dmg: 15
+          });
+        }
+        FX.ring(e.x, e.y, {color: '#e9b8ff', r: 100, life: 0.3});
+        e.shootT = e.shootInterval;
+      }
+    }
+    
+    e.hit = Math.max(0, e.hit - dt);
+    
+    if (d < e.radius + 20) {
+      hurtPlayer(e.dmg * dt);
+    }
+  });
+  
+  // Spawning
+  spawnTimer -= dt;
+  if (spawnTimer <= 0) {
+    if (enemies.length < Math.min(40, 15 + gameTime / 15)) {
+      spawnEnemy();
+    }
+    spawnInterval = Math.max(0.4, 0.8 - gameTime / 150);
+    spawnTimer = spawnInterval;
+  }
+  
+  miniBossTimer -= dt;
+  if (miniBossTimer <= 0 && gameTime < 180) {
+    spawnMiniBoss();
+    miniBossTimer = miniBossInterval;
+  }
+  
+  if (!bossSpawned && gameTime >= 180) {
+    bossSpawned = true;
+    spawnBoss();
+  }
+  
+  // Passive effects
+  if (skills.regen) {
+    player.hp = Math.min(player.maxHP, player.hp + player.maxHP * 0.01 * dt);
+  }
+  if (gameTime - comboLastTime > 3) {
+    combo = 0;
+  }
+  
+  // Update HUD
+  const timeStr = `${Math.floor(gameTime / 60)}:${String(Math.floor(gameTime % 60)).padStart(2, '0')}`;
+  document.getElementById('time').textContent = timeStr;
+  document.getElementById('hp').textContent = Math.ceil(player.hp);
+  document.getElementById('level').textContent = level;
+  document.getElementById('kills').textContent = kills;
+}
+
+// === DRAW ===
+function draw(ctx) {
+  const cameraX = player.x;
+  const cameraY = player.y;
+  
+  const bgImg = FX.img(groundBgName);
+  const bgScale = Math.max(FX.W / bgImg.width, FX.H / bgImg.height);
+  const bgW = bgImg.width * bgScale;
+  const bgH = bgImg.height * bgScale;
+  const bgX = (FX.W - bgW) / 2;
+  const bgY = (FX.H - bgH) / 2;
+  ctx.drawImage(bgImg, bgX, bgY, bgW, bgH);
+  
+  FX.motes(ctx, '#ffeedd');
+  
+  const tileSize = 512;
+  const startX = Math.floor((cameraX - FX.W / 2 - 100) / tileSize) * tileSize;
+  const endX = Math.ceil((cameraX + FX.W / 2 + 100) / tileSize) * tileSize;
+  const startY = Math.floor((cameraY - FX.H / 2 - 100) / tileSize) * tileSize;
+  const endY = Math.ceil((cameraY + FX.H / 2 + 100) / tileSize) * tileSize;
+  
+  for (let tx = startX; tx <= endX; tx += tileSize) {
+    for (let ty = startY; ty <= endY; ty += tileSize) {
+      const screenX = tx - cameraX + FX.W / 2;
+      const screenY = ty - cameraY + FX.H / 2;
+      ctx.drawImage(groundTile, screenX, screenY, tileSize, tileSize);
+    }
+  }
+  
+  const cellSize = 260;
+  const cellStartX = Math.floor((cameraX - FX.W / 2 - 200) / cellSize);
+  const cellEndX = Math.ceil((cameraX + FX.W / 2 + 200) / cellSize);
+  const cellStartY = Math.floor((cameraY - FX.H / 2 - 200) / cellSize);
+  const cellEndY = Math.ceil((cameraY + FX.H / 2 + 200) / cellSize);
+  
+  const propObjects = [];
+  for (let cx = cellStartX; cx <= cellEndX; cx++) {
+    for (let cy = cellStartY; cy <= cellEndY; cy++) {
+      const hash = hashCell(cx, cy);
+      if (hash % 3 === 0) {
+        const px = cx * cellSize + ((hash >> 4) % cellSize);
+        const py = cy * cellSize + ((hash >> 8) % cellSize);
+        const propIdx = (hash >> 12) % 5;
+        const propScale = 0.5 + ((hash >> 16) % 40) / 100;
+        
+        const propTypes = ['prop-flowers', 'prop-pine', 'prop-crystal', 'prop-sakura', 'prop-lantern'];
+        const propImg = propTypes[propIdx];
+        
+        propObjects.push({
+          x: px,
+          y: py,
+          img: propImg,
+          scale: propScale
+        });
+      }
+    }
+  }
+  
+  propObjects.sort((a, b) => a.y - b.y);
+  
+  propObjects.forEach(prop => {
+    const screenX = prop.x - cameraX + FX.W / 2;
+    const screenY = prop.y - cameraY + FX.H / 2;
+    
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+    ctx.beginPath();
+    ctx.ellipse(screenX, screenY + 5, 20 * prop.scale, 8 * prop.scale, 0, 0, Math.PI * 2);
+    ctx.fill();
+    
+    const img = FX.img(prop.img);
+    FX.drawSprite(ctx, img, screenX, screenY, 60 * prop.scale, {alpha: 0.7});
+  });
+  
+  ctx.save();
+  ctx.translate(-cameraX + FX.W / 2, -cameraY + FX.H / 2);
+  
+  // Gems
+  gems.forEach(g => {
+    const img = FX.img('item-star');
+    const rot = gameTime * 3;
+    FX.drawSprite(ctx, img, g.x, g.y, 20, {rot: rot, glow: true});
+  });
+  
+  // Projectiles
+  projectiles.forEach(p => {
+    if (p.type === 'bolt') {
+      ctx.fillStyle = '#ffd700';
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 5, 0, Math.PI * 2);
+      ctx.fill();
+      FX.trail(p.x, p.y, '#ffd700', 4);
+    } else if (p.type === 'mine') {
+      const img = FX.img('prop-flowers');
+      const alpha = p.armed > 0 ? 0.3 : 0.8;
+      FX.drawSprite(ctx, img, p.x, p.y, 40, {alpha: alpha});
+    } else if (p.type === 'spear') {
+      const img = FX.img('prop-crystal');
+      FX.drawSprite(ctx, img, p.x, p.y, 30, {glow: true});
+    } else if (p.type === 'bomb') {
+      ctx.fillStyle = '#ffaa99';
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 12, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (p.type === 'boss_proj') {
+      ctx.fillStyle = '#e9b8ff';
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 7, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  });
+  
+  // Enemies
+  enemies.forEach(e => {
+    const img = FX.img(enemyTypes[e.type]?.img || 'enemy-slime');
+    let alpha = 1;
+    if (e.hit > 0) {
+      ctx.filter = 'brightness(2)';
+      alpha = 0.7;
+    }
+    
+    const scale = e.elite ? 1.3 : (e.mini ? 1.5 : 1);
+    const hpRatio = Math.max(0, e.hp / e.maxHP);
+    
+    if (currentSel?.skin?.filter) ctx.filter = currentSel.skin.filter;
+    FX.drawSprite(ctx, img, e.x, e.y, 70 * scale, {alpha: alpha});
+    ctx.filter = 'none';
+    
+    // HP bar for elites/boss
+    if (e.mini || e.boss) {
+      ctx.fillStyle = 'rgba(0,0,0,0.5)';
+      ctx.fillRect(e.x - 40, e.y - 80, 80, 8);
+      ctx.fillStyle = e.boss ? '#e9b8ff' : '#ff9999';
+      ctx.fillRect(e.x - 40, e.y - 80, 80 * hpRatio, 8);
+      ctx.strokeStyle = e.boss ? '#e9b8ff' : '#ff9999';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(e.x - 40, e.y - 80, 80, 8);
+    }
+  });
+  
+  // Heart orbits
+  if (skills.heart) {
+    const n = 3 + (skills.heart - 1);
+    const rad = 80 + (skills.heart - 1) * 15;
+    ctx.strokeStyle = 'rgba(255, 102, 204, 0.3)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(player.x, player.y, rad, 0, Math.PI * 2);
+    ctx.stroke();
+    
+    for (let i = 0; i < n; i++) {
+      const a = gameTime * 2 + (i / n) * Math.PI * 2;
+      const hx = player.x + Math.cos(a) * rad;
+      const hy = player.y + Math.sin(a) * rad;
+      const img = FX.img('item-heart');
+      FX.drawSprite(ctx, img, hx, hy, 25, {rot: a, glow: true});
+    }
+  }
+  
+  // Player shadow
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+  ctx.beginPath();
+  ctx.ellipse(player.x, player.y + 5, 30, 12, 0, 0, Math.PI * 2);
+  ctx.fill();
+  
+  // Player
+  let playerAlpha = invulnTimer > 0 && Math.sin(gameTime * 20) > 0 ? 0.3 : 1;
+  ctx.globalAlpha = playerAlpha;
+  
+  const chibis = {lan: 'lan-chibi', mo: 'mo-chibi', li: 'li-chibi', xing: 'xing-chibi', hu: 'hu-chibi'};
+  const charKey = currentSel?.char || 'lan';
+  const img = FX.img(chibis[charKey]);
+  
+  if (currentSel?.skin?.filter) ctx.filter = currentSel.skin.filter;
+  const joy = FX.joystick({side: 'left'});
+  if (Math.abs(joy.x) > 0.15) player._face = joy.x < 0 ? -1 : 1;
+  FX.drawSprite(ctx, img, player.x, player.y, 130, {flip: player._face < 0});
+  ctx.filter = 'none';
+  
+  ctx.globalAlpha = 1;
+  
+  // Shield effect
+  if (skills.armor) {
+    ctx.strokeStyle = 'rgba(150, 200, 255, 0.4)';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(player.x, player.y, 80, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  
+  ctx.restore();
+  
+  // XP bar (screen-space)
+  const xpRatio = xp / xpNeeded;
+  ctx.fillStyle = 'rgba(0,0,0,0.4)';
+  ctx.fillRect(20, FX.H - 30, FX.W - 40, 20);
+  ctx.fillStyle = '#80f6d2';
+  ctx.fillRect(20, FX.H - 30, (FX.W - 40) * xpRatio, 20);
+  ctx.strokeStyle = '#80f6d2';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(20, FX.H - 30, FX.W - 40, 20);
+  
+  // FX
+  FX.drawFX(ctx);
+  FX.vignette(ctx);
+}
+
+// === BUTTONS ===
+const ultimateBtn = FX.button({icon: 'item-star', color: '#ffdd00', size: 100, right: 30, bottom: 30, key: 'KeyJ', cd: 20, onPress: () => {
+  if (gameMode !== 'play') return;
+  FX.burst(player.x, player.y, {n: 50, color: '#ffddff', speed: 300, life: 1, size: 10, glow: true});
+  FX.ring(player.x, player.y, {color: '#ffdd00', r: 250, life: 0.8});
+  FX.shake(15);
+  enemies.forEach(e => {
+    if (!e.boss) {
+      damageEnemy(e, 100);
+      FX.burst(e.x, e.y, {n: 10, color: '#ffdd00', speed: 200, life: 0.6, size: 6});
+    }
+  });
+}});
+
+const dashBtn = FX.button({icon: 'item-ice', color: '#66ccff', size: 80, right: 30, bottom: 150, key: 'KeyK', cd: 3, onPress: () => {
+  if (gameMode !== 'play') return;
+  const joy = FX.joystick({side: 'left'});
+  let dx = 1, dy = 0;
+  if (Math.hypot(joy.x, joy.y) > 0.1) {
+    dx = joy.x;
+    dy = joy.y;
+  }
+  const len = Math.hypot(dx, dy);
+  player.x += (dx / len || 1) * 200;
+  player.y += (dy / len || 0) * 200;
+  player.x = Math.max(50, Math.min(FX.W - 50, player.x));
+  player.y = Math.max(50, Math.min(FX.H - 50, player.y));
+  FX.burst(player.x - dx * 50, player.y - dy * 50, {n: 20, color: '#66ccff', speed: 200, life: 0.6, size: 6, glow: true});
+}});
+
+// === INIT ===
+const assets = [
+  'bg-space', 'bg-sakura', 'bg-forest', 'bg-garden', 'bg-snow', 'bg-moon',
+  'enemy-slime', 'enemy-bat', 'enemy-alien', 'enemy-boss',
+  'lan-chibi', 'mo-chibi', 'li-chibi', 'xing-chibi', 'hu-chibi',
+  'item-star', 'item-heart', 'item-ice', 'item-weapon', 'item-shield', 'item-armor', 'item-chest',
+  'prop-crystal', 'prop-flowers', 'prop-pine', 'prop-sakura', 'prop-lantern'
+];
+
+FX.load(assets).then(() => {
+  window.Lobby.init({
+    id: 'star-survivor',
+    title: '星野幸存者',
+    orientation: 'portrait',
+    bg: ['bg-space'],
+    modes: [{id: 'story', name: '故事'}, {id: 'endless', name: '无尽'}],
+    stages: [
+      {id: 's0', name: '梦境', bg: 'bg-space'},
+      {id: 's1', name: '星轨', bg: 'bg-sakura'},
+      {id: 's2', name: '幻海', bg: 'bg-forest'}
+    ],
+    chars: [
+      {id: 'xing', name: '星眠', img: 'xing-chibi', chibi: 'xing-chibi', stats: {atk: 80, def: 80, hp: 100, spd: 100}},
+      {id: 'lan', name: '蓝蓝', img: 'lan-chibi', chibi: 'lan-chibi', stats: {atk: 90, def: 75, hp: 95, spd: 110}},
+      {id: 'mo', name: '墨', img: 'mo-chibi', chibi: 'mo-chibi', stats: {atk: 85, def: 85, hp: 105, spd: 95}},
+      {id: 'li', name: '栗栗', img: 'li-chibi', chibi: 'li-chibi', stats: {atk: 75, def: 90, hp: 120, spd: 85}},
+      {id: 'hu', name: '橙铃', img: 'hu-chibi', chibi: 'hu-chibi', stats: {atk: 88, def: 82, hp: 100, spd: 105}}
+    ],
+    skins: [
+      {id: 's0', char: 'xing', name: '原始', filter: 'none', rarity: 'N'},
+      {id: 's1', char: 'xing', name: '星耀', filter: 'hue-rotate(60deg) saturate(1.3)', rarity: 'R'},
+      {id: 's2', char: 'xing', name: '冷月', filter: 'hue-rotate(200deg) saturate(1.1)', rarity: 'SR'},
+      {id: 's3', char: 'xing', name: '梦幻', filter: 'hue-rotate(280deg) saturate(1.5) brightness(1.1)', rarity: 'SSR', vip: true}
+    ],
+    currency: [{id: 'coin', icon: 'item-chest'}, {id: 'gem', icon: 'item-star'}],
+    onStart: startGame,
+    onQuit: () => { FX.running = false; },
+    onSkinChange: (sel) => { if (currentSel) currentSel.skin = sel.skin; }
+  });
+});
+
+window.__game = {
+  state: () => ({
+    time: gameTime,
+    player: {x: player.x, y: player.y, hp: Math.ceil(player.hp)},
+    level,
+    kills,
+    xp,
+    enemies: enemies.length,
+    gems: gems.length,
+    skills: Object.keys(skills).filter(k => skills[k] > 0),
+    bossAlive: bossSpawned && !bossDead
+  })
+};
+
 })();
+;FX.useSideSprites('run');

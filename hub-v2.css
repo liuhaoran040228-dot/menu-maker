@@ -1,0 +1,65 @@
+/* 星糖宇宙 homepage v2 — mobile first */
+body.hub-v2{margin:0;background:radial-gradient(120% 60% at 80% 0,#ffe3f3,transparent 60%),radial-gradient(100% 50% at 0 30%,#dff0ff,transparent 60%),#f7f5ff;color:#3d3a5c;padding-bottom:40px}
+.hub-v2 *{box-sizing:border-box}
+.v2-top{position:sticky;top:0;z-index:50;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 16px;padding-top:calc(10px + env(safe-area-inset-top,0px));background:#ffffffb8;backdrop-filter:blur(16px) saturate(1.4);-webkit-backdrop-filter:blur(16px) saturate(1.4);border-bottom:1px solid #ffffff80}
+.v2-brand{font-weight:900;font-size:18px;text-decoration:none;color:#5b4a9a;letter-spacing:.06em;display:flex;align-items:center;gap:6px}.v2-brand i{font-style:normal;display:grid;place-items:center;width:28px;height:28px;border-radius:9px;background:linear-gradient(135deg,#ff9fd1,#9f8cff);color:#fff;font-size:14px}
+.v2-top nav{display:flex;gap:4px;margin-right:auto;margin-left:8px}.v2-top nav a{font-size:13px;color:#6d6896;text-decoration:none;padding:6px 9px;border-radius:99px}.v2-top nav a:hover{background:#efeaff}
+@media(max-width:420px){.v2-top nav a{padding:6px 6px;font-size:12px}}
+.v2-hero{position:relative;margin:12px;min-height:440px;border-radius:26px;overflow:hidden;display:flex;align-items:flex-end;background:var(--hero) 62% center/cover;box-shadow:0 18px 50px #5b4a9a40}
+.v2-hero:before{content:'';position:absolute;inset:0;background:linear-gradient(180deg,transparent 30%,#1d1638cc 88%)}
+.v2-hero-copy{position:relative;padding:22px;color:#fff;width:100%}
+.v2-eyebrow{font-size:10px;letter-spacing:.3em;opacity:.85}
+.v2-hero h1{margin:6px 0 8px;font-size:38px;line-height:1.1;letter-spacing:.04em;text-shadow:0 4px 24px #0006;background:linear-gradient(100deg,#fff,#ffe0f3 50%,#d9e6ff);-webkit-background-clip:text;background-clip:text;color:transparent}
+.v2-hero h1 small{display:block;font-size:15px;font-weight:600;margin-top:8px;color:#fff;-webkit-text-fill-color:#fff;letter-spacing:.02em}
+.v2-hero p{margin:0 0 14px;font-size:13px;line-height:1.7;color:#f1eeff;max-width:460px}
+.v2-cta{display:flex;gap:10px;flex-wrap:wrap}
+.v2-btn{display:inline-flex;align-items:center;justify-content:center;min-height:46px;padding:0 22px;border-radius:99px;font:800 15px system-ui,sans-serif;text-decoration:none;cursor:pointer;width:auto;margin:0;border:0}
+.v2-btn.primary{background:linear-gradient(100deg,#ff7fc0,#a17dff);color:#fff;box-shadow:0 8px 24px #ff7fc066}
+.v2-btn.glass{background:#ffffff2e;color:#fff;border:1px solid #ffffff80;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.v2-stats{display:flex;gap:16px;margin-top:16px;font-size:11px;color:#e8e3ff}.v2-stats b{font-size:20px;color:#fff;margin-right:3px}
+.v2-sec{max-width:1120px;margin:22px auto 0;padding:0 12px}
+.v2-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin:0 4px 12px}.v2-head h2{margin:0;font-size:20px;color:#3d3566}.v2-head span{font-size:11px;color:#8a86a8}
+.v2-games{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.hub-v2 .v2-game{position:relative;display:block;padding:0;height:168px;border-radius:20px;overflow:hidden;border:0;background:#2b2450;box-shadow:0 8px 22px #3d356630;color:#fff}
+.hub-v2 .v2-game.big{grid-column:span 2;height:190px}
+.v2-cover{position:absolute;inset:0;background:center/cover;transition:transform .4s}.v2-game:hover .v2-cover{transform:scale(1.06)}
+.v2-game:after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,transparent 40%,#140f2ae6)}
+.v2-chibi{position:absolute;right:-6px;bottom:30px;height:62%;z-index:1;filter:drop-shadow(0 6px 10px #0006)}
+.v2-meta{position:absolute;z-index:2;left:12px;right:12px;bottom:10px}.hub-v2 .v2-meta h3{margin:0;font-size:15px;color:#fff;text-shadow:0 2px 8px #0008}.hub-v2 .v2-meta p{margin:2px 0 0;font-size:11px;color:#e6e1ff;line-height:1.4}
+.hub-v2 .v2-meta .tag{font-size:9px;padding:2px 6px;border-radius:99px;background:#ff7fc0;color:#fff;vertical-align:2px}
+.v2-skins{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;padding:2px 2px 10px;scrollbar-width:none}.v2-skins::-webkit-scrollbar{display:none}
+.v2-skin{flex:0 0 74%;max-width:300px;height:150px;scroll-snap-align:start;position:relative;border-radius:18px!important;overflow:hidden;border:2px solid #fff;background:var(--s) center/cover;margin:0;padding:0;cursor:pointer;box-shadow:0 8px 20px #3d356633;text-align:left}
+.v2-skin.on{border-color:#ffcf6e;box-shadow:0 0 0 3px #ffcf6e88}
+.v2-skin:after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,transparent 50%,#0009)}
+.v2-skin i{position:absolute;z-index:1;top:8px;left:8px;font:800 10px system-ui;font-style:normal;color:#3a2a00;background:linear-gradient(100deg,#ffe8a3,#ffc96b);padding:3px 8px;border-radius:99px}
+.v2-skin b{position:absolute;z-index:1;left:12px;bottom:9px;color:#fff;font-size:15px;text-shadow:0 2px 6px #000a}
+.v2-vip{margin-top:6px;display:grid;gap:12px;padding:16px;border-radius:20px;background:linear-gradient(120deg,#2a2150,#4a3375);color:#f3ecff;box-shadow:0 10px 30px #4a337555}
+.v2-vip b{font-size:16px;color:#ffe3a6}.v2-vip ul{margin:8px 0 0;padding:0;list-style:none;display:grid;grid-template-columns:1fr 1fr;gap:4px 10px;font-size:12px}.v2-vip li:before{content:'✦ ';color:#ffcf6e}
+.hub-v2 #hubVip{width:100%;margin:0;min-height:46px;border-radius:99px;border:0;font-weight:900;color:#3a2a00;background:linear-gradient(100deg,#ffe8a3,#ffbf5e);box-shadow:0 6px 18px #ffbf5e55}
+.hub-v2 .cast-section{padding:0 12px}.hub-v2 .cast-row{display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;padding-bottom:6px}.hub-v2 .cast-card{flex:0 0 120px}
+.v2-tools{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.hub-v2 .v2-tools .tcard{flex-direction:row;align-items:center;gap:10px;padding:12px;border-radius:16px;background:#ffffffd9;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.hub-v2 .v2-tools .tcard .ic{width:40px;height:40px;font-size:20px;border-radius:12px}.hub-v2 .v2-tools h3{font-size:13.5px}.hub-v2 .v2-tools p{font-size:11px}
+.v2-foot{text-align:center;font-size:11px;color:#8a86a8;margin:30px 0 0}
+@media(min-width:760px){
+.v2-hero{margin:18px auto 0;max-width:1096px;min-height:480px;align-items:center}
+.v2-hero:before{background:linear-gradient(90deg,#1d1638d9 0,#1d163866 45%,transparent 70%)}
+.v2-hero-copy{padding:48px;max-width:560px}.v2-hero h1{font-size:60px}.v2-hero h1 small{font-size:18px}.v2-hero p{font-size:15px}
+.v2-games{grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}.hub-v2 .v2-game{height:200px}.hub-v2 .v2-game.big{height:240px}
+.v2-skins{display:grid;grid-template-columns:repeat(4,1fr);overflow:visible}.v2-skin{max-width:none;height:140px}
+.v2-vip{grid-template-columns:1fr auto;align-items:center;padding:20px 26px}.v2-vip ul{grid-template-columns:repeat(4,auto)}.hub-v2 #hubVip{width:auto;padding:0 30px}
+.v2-tools{grid-template-columns:repeat(3,1fr)}
+}
+/* ===== VIP skin applied: show the art clearly (NetEase-skin style) ===== */
+body.hub-v2.premium-site-theme{background:#1a1530!important}
+body.premium-site-theme.hub-v2 .v2-hero{background:transparent;box-shadow:none}
+body.premium-site-theme.hub-v2 .v2-hero:before{background:linear-gradient(180deg,transparent 45%,#120e26b3 95%)}
+@media(min-width:760px){body.premium-site-theme.hub-v2 .v2-hero:before{background:linear-gradient(90deg,#120e26a6,transparent 55%)}}
+body.premium-site-theme.hub-v2 .v2-head h2,body.premium-site-theme.hub-v2 .v2-head span{color:#fff;text-shadow:0 2px 10px #000a}
+body.premium-site-theme.hub-v2 .v2-head{background:#120e2659;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);padding:6px 12px;border-radius:12px;margin:0 0 10px}
+body.premium-site-theme.hub-v2 .topbar{background:#140f2a73!important;border-bottom-color:#ffffff22}body.premium-site-theme.hub-v2 .topbar .brand{color:#fff}
+body.premium-site-theme.hub-v2 .v2-foot{color:#fff;text-shadow:0 1px 6px #000}
+body.premium-site-theme.hub-v2 .v2-hero-copy{margin:12px;width:auto;border-radius:20px;background:#140f2a8c;backdrop-filter:blur(14px) saturate(1.3);-webkit-backdrop-filter:blur(14px) saturate(1.3);border:1px solid #ffffff2e}
+body.premium-site-theme.hub-v2 .v2-hero{align-items:flex-end}
+@media(max-width:759px){body.premium-site-theme.hub-v2 .v2-hero{min-height:560px}}
+@media(min-width:760px){body.premium-site-theme.hub-v2 .v2-hero{align-items:center}body.premium-site-theme.hub-v2 .v2-hero-copy{margin:24px;padding:32px}}

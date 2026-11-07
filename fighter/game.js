@@ -429,7 +429,8 @@
           enemyFilter = `hue-rotate(${hue}deg)`;
         }
         ctx.filter = enemyFilter;
-        const enemyScaleX = -enemy.facing * (1 + Math.sin(enemy.stateTime * 3) * 0.05);
+        if (!hero.attacking) hero.facing = enemy.x >= hero.x ? 1 : -1; if (!enemy.attacking) enemy.facing = hero.x >= enemy.x ? 1 : -1;
+        const enemyScaleX = enemy.facing * (1 + Math.sin(enemy.stateTime * 3) * 0.05);
         const enemyScaleY = 0.95 + Math.cos(enemy.stateTime * 2) * 0.03;
         FX.drawSprite(ctx, enemyImg, enemy.x, enemy.y, enemy.h, { sx: enemyScaleX, sy: enemyScaleY });
 
@@ -785,3 +786,4 @@
   });
   window.__game={state:()=>({hero:{x:hero.x,y:hero.y,hp:hero.hp},enemy:{x:enemy.x,y:enemy.y,vx:enemy.vx,vy:enemy.vy,hp:enemy.hp,state:enemy.state},W:FX.W,H:FX.H})};
 })();
+;FX.useSideSprites('idle');

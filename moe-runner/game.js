@@ -167,41 +167,21 @@ let touchStartX = 0;
 let touchStartY = 0;
 let touchStartTime = 0;
 
+let swipeFired = false;
+function toLogical(e) { const r = cv.getBoundingClientRect(); return [(e.clientX - r.left) / r.width * W, (e.clientY - r.top) / r.height * H]; }
 cv.addEventListener('pointerdown', e => {
-  const rect = cv.getBoundingClientRect();
-  const px = (e.clientX - rect.left) / rect.width * W;
-  const py = (e.clientY - rect.top) / rect.height * H;
-  
-  if (px < W/2) {
-    touchStartX = px;
-    touchStartY = py;
-    touchStartTime = FX.time;
-  } else {
-    jump();
-  }
+  const [px, py] = toLogical(e);
+  touchStartX = px; touchStartY = py; touchStartTime = FX.time || 0.0001; swipeFired = false;
 });
-
+cv.addEventListener('pointermove', e => {
+  if (!touchStartTime || swipeFired) return;
+  const [px, py] = toLogical(e);
+  const dy = py - touchStartY, dx = px - touchStartX;
+  if (Math.abs(dy) > 36 && Math.abs(dy) > Math.abs(dx)) { swipeFired = true; dy < 0 ? jump() : slide(); }
+});
 cv.addEventListener('pointerup', e => {
-  if (touchStartTime === 0) return;
-  
-  const rect = cv.getBoundingClientRect();
-  const px = (e.clientX - rect.left) / rect.width * W;
-  const py = (e.clientY - rect.top) / rect.height * H;
-  
-  const dx = px - touchStartX;
-  const dy = py - touchStartY;
-  const dt = FX.time - touchStartTime;
-  
-  if (dt < 0.3 && Math.abs(dx) < 30 && Math.abs(dy) < 30) {
-    slide();
-  } else if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 50) {
-    if (dy < 0) {
-      jump();
-    } else {
-      slide();
-    }
-  }
-  
+  if (!touchStartTime) return;
+  if (!swipeFired) jump(); // tap anywhere = jump (low latency)
   touchStartTime = 0;
 });
 
@@ -725,18 +705,12 @@ function draw(ctx) {
     }
   }
   
-  const fgProps = Math.floor(scrollX * 1.2);
-  for (let i=0; i<5; i++) {
-    const px = ((fgProps + i*200) % (W+400)) - 200;
-    const py = groundY + 20 + Math.sin(i)*30;
-    ctx.globalAlpha = 0.5;
-    ctx.filter = 'blur(3px)';
-    ctx.fillStyle = 'rgba(0,0,0,0.3)';
-    ctx.fillRect(px-20, py-40, 40, 80);
-    ctx.filter = 'none';
-    ctx.globalAlpha = 1;
+  const fgProps = scrollX * 1.3;
+  const fgImg = FX.img('prop-flowers');
+  for (let i = 0; i < 4; i++) {
+    const px = W + 200 - (((fgProps + i * 420) % (W + 400)));
+    FX.drawSprite(ctx, fgImg, px, H + 30, 150 + (i % 2) * 30, { alpha: 0.9 });
   }
-  
   if (speed > 350) {
     ctx.strokeStyle = 'rgba(255,255,255,0.3)';
     ctx.lineWidth = 2;
@@ -891,14 +865,14 @@ function draw(ctx) {
     if (heroState==='run') {
       heroImg = FX.img('whale-run');
       const cycle = (heroAnimT*speed/100) % 1;
-      heroSy = 1 + Math.sin(cycle*Math.PI*2)*0.18;
+      heroSy = 1 + Math.sin(cycle*Math.PI*2)*0.05;
       heroSx = 1 / heroSy;
-      heroH = 150;
+      heroH = 170;
     } else if (heroState==='jump') {
       heroImg = FX.img('whale-jump');
       heroSy = heroVY<0 ? 1.25 : 0.85;
       heroSx = 1 / heroSy;
-      heroH = 150;
+      heroH = 170;
     } else if (slideTimer > 0) {
       heroImg = FX.img('whale-attack');
       heroSx = 1.4;
@@ -993,7 +967,7 @@ function gameOver() {
   
   Lobby.reportResult({
     stage: currentSel ? currentSel.stage : 0,
-    win: false, title: '跑了 ' + Math.floor(distance) + ' 米！再冲一次？',
+    win: distance >= 1000, title: '跑了 ' + Math.floor(distance) + ' 米！再冲一次？',
     stars: Math.min(3, Math.floor(completedMissions / 1.5)),
     coins,
     gems: Math.floor(score / 100),
@@ -1104,3 +1078,4 @@ window.__game = {
 };
 
 })();
+;FX.useSideSprites('run');
