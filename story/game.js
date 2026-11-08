@@ -67,7 +67,7 @@ function allowed(ch) {
 function persist() {
   store.bestChapter = Math.max(store.bestChapter || 0, state.chapter);
   store.done = [...new Set([...store.done, ...state.done])];
-  store.flags = [...new Set([...store.flags, ...state.flags])];
+  store.flags = [...new Set([...state.flags, ...state.flags])];
   store.save();
 }
 
@@ -106,6 +106,7 @@ function renderLine() {
   
   if (ln.mood === 'happy') {
     state.portrait.scale = 1.05;
+    FX.burst(state.portrait.x, state.portrait.y, {n: 20, color: '#ffdd88', speed: 100, life: 0.6, size: 4, glow: true});
   } else if (ln.mood === 'sad') {
     state.portrait.scale = 0.95;
   } else if (ln.mood === 'surprised') {
@@ -159,7 +160,9 @@ function choose(idx) {
   const choice = state.choices[idx];
   if (!choice) return;
   
-  state.flags = [...new Set([...state.flags, choice.flag])];
+  if (choice.flag) {
+    state.flags = [...new Set([...state.flags, choice.flag])];
+  }
   
   const ln = line();
   state.reply = {
@@ -179,8 +182,8 @@ function complete() {
   if (!ch) return;
   
   state.done = [...new Set([...state.done, ch.id])];
-  persist();
   try { if (window.Lobby && Lobby.reportFinished) { Lobby.reportFinished(); Lobby.newRound(); } } catch (e) {}
+  persist();
   
   FX.banner('✓ ' + ch.title);
   FX.flash('#ffffff', 0.3);
@@ -194,8 +197,8 @@ function complete() {
       title: ch.title + ' · 完',
       text: ch.vip ? '这场茶话会，留在你的星糖手账里。' : (hasNext ? '下一站：' + nextCh.title : '我们的下一次相遇'),
       hero: 'lan-chibi',
-      html: ch.game ? `<a href="${ch.game}" class="fx-icon" style="display:inline-block;margin:10px 0;padding:10px 20px;background:#6a4a7a;color:#fff;border-radius:12px;text-decoration:none">试玩 ${ch.gameName} →</a>` : '',
-      button: hasNext ? '继续下一章' : '回到章节选择',
+      html: ch.game ? `<a href="${ch.game}" class="fx-icon" style="display:inline-block;margin:10px 0;padding:10px 20px;background:#6a4a7a;color:#fff;border-radius:12px;text-decoration:none">${ch.gameName} →</a>` : '',
+      button: hasNext ? '继续' : '回到选章',
       onStart: () => {
         if (hasNext) {
           state.chapter++;
@@ -209,13 +212,13 @@ function complete() {
   }, 1000);
 }
 
-// === BUTTONS (moved to top-right below HUD) ===
+// === BUTTONS ===
 const autoBtn = FX.button({
   icon: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M8 5v14l11-7z"/></svg>',
   color: '#ff66aa',
-  size: 56,
+  size: 64,
   right: 20,
-  top: 80,
+  top: 72,
   onPress: () => {
     state.autoPlay = !state.autoPlay;
     if (state.autoPlay && state.typed) {
@@ -227,9 +230,9 @@ const autoBtn = FX.button({
 const skipBtn = FX.button({
   icon: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>',
   color: '#66aaff',
-  size: 56,
-  right: 90,
-  top: 80,
+  size: 64,
+  right: 100,
+  top: 72,
   onPress: () => {
     state.skipType = !state.skipType;
   }
@@ -238,9 +241,9 @@ const skipBtn = FX.button({
 const backBtn = FX.button({
   icon: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6z"/></svg>',
   color: '#aaaaaa',
-  size: 56,
-  right: 160,
-  top: 80,
+  size: 64,
+  right: 180,
+  top: 72,
   onPress: () => {
     state.reply = null;
     state.line = Math.max(0, state.line - 1);
@@ -266,7 +269,7 @@ cv.addEventListener('pointerdown', e => {
         return;
       }
     }
-  } else if (py > H*0.5) {
+  } else if (py > H*0.5 && py < H - 50) {
     advance();
   }
 });
@@ -312,9 +315,9 @@ function update(dt) {
   FX.hud(`
     <a class="fx-icon" href="../tools.html">‹</a>
     <span class="chip">${chapter()?.subtitle || ''}</span>
-    <span class="chip">第 ${state.line + 1} 句</span>
-    ${state.autoPlay ? '<span class="chip">⏵ 自动</span>' : ''}
-    ${state.skipType ? '<span class="chip">⏭ 速读</span>' : ''}
+    <span class="chip">${state.line + 1} / ${chapter()?.lines?.length || 0}</span>
+    ${state.autoPlay ? '<span class="chip">⏵</span>' : ''}
+    ${state.skipType ? '<span class="chip">⏭</span>' : ''}
     <span class="grow"></span>
   `);
 }
@@ -351,8 +354,8 @@ function draw(ctx) {
         ctx.filter = currentSel.skin.filter;
       }
       
-      const portraitH = H * 0.7;
-      const portraitY = H - 280 - 20;
+      const portraitH = H * 0.65;
+      const portraitY = H - 300;
       
       FX.drawSprite(ctx, portraitImg, state.portrait.x, portraitY, portraitH, {
         sx: state.portrait.scale,

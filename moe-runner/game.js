@@ -26,7 +26,7 @@ let distance = 0;
 let coins = 0;
 let combo = 0;
 let comboTimer = 0;
-const runnerLifeCap=()=>3+(window.VIP?.active()?Number(window.VIP?.perks?.().runner_bonus_lives||0):0);
+const runnerLifeCap = () => 3 + (window.VIP?.active() ? Number(window.VIP?.perks?.().runner_bonus_lives || 0) : 0);
 let lives = 3;
 let score = 0;
 let lastCoinPopupCount = 0;
@@ -181,7 +181,7 @@ cv.addEventListener('pointermove', e => {
 });
 cv.addEventListener('pointerup', e => {
   if (!touchStartTime) return;
-  if (!swipeFired) jump(); // tap anywhere = jump (low latency)
+  if (!swipeFired) jump();
   touchStartTime = 0;
 });
 
@@ -379,7 +379,7 @@ function hit() {
   FX.flash('#ff0000', 0.5);
   FX.burst(hero.x, heroY-70, {n:30, color:'#ff4444', speed:200, life:.7, size:7});
   combo = 0;
-  FX.bar('hp', lives/3);
+  FX.bar('hp', Math.max(0, lives)/runnerLifeCap());
   if (lives <= 0) {
     gameOver();
   }
@@ -417,7 +417,7 @@ function collectPowerup(p) {
     FX.banner('🛡 护盾');
   } else if (p.type==='rocket') {
     lives = Math.min(runnerLifeCap(), lives+1);
-    FX.bar('hp', lives/3);
+    FX.bar('hp', Math.max(0, lives)/runnerLifeCap());
     FX.banner('💖 生命+1');
   } else if (p.type==='x2') {
     coinMultiplier = 2;
@@ -629,7 +629,6 @@ function update(dt) {
   checkMissions();
   
   const comboStr = combo>=3 ? ` <span style="color:#ff0;font-size:1.2em">×${combo}</span>` : '';
-  const missionsDone = missions.filter(m=>m.completed).length;
   const lifeStr = Math.max(0, lives);
   const missionIcons = missions.map(m => m.icon + (m.completed ? '✓' : '')).join(' ');
   FX.hud(`
@@ -854,8 +853,6 @@ function draw(ctx) {
     ctx.fillRect(x-60, boss.y-150, 120*(boss.hp/3), 10);
   }
   
-  const hx = hero.x;
-  const hy = heroY;
   let heroImg;
   let heroH = 150;
   let heroSx = 1;
@@ -911,7 +908,7 @@ function draw(ctx) {
   if (invulnTimer>0 && Math.floor(FX.time*15)%2===0) {
     ctx.globalAlpha = 0.6;
   }
-  ctx.save(); ctx.globalAlpha *= 0.35; ctx.fillStyle = '#000'; ctx.beginPath(); ctx.ellipse(hx, 442, 46, 9, 0, 0, Math.PI*2); ctx.fill(); ctx.restore();
+  ctx.save(); ctx.globalAlpha *= 0.35; ctx.fillStyle = '#000'; ctx.beginPath(); ctx.ellipse(hero.x, 442, 46, 9, 0, 0, Math.PI*2); ctx.fill(); ctx.restore();
   ctx.shadowColor = 'rgba(255,255,255,.9)'; ctx.shadowBlur = 10;
   if (hitFlashTimer > 0) {
     ctx.filter = 'brightness(3)';
@@ -919,7 +916,7 @@ function draw(ctx) {
     ctx.filter = currentSel.skin.filter;
   }
   
-  FX.drawSprite(ctx, heroImg, hx, hy, heroH, {sx:heroSx, sy:heroSy});
+  FX.drawSprite(ctx, heroImg, hero.x, heroY, heroH, {sx:heroSx, sy:heroSy});
   ctx.shadowBlur = 0;
   ctx.filter = 'none';
   ctx.globalAlpha = 1;
@@ -928,14 +925,14 @@ function draw(ctx) {
     ctx.strokeStyle = 'rgba(102,204,255,0.6)';
     ctx.lineWidth = 4;
     ctx.beginPath();
-    ctx.arc(hx, hy-75, 65, 0, Math.PI*2);
+    ctx.arc(hero.x, heroY-75, 65, 0, Math.PI*2);
     ctx.stroke();
     
     const pulse = 1 + Math.sin(FX.time*10)*0.1;
     ctx.strokeStyle = 'rgba(102,204,255,0.3)';
     ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.arc(hx, hy-75, 65*pulse, 0, Math.PI*2);
+    ctx.arc(hero.x, heroY-75, 65*pulse, 0, Math.PI*2);
     ctx.stroke();
   }
   
@@ -945,7 +942,7 @@ function draw(ctx) {
     ctx.filter = trailFilter;
     for (let i=1; i<=3; i++) {
       const offset = i * 40;
-      FX.drawSprite(ctx, heroImg, hx-offset, hy, heroH, {sx:heroSx, sy:heroSy});
+      FX.drawSprite(ctx, heroImg, hero.x-offset, heroY, heroH, {sx:heroSx, sy:heroSy});
     }
     ctx.filter = 'none';
     ctx.globalAlpha = 1;
@@ -967,11 +964,10 @@ function gameOver() {
   
   Lobby.reportResult({
     stage: currentSel ? currentSel.stage : 0,
-    win: distance >= 1000, title: '跑了 ' + Math.floor(distance) + ' 米！再冲一次？',
+    win: distance >= 1000,
     stars: Math.min(3, Math.floor(completedMissions / 1.5)),
     coins,
-    gems: Math.floor(score / 100),
-    missionsProgress: {coins: missionProgress.coins, jumps: missionProgress.jumps, slides: missionProgress.slides, kills: missionProgress.kills}
+    gems: Math.floor(score / 100)
   });
 }
 
@@ -1015,7 +1011,7 @@ function startRun(sel) {
 
 const assets = [
   'bg-sakura','bg-forest','bg-snow','bg-neon','bg-rail','bg-sky',
-  'prop-sakura','prop-pine','prop-lantern','prop-rail','prop-crystal',
+  'prop-sakura','prop-pine','prop-lantern','prop-rail','prop-crystal','prop-flowers',
   'enemy-bat','enemy-slime','enemy-boss',
   'lan-chibi','mo-chibi','li-chibi','xing-chibi','hu-chibi',
   'whale-run','whale-jump','whale-attack','whale-idle',
@@ -1078,4 +1074,4 @@ window.__game = {
 };
 
 })();
-;FX.useSideSprites('run');
+FX.useSideSprites('run');

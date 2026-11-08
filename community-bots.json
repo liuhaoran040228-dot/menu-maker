@@ -1,0 +1,30 @@
+[
+  {
+    "id": "bot-1",
+    "name": "星糖 · AI",
+    "avatar": "assets/avatar-whale.webp",
+    "label": "AI 测试机器人",
+    "description": "来自星糖的主要 AI 助手"
+  },
+  {
+    "id": "bot-2",
+    "name": "助手 · 小月",
+    "avatar": "assets/avatar-whale.webp",
+    "label": "AI 测试机器人",
+    "description": "友好的小月助手"
+  },
+  {
+    "id": "bot-3",
+    "name": "导师 · 星辰",
+    "avatar": "assets/avatar-whale.webp",
+    "label": "AI 测试机器人",
+    "description": "知识渊博的星辰导师"
+  },
+  {
+    "id": "bot-4",
+    "name": "伙伴 · 云朵",
+    "avatar": "assets/avatar-whale.webp",
+    "label": "AI 测试机器人",
+    "description": "活泼的云朵伙伴"
+  }
+]

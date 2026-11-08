@@ -5,18 +5,46 @@
 const {cv, ctx, W, H} = FX.init({landscape: false});
 
 // === CONSTANTS ===
-const TILE_FOODS = ['🍙','🍰','🍓','🍊','🍇','🍑','🍋','🍉','🍒','🍍','🏆'];
 const TILE_COLORS = [
   '#f2e5ff','#dbefff','#ddf7ee','#ffe2e9','#fff0d1',
   '#e9d5ff','#cbe8f4','#f5cce4','#d9e6ff','#e9dbff','#fff0b8'
 ];
 
-// === CACHED TILE RENDERING ===
-const tileCache = new Map();
+const TIER_COLORS = [
+  {frame: '#e8b4f8', glow: '#d580ff'},
+  {frame: '#a8d8ff', glow: '#5eb3ff'},
+  {frame: '#98f0e6', glow: '#4dd9d0'},
+  {frame: '#ffb3d9', glow: '#ff6eb4'},
+  {frame: '#ffe8a8', glow: '#ffd966'},
+  {frame: '#d4c4ff', glow: '#9f7eff'},
+  {frame: '#b8dff8', glow: '#7ab8ff'},
+  {frame: '#f0c4e8', glow: '#e89bd9'},
+  {frame: '#c8deff', glow: '#8fb5ff'},
+  {frame: '#dcc8ff', glow: '#b395ff'},
+  {frame: '#fff4b8', glow: '#ffeb7a'},
+  {frame: '#ffd700', glow: '#ffaa00'}
+];
 
-function getCachedTile(value, size) {
+// === IMAGE & TILE CACHE ===
+const tileImageCache = new Map();
+const tileSpriteCache = new Map();
+
+function getTileImage(value) {
+  const tier = Math.min(value, 11);
+  const key = `t2048-${tier}`;
+  
+  if (tileImageCache.has(key)) {
+    return tileImageCache.get(key);
+  }
+  
+  const img = FX.img(key);
+  tileImageCache.set(key, img);
+  return img;
+}
+
+function getCachedTileSprite(value, size) {
   const key = `${value}_${size}`;
-  if (tileCache.has(key)) return tileCache.get(key);
+  if (tileSpriteCache.has(key)) return tileSpriteCache.get(key);
   
   const canvas = document.createElement('canvas');
   canvas.width = size;
@@ -42,35 +70,61 @@ function getCachedTile(value, size) {
     c.roundRect(0, 0, size, size, 12);
     c.fill();
   } else {
-    const idx = Math.min(value - 1, 10);
-    const color = TILE_COLORS[idx];
+    const tierIdx = Math.min(value, 11);
+    const tierColor = TIER_COLORS[tierIdx - 1];
+    
     const grad = c.createLinearGradient(0, 0, size, size);
-    grad.addColorStop(0, color);
-    grad.addColorStop(1, adjustColor(color, -20));
+    grad.addColorStop(0, tierColor.frame);
+    grad.addColorStop(1, adjustColor(tierColor.frame, -25));
+    
     c.fillStyle = grad;
-    c.shadowColor = value >= 8 ? '#ffd700' : 'rgba(0,0,0,0.2)';
-    c.shadowBlur = value >= 8 ? 15 : 8;
+    c.shadowColor = tierColor.glow;
+    c.shadowBlur = 16;
+    c.shadowOffsetX = 0;
+    c.shadowOffsetY = 2;
+    
     c.beginPath();
-    c.roundRect(0, 0, size, size, 12);
+    c.roundRect(4, 4, size - 8, size - 8, 14);
     c.fill();
+    
     c.shadowBlur = 0;
-    c.fillStyle = '#ffffff';
-    c.globalAlpha = 0.3;
+    c.shadowColor = 'transparent';
+    
+    c.fillStyle = 'rgba(255, 255, 255, 0.35)';
     c.beginPath();
-    c.roundRect(0, 0, size, size/3, 12);
+    c.roundRect(4, 4, size - 8, size * 0.25, 14);
     c.fill();
-    c.globalAlpha = 1;
-    c.font = `${Math.floor(size * 0.45)}px sans-serif`;
+    
+    const imgSize = Math.floor(size * 0.82);
+    const imgX = (size - imgSize) / 2;
+    const imgY = (size - imgSize) * 0.35;
+    
+    try {
+      const tileImg = getTileImage(value);
+      if (tileImg.complete || tileImg.width > 0) {
+        c.drawImage(tileImg, imgX, imgY, imgSize, imgSize);
+      }
+    } catch (e) {
+      c.fillStyle = '#cccccc';
+      c.fillRect(imgX, imgY, imgSize, imgSize);
+    }
+    
+    const pillHeight = Math.floor(size * 0.22);
+    const pillY = size - pillHeight - 4;
+    
+    c.fillStyle = 'rgba(0, 0, 0, 0.15)';
+    c.beginPath();
+    c.roundRect(size * 0.1, pillY, size * 0.8, pillHeight, 8);
+    c.fill();
+    
+    c.fillStyle = 'rgba(255, 255, 255, 0.9)';
+    c.font = `bold ${Math.floor(size * 0.14)}px sans-serif`;
     c.textAlign = 'center';
     c.textBaseline = 'middle';
-    c.fillStyle = '#333333';
-    c.fillText(TILE_FOODS[idx], size/2, size/2 - size * 0.05);
-    c.font = `bold ${Math.floor(size * 0.18)}px sans-serif`;
-    c.fillStyle = 'rgba(255,255,255,0.9)';
-    c.fillText(Math.pow(2, value).toString(), size/2, size/2 + size * 0.28);
+    c.fillText(String(Math.pow(2, value)), size / 2, pillY + pillHeight / 2);
   }
   
-  tileCache.set(key, canvas);
+  tileSpriteCache.set(key, canvas);
   return canvas;
 }
 
@@ -364,14 +418,15 @@ function move(direction) {
             const gridW = gridSize * tileSize + (gridSize - 1) * gap;
             const gridX = (W - gridW) / 2;
             const boardH = gridW;
-            const boardY = (H - boardH) / 2 - 50;
+            const boardY = (H - boardH) / 2 - 30;
             const gridY = boardY + 12;
             const x = gridX + c * (tileSize + gap) + tileSize / 2;
             const y = gridY + r * (tileSize + gap) + tileSize / 2;
             
+            const tierColor = TIER_COLORS[Math.min(val, 11) - 1];
             FX.burst(x, y, {
               n: 12,
-              color: TILE_COLORS[Math.min(val - 1, 10)],
+              color: tierColor.frame,
               speed: 120,
               life: 0.5,
               size: 6,
@@ -462,7 +517,7 @@ const undoBtn = FX.button({
   color: '#ff6b9d',
   size: 70,
   right: W/2 - 105,
-  bottom: 60,
+  bottom: 50,
   key: 'KeyZ',
   onPress: () => {
     if (undoUses <= 0) return;
@@ -493,7 +548,7 @@ const bombBtn = FX.button({
   color: '#ffaa00',
   size: 70,
   right: W/2 - 5,
-  bottom: 60,
+  bottom: 50,
   key: 'KeyX',
   onPress: () => {
     if (bombUses <= 0) return;
@@ -516,7 +571,7 @@ const bombBtn = FX.button({
     const gridW = gridSize * tileSize + (gridSize - 1) * gap;
     const gridX = (W - gridW) / 2;
     const boardH = gridW;
-    const boardY = (H - boardH) / 2 - 50;
+    const boardY = (H - boardH) / 2 - 30;
     const gridY = boardY + 12;
     const x = gridX + target.c * (tileSize + gap) + tileSize / 2;
     const y = gridY + target.r * (tileSize + gap) + tileSize / 2;
@@ -539,7 +594,7 @@ const shuffleBtn = FX.button({
   color: '#66ccff',
   size: 70,
   right: W/2 + 95,
-  bottom: 60,
+  bottom: 50,
   key: 'KeyC',
   onPress: () => {
     if (shuffleUses <= 0) return;
@@ -658,10 +713,12 @@ function update(dt) {
     <span class="chip" style="opacity:${shuffleUses>0?1:0.4}">🔀×${shuffleUses}</span>
   `;
   
+  const foodIcons = ['🍙','🍰','🍓','🍊','🍇','🍑','🍋','🍉','🍒','🍍','🏆'];
+  
   FX.hud(`
     <a class="fx-icon" href="../tools.html">‹</a>
     <span class="chip">🍱 ${score}</span>
-    <span class="chip">🎯 ${TILE_FOODS[targetTile-1]}</span>
+    <span class="chip">🎯 ${foodIcons[targetTile-1]}</span>
     ${usesStr}
     <span class="grow"></span>
   `);
@@ -670,11 +727,10 @@ function update(dt) {
 // === DRAW ===
 function drawTile(ctx, value, x, y, size, scale = 1) {
   const s = Math.max(0, size * scale);
-  const r = Math.max(0, 12 * scale);
   
   if (s === 0) return;
   
-  const cached = getCachedTile(value, size);
+  const cached = getCachedTileSprite(value, size);
   
   if (scale === 1) {
     ctx.drawImage(cached, x - size/2, y - size/2);
@@ -708,10 +764,9 @@ function draw(ctx) {
   const tileSize = Math.min((W - 80) / gridSize, 110);
   const gap = 8;
   const gridW = gridSize * tileSize + (gridSize - 1) * gap;
-  const gridH = gridSize * tileSize + (gridSize - 1) * gap;
   const gridX = (W - gridW) / 2;
   const boardH = gridW;
-  const boardY = (H - boardH) / 2 - 50;
+  const boardY = (H - boardH) / 2 - 30;
   const gridY = boardY + 12;
   
   const chibiSize = 160;
@@ -829,7 +884,7 @@ function startRun(sel) {
   bombBtn.right = W/2 - 5;
   shuffleBtn.right = W/2 + 95;
   
-  tileCache.clear();
+  tileSpriteCache.clear();
   
   initGrid();
   
@@ -840,8 +895,9 @@ function startRun(sel) {
 // === INIT ===
 const assets = [
   'bg-garden','bg-sakura','bg-forest','bg-neon','bg-snow','bg-sky',
-  'li-chibi','mo-chibi','lan-chibi','xing-chibi','hu-chibi',
-  'item-heart','item-star','item-ice'
+  'li-chibi',
+  'item-heart','item-star','item-ice',
+  't2048-1','t2048-2','t2048-3','t2048-4','t2048-5','t2048-6','t2048-7','t2048-8','t2048-9','t2048-10','t2048-11'
 ];
 
 FX.load(assets).then(() => {

@@ -178,10 +178,35 @@ body{display:flex;flex-direction:column}
 .trans-ring{position:absolute;width:40vmin;height:40vmin;border-radius:50%;border:4px solid #fff;box-shadow:0 0 30px #ff7ac6,inset 0 0 30px #c26bff;animation:ring 1.2s ease-out forwards}
 @keyframes ring{0%{transform:scale(.2);opacity:1}100%{transform:scale(3);opacity:0}}
 .photo-hide-btn{position:absolute;right:12px;top:calc(env(safe-area-inset-top,0px) + 12px);z-index:101}
-.items-grid{grid-auto-rows:118px;padding-bottom:64px}.item-tile{aspect-ratio:auto;height:118px}#screen-wardrobe .top-hud .hud-btn{min-width:36px;height:36px;padding:0 8px;font-size:17px}#screen-wardrobe .top-hud>div{flex-wrap:nowrap!important;gap:6px!important}.blink-l{opacity:0;animation:blinkk 4.6s infinite}@keyframes blinkk{0%,93%,100%{opacity:0}95%,97%{opacity:1}}@media (prefers-reduced-motion:reduce){.blink-l{animation:none}}html.qa .preview-banner,html.qa .account-trigger,html.qa #account-widget,html.qa .account-float{display:none!important}</style>
+.items-grid{grid-auto-rows:118px;padding-bottom:64px}.item-tile{aspect-ratio:auto;height:118px}#screen-wardrobe .top-hud .hud-btn{min-width:36px;height:36px;padding:0 8px;font-size:17px}#screen-wardrobe .top-hud>div{flex-wrap:nowrap!important;gap:6px!important}.blink-l{opacity:0;animation:blinkk 4.6s infinite}@keyframes blinkk{0%,93%,100%{opacity:0}95%,97%{opacity:1}}@media (prefers-reduced-motion:reduce){.blink-l{animation:none}}html.qa .preview-banner,html.qa .account-trigger,html.qa #account-widget,html.qa .account-float{display:none!important}.face-cam .doll-container{transform:scale(2.6);transform-origin:50% 4%}
+#screen-face .doll-stage{top:calc(env(safe-area-inset-top,0px) + 50px);bottom:calc(40vh - 8px)}
+.face-panel .panel-content{gap:6px}
+.face-opts{flex:1;min-height:0;overflow-y:auto}
+.face-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.face-tile{height:92px;border-radius:14px;background:radial-gradient(circle at 50% 35%,#fff8fd,#ead6ff);position:relative;overflow:hidden;border:2px solid rgba(255,255,255,.3);cursor:pointer;transition:transform .2s}
+.face-tile img{position:absolute;inset:4px 4px 20px;width:calc(100% - 8px);height:calc(100% - 24px);object-fit:contain}
+.face-tile span{position:absolute;left:0;right:0;bottom:2px;text-align:center;font-size:10.5px;font-weight:700;color:#5a2a5a}
+.face-tile .ft-def{position:absolute;inset:0 0 18px;display:flex;align-items:center;justify-content:center;font-size:20px;color:#b070c0;font-weight:900}
+.face-tile.on{border-color:#ff7ac6;box-shadow:0 0 14px rgba(255,122,198,.8);transform:scale(1.03)}
+.face-tile.locked{filter:grayscale(.6) brightness(.7)}
+.swatches{display:flex;flex-wrap:wrap;gap:12px;padding:6px 2px}
+.sw{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;width:54px}
+.sw i{width:42px;height:42px;border-radius:50%;border:3px solid rgba(255,255,255,.5);box-shadow:0 3px 10px rgba(0,0,0,.35),inset 0 3px 6px rgba(255,255,255,.4);display:flex;align-items:center;justify-content:center;font-style:normal;font-size:20px;background:rgba(255,255,255,.12);transition:transform .2s}
+.sw span{font-size:11px;font-weight:700}
+.sw.on i{border-color:#fff;transform:scale(1.15);box-shadow:0 0 16px #ff7ac6}
+.slider-row{display:flex;align-items:center;gap:12px;padding:18px 8px;font-size:22px}
+.slider-row input{flex:1;accent-color:#ff7ac6;height:28px}
+.slider-row b{font-size:14px;width:44px}
+.face-presets{display:flex;gap:6px;padding-bottom:4px;padding-right:110px}
+.preset{display:flex;flex:1;gap:2px}
+.preset button{flex:1;border:0;border-radius:12px;padding:7px 4px;font-weight:800;font-size:12px;color:#fff;background:rgba(255,255,255,.12)}
+.preset button[data-s]{flex:0 0 34px;background:linear-gradient(135deg,#ff7ac6,#c26bff)}
+.preset.has button[data-l]{background:rgba(255,122,198,.35)}
+.preset button:disabled{opacity:.45}
+</style>
 </head>
 <body>
-<script src="dressup-data.js"></script><script src="../qqshow.js"></script><script src="../vip.js"></script>
+<script src="dressup-data.js"></script><script src="../starface.js"></script><script src="../qqshow.js"></script><script src="../vip.js"></script>
 <div id="app"></div>
 <canvas id="sparkle-canvas"></canvas>
 <div class="loading-screen" id="loading">
@@ -196,7 +221,7 @@ const DATA=window.DressData;
 const QA=new URLSearchParams(location.search).has('qa');if(QA)document.documentElement.classList.add('qa');
 if(!DATA){alert('DressData not loaded');return}
 const W=DATA.W,H=DATA.H;
-let state={equipped:{},coins:1000,gems:50,level:5,avatar:'🦄',sound:true,lastDaily:null};
+let state={face:{},equipped:{},coins:1000,gems:50,level:5,avatar:'🦄',sound:true,lastDaily:null};
 let undoStack=[];
 let currentScreen='lobby';
 let currentSlot='全部';
@@ -225,7 +250,7 @@ osc.start();
 osc.stop(audioCtx.currentTime+dur);
 }
 function saveState(){
-try{if(window.StarShow&&StarShow.save){const it={};Object.entries(state.equipped).forEach(([k,v])=>{const x=getItem(v);if(x&&isUnlocked(x))it[k]=v});StarShow.save({v:1,items:it,set:state.set||null});}}catch(e){}
+try{if(window.StarShow&&StarShow.save){const it={};Object.entries(state.equipped).forEach(([k,v])=>{const x=getItem(v);if(x&&isUnlocked(x))it[k]=v});StarShow.save({v:1,items:it,set:state.set||null,face:state.face||{}});}}catch(e){}
 try{
 localStorage.setItem('lili-dressup-v1',JSON.stringify(state));
 }catch(e){}
@@ -570,6 +595,8 @@ renderWardrobe();
 renderCollection();
 }else if(screen==='photo'){
 renderPhoto();
+}else if(screen==='face'){
+renderDoll();renderScene();renderFace();
 }
 }
 function renderDoll(container){
@@ -579,13 +606,14 @@ renderDollTo(c,state.equipped);
 });
 }
 const IMC={};function im(src){if(!IMC[src]){const i=new Image();i.src=src;IMC[src]=i}return IMC[src]}
-function ready(i){return i.complete&&i.naturalWidth?Promise.resolve(i):new Promise(r=>{i.onload=()=>r(i);i.onerror=()=>r(i)})}
-function baseCanvas(eq){const c=document.createElement('canvas');c.width=W;c.height=H;const b=DATA.base;const er=Object.values(eq).map(getItem).filter(it=>it&&it.erase&&(it.slot!=='bottom'||!(getItem(eq.top)||{}).full)).map(it=>it.erase);Promise.all([b,...er].map(x=>ready(im(x.src)))).then(()=>{const g=c.getContext('2d');g.drawImage(im(b.src),b.x,b.y,b.w,b.h);g.globalCompositeOperation='destination-out';er.forEach(e=>g.drawImage(im(e.src),e.x,e.y,e.w,e.h));});return c}
+function ready(i){return i.complete&&i.naturalWidth?Promise.resolve(i):new Promise(r=>{i.addEventListener('load',()=>r(i),{once:true});i.addEventListener('error',()=>r(i),{once:true})})}
+function baseCanvas(eq,FACE){const c=document.createElement('canvas');c.width=W;c.height=H;const b=DATA.base;const er=Object.values(eq).map(getItem).filter(it=>it&&it.erase&&(it.slot!=='bottom'||!(getItem(eq.top)||{}).full)).map(it=>it.erase);Promise.all([b,...er].map(x=>ready(im(x.src)))).then(()=>{const g=c.getContext('2d');g.drawImage(im(b.src),b.x,b.y,b.w,b.h);g.globalCompositeOperation='destination-out';er.forEach(e=>g.drawImage(im(e.src),e.x,e.y,e.w,e.h));g.globalCompositeOperation='source-over';if(FACE&&window.StarFace&&StarFace.recolorBase)StarFace.recolorBase(c,DATA,FACE);});return c}
 function baseFor(eq){return DATA.base;const t=getItem(eq.top),b=getItem(eq.bottom);if(t&&t.baseAlt)return t.baseAlt;if(b&&b.baseAlt&&!(t&&t.full))return b.baseAlt;return DATA.base}
 function withDefaults(eq){eq={...eq};const df=DATA.defaults||{};if(!eq.top&&df.top)eq.top=df.top;const t=getItem(eq.top);if(!eq.bottom&&df.bottom&&!(t&&t.full))eq.bottom=df.bottom;return eq}
 function renderDollTo(container,equipped,setId){
+const isMain=equipped===state.equipped;const FACE=isMain?state.face:null;const faceOn=FACE&&window.StarFace&&!StarFace.isDefault(FACE);
 setId=setId===undefined?(equipped===state.equipped?state.set:null):setId;const ST=setId&&getSet(setId);
-if(ST&&ST.illus&&ST.items.every(id=>equipped[getItem(id).slot]===id)){const had=container.querySelector('.illus');container.innerHTML='';const im=document.createElement('img');im.className='illus'+(had?'':' pop-in');im.src=ST.illus.src;Object.assign(im.style,{left:ST.illus.x/W*100+'%',top:ST.illus.y/H*100+'%',width:ST.illus.w/W*100+'%',height:ST.illus.h/H*100+'%',zIndex:20});container.appendChild(im);return}
+if(!faceOn&&ST&&ST.illus&&ST.items.every(id=>equipped[getItem(id).slot]===id)){const had=container.querySelector('.illus');container.innerHTML='';const im=document.createElement('img');im.className='illus'+(had?'':' pop-in');im.src=ST.illus.src;Object.assign(im.style,{left:ST.illus.x/W*100+'%',top:ST.illus.y/H*100+'%',width:ST.illus.w/W*100+'%',height:ST.illus.h/H*100+'%',zIndex:20});container.appendChild(im);return}
 const prevSrc=new Set([...container.querySelectorAll('img')].map(i=>i.getAttribute('src')));const first=!container.children.length;
 container.innerHTML='';
 const layers=[];
@@ -598,14 +626,14 @@ const topItem=getItem(equipped.top);
 if(topItem&&topItem.full)return;
 }
 if(item.layers){
-item.layers.forEach(l=>layers.push(l));
+item.layers.forEach(l=>layers.push({...l,_slot:item.slot}));
 }
 });
 equipped=withDefaults(equipped);
 if(DATA.blink)layers.push({...DATA.blink,blink:true});
 layers.sort((a,b)=>(a.z||0)-(b.z||0));
 layers.forEach(l=>{
-if(l.isBase){const c=baseCanvas(equipped);c.className='base-cv';c.style.cssText='position:absolute;left:0;top:0;width:100%;height:100%;z-index:20;pointer-events:none';container.appendChild(c);return}
+if(l.isBase){const c=baseCanvas(equipped,faceOn?FACE:null);c.className='base-cv';c.style.cssText='position:absolute;left:0;top:0;width:100%;height:100%;z-index:20;pointer-events:none';container.appendChild(c);return}
 const img=document.createElement('img');
 img.src=l.src;
 img.style.left=(l.x/W*100)+'%';
@@ -616,11 +644,14 @@ img.style.zIndex=l.z||0;
 img.onerror=()=>img.style.display='none';
 if(!first&&!prevSrc.has(l.src))img.className='pop-in';
 if(l.blink)img.className='blink-l';
+if(faceOn&&(l.role==='hairBack'||l.role==='hairFront'))StarFace.applyHair(img,DATA,FACE);else if(faceOn&&(l.blink||l._slot==='expr'||l._slot==='makeup')&&StarFace.applyHairMasked)StarFace.applyHairMasked(img,l,DATA,FACE);
 container.appendChild(img);
 });
+container._sfSpecs=[];
+if(faceOn){const tok=container._sfTok=(container._sfTok||0)+1;StarFace.build(DATA,FACE,{coverLayers:layers.filter(l=>l.src&&!l.isBase)}).then(sp=>{if(container._sfTok!==tok)return;container._sfSpecs=sp;StarFace.mount(container,sp,W,H)});}
 }
 function renderScene(){
-document.querySelectorAll('#screen-wardrobe .scene-bg,#screen-photo .scene-bg').forEach(sceneBg=>{
+document.querySelectorAll('#screen-wardrobe .scene-bg,#screen-photo .scene-bg,#screen-face .scene-bg').forEach(sceneBg=>{
 if(currentScene){
 const scene=getScene(currentScene);
 if(scene){
@@ -674,6 +705,40 @@ renderWardrobe();
 });
 grid.appendChild(tile);
 });
+}
+
+let faceTab='shape';
+const FACE_TABS=[['shape','🙂','脸型'],['eyes','👁️','眼睛'],['iris','🎨','瞳色'],['brows','〰️','眉毛'],['mouth','👄','嘴巴'],['skin','✋','肤色'],['blush','🌸','腮红'],['makeup','💄','妆容'],['hair','💇','发色'],['mark','✦','美人痣']];
+function setFace(patch,quiet){state.face={...(state.face||{}),...patch};state.set=null;saveState();renderDoll();if(!quiet){playSound(1100,.06);burstSparkles();}renderFace();}
+function renderFace(){
+const F=DATA.face;if(!F)return;const f=window.StarFace?StarFace.normalize(state.face):{};
+const tabs=document.getElementById('face-tabs');if(!tabs)return;
+tabs.innerHTML=FACE_TABS.map(([id,ic,nm])=>`<div class="tab-btn${id===faceTab?' active':''}" data-t="${id}"><div class="tab-icon">${ic}</div><div class="tab-label">${nm}</div></div>`).join('');
+tabs.querySelectorAll('.tab-btn').forEach(t=>t.onclick=()=>{faceTab=t.dataset.t;renderFace()});
+const box=document.getElementById('face-opts');let h='';
+if(['shape','eyes','brows','mouth'].includes(faceTab)){
+ const ps=F.parts.filter(p=>p.kind===faceTab);
+ h=`<div class="face-tile${!f[faceTab]?' on':''}" data-v=""><div class="ft-def">原生</div><span>默认</span></div>`+ps.map(p=>`<div class="face-tile${f[faceTab]===p.id?' on':''}" data-v="${p.id}"><img src="${p.layer.src}" alt=""><span>${p.name}</span></div>`).join('');
+ box.innerHTML=`<div class="face-grid">${h}</div>`;box.querySelectorAll('.face-tile').forEach(t=>t.onclick=()=>setFace({[faceTab]:t.dataset.v||null}));
+}else if(['iris','skin','hair'].includes(faceTab)){
+ box.innerHTML=`<div class="swatches">${F[faceTab].map(c=>`<div class="sw${f[faceTab]===c.id?' on':''}" data-v="${c.id}"><i style="background:${c.hex}"></i><span>${c.name}</span></div>`).join('')}</div>`;
+ box.querySelectorAll('.sw').forEach(t=>t.onclick=()=>setFace({[faceTab]:t.dataset.v}));
+}else if(faceTab==='blush'){
+ box.innerHTML=`<div class="slider-row"><span>🌸</span><input type="range" min="0" max="1" step="0.05" value="${f.blush}" id="blush-r" aria-label="腮红浓度"><b>${Math.round(f.blush*100)}%</b></div>`;
+ const r=document.getElementById('blush-r');r.oninput=()=>{r.nextElementSibling.textContent=Math.round(r.value*100)+'%'};r.onchange=()=>setFace({blush:Number(r.value)});
+}else if(faceTab==='mark'){
+ const ms=[['none','🚫','无'],['eye','👁️','泪痣'],['lip','👄','唇痣'],['cheek','✦','颊痣']];
+ box.innerHTML=`<div class="swatches">${ms.map(([v,ic,nm])=>`<div class="sw${f.mark===v?' on':''}" data-v="${v}"><i class="ic">${ic}</i><span>${nm}</span></div>`).join('')}</div>`;
+ box.querySelectorAll('.sw').forEach(t=>t.onclick=()=>setFace({mark:t.dataset.v}));
+}else if(faceTab==='makeup'){
+ const its=DATA.items.filter(i=>i.slot==='makeup');
+ box.innerHTML=`<div class="face-grid"><div class="face-tile${!state.equipped.makeup?' on':''}" data-v=""><div class="ft-def">素颜</div><span>无妆</span></div>${its.map(i=>`<div class="face-tile${state.equipped.makeup===i.id?' on':''}${isUnlocked(i)?'':' locked'}" data-v="${i.id}"><img src="${i.layers[0].src}" alt=""><span>${i.name}</span></div>`).join('')}</div>`;
+ box.querySelectorAll('.face-tile').forEach(t=>t.onclick=()=>{const v=t.dataset.v;if(!v){undoStack.push({...state.equipped});delete state.equipped.makeup;state.set=null;saveState();renderDoll();}else if(state.equipped.makeup!==v)equipItem(v);renderFace()});
+}
+let pr=[];try{pr=JSON.parse(localStorage.getItem('lili-face-presets')||'[]')}catch(e){}
+document.getElementById('face-presets').innerHTML=[0,1,2].map(i=>`<div class="preset${pr[i]?' has':''}"><button data-l="${i}" ${pr[i]?'':'disabled'}>📂 预设${i+1}</button><button data-s="${i}" title="保存到预设${i+1}">💾</button></div>`).join('');
+document.querySelectorAll('#face-presets [data-s]').forEach(b=>b.onclick=()=>{pr[b.dataset.s]={face:{...state.face},makeup:state.equipped.makeup||null};localStorage.setItem('lili-face-presets',JSON.stringify(pr));playSound(1500,.1);renderFace()});
+document.querySelectorAll('#face-presets [data-l]').forEach(b=>b.onclick=()=>{const p=pr[b.dataset.l];if(!p)return;if(p.makeup)state.equipped.makeup=p.makeup;else delete state.equipped.makeup;setFace(p.face?{...StarFace.defaults,...p.face}:{})});
 }
 function renderCollection(){
 const modal=document.getElementById('collection-grid');
@@ -755,11 +820,12 @@ else if(currentPose==='特写'){ctx.translate(0,dh*0.62);ctx.scale(1.9,1.9);}
 else if(currentPose==='远景')ctx.scale(0.78,0.78);
 ctx.translate(-cx,-cy);
 const doll=document.querySelector('#screen-photo .doll-container');
-const map={};if(doll)doll.querySelectorAll('img').forEach(i=>map[i.getAttribute('src')]=i);
+const map={};if(doll)doll.querySelectorAll('img').forEach(i=>map[i.dataset.osrc||i.getAttribute('src')]=i);
 const eq=withDefaults(state.equipped);const L=[{isBase:true,z:20}];Object.values(eq).forEach(id=>{const it=getItem(id);if(!it||!isUnlocked(it))return;if(it.slot==='bottom'){const t=getItem(eq.top);if(t&&t.full)return}L.push(...it.layers)});
 const bcv=doll&&doll.querySelector('canvas.base-cv');
 const ilm=doll&&doll.querySelector('img.illus');const STI=state.set&&getSet(state.set);if(ilm&&STI&&STI.illus&&ilm.naturalWidth){ctx.drawImage(ilm,dx+STI.illus.x*k,dy+STI.illus.y*k,STI.illus.w*k,STI.illus.h*k);L.length=0;}
-L.sort((p,q)=>p.z-q.z).forEach(l=>{if(l.isBase){if(bcv)ctx.drawImage(bcv,dx,dy,W*k,H*k);return}const im=map[l.src];if(im&&im.complete&&im.naturalWidth)ctx.drawImage(im,dx+l.x*k,dy+l.y*k,l.w*k,l.h*k)});
+const sfs=(doll&&doll._sfSpecs)||[];const HF=window.StarFace&&!StarFace.isDefault(state.face)?StarFace.hairFilter(DATA,state.face):'none';sfs.forEach(s=>L.push({...s,sf:true}));
+L.sort((p,q)=>p.z-q.z).forEach(l=>{if(l.sf){const el=l.canvas||[...doll.querySelectorAll('img.sf-layer')].find(i=>(i.dataset.osrc?new URL(i.dataset.osrc,location.href).href:i.src)===new URL(l.src,location.href).href);if(el){ctx.save();if(l.filter)ctx.filter=l.filter;if(l.blend&&l.blend!=='normal')ctx.globalCompositeOperation=l.blend;ctx.drawImage(el,dx+l.x*k,dy+l.y*k,l.w*k,l.h*k);ctx.restore();}return}if(l.isBase){if(bcv)ctx.drawImage(bcv,dx,dy,W*k,H*k);return}const im=map[l.src];if(im&&im.complete&&im.naturalWidth){if(false){ctx.save();ctx.drawImage(im,dx+l.x*k,dy+l.y*k,l.w*k,l.h*k);ctx.restore()}else ctx.drawImage(im,dx+l.x*k,dy+l.y*k,l.w*k,l.h*k)}});
 ctx.restore();
 if(stickerOn){for(let i=0;i<60;i++){const x=Math.random()*1080,y=Math.random()*1620,r=2+Math.random()*7;ctx.fillStyle=`rgba(255,${200+Math.random()*55|0},255,${.5+Math.random()*.5})`;ctx.beginPath();for(let j=0;j<8;j++){const a=j*Math.PI/4,rr=j%2?r*.35:r*1.6;ctx.lineTo(x+Math.cos(a)*rr,y+Math.sin(a)*rr)}ctx.fill()}}
 ctx.filter='none';
@@ -857,6 +923,7 @@ app.innerHTML=`
 <div class="daily-card" id="daily-card"></div>
 <div class="side-buttons">
 <div class="hud-btn" onclick="LiliDress.dailySignIn()">🎁</div>
+<div class="hud-btn" onclick="LiliDress.show('face')" title="捏脸">🙂</div>
 <div class="hud-btn" onclick="LiliDress.show('collection')">📖</div>
 <div class="hud-btn" onclick="LiliDress.show('photo')">📸</div>
 <div class="hud-btn" onclick="LiliDress.toggleSound()">${state.sound?'🔊':'🔇'}</div>
@@ -893,6 +960,7 @@ app.innerHTML=`
 <div class="hud-btn" onclick="LiliDress.random()"><span>🎲</span></div>
 <div class="hud-btn" onclick="LiliDress.clear()"><span>🧹</span></div>
 <div class="hud-btn" onclick="LiliDress.score()"><span>⭐</span></div>
+<div class="hud-btn" onclick="LiliDress.show('face')" title="捏脸">🙂</div>
 <div class="hud-btn" onclick="LiliDress.show('collection')" title="套装">👗</div>
 <div class="hud-btn" onclick="LiliDress.show('photo')" title="拍照">📸</div>
 <div class="hud-btn" onclick="LiliDress.cycleScene()" title="场景">🖼️</div>
@@ -907,6 +975,23 @@ app.innerHTML=`
 <div class="items-grid"></div>
 </div>
 </div>
+</div>
+<div class="screen" id="screen-face">
+<div class="scene-bg"></div>
+<div class="doll-stage face-cam"><div class="doll-container"></div></div>
+<div class="top-hud">
+<div class="hud-btn" onclick="LiliDress.show('wardrobe')" title="返回">↩</div>
+<div style="flex:1;text-align:center;font-weight:800;font-size:17px;text-shadow:0 2px 8px #a0306f">🙂 捏脸</div>
+<div class="hud-btn" onclick="LiliDress.faceRandom()" title="随机">🎲</div>
+<div class="hud-btn" onclick="LiliDress.faceReset()" title="重置">↺</div>
+</div>
+<div class="bottom-panel face-panel" style="height:40vh">
+<div class="panel-handle"></div>
+<div class="panel-content">
+<div class="tabs-row" id="face-tabs"></div>
+<div id="face-opts" class="face-opts"></div>
+<div class="face-presets" id="face-presets"></div>
+</div></div>
 </div>
 <div class="screen" id="screen-collection">
 <div class="scene-bg" style="background-image:url(${DATA.lobbyBg})"></div>
@@ -1111,12 +1196,12 @@ showSetDetail(dailySet.id);
 renderDoll();
 renderScene();
 showScreen(currentScreen);
-window.__lobbyShow=()=>{const host=document.querySelector('#screen-lobby .doll-container');if(!(window.StarShow&&host))return;host.classList.remove('breathing');host.innerHTML='';StarShow.render(host,{v:1,items:{...state.equipped},set:state.set||null},{size:'full',lazy:false,dataUrl:new URL('dressup-data.js',location.href).href}).catch(()=>renderDollTo(host,state.equipped));};window.__lobbyShow();
+window.__lobbyShow=()=>{const host=document.querySelector('#screen-lobby .doll-stage>*');if(!(window.StarShow&&host))return;host.classList.remove('breathing');host.innerHTML='';StarShow.render(host,{v:1,items:{...state.equipped},set:state.set||null,face:state.face||undefined},{size:'full',lazy:false,dataUrl:new URL('dressup-data.js',location.href).href}).catch(()=>renderDollTo(host,state.equipped));};window.__lobbyShow();
 initSparkles();
 {const lb=document.getElementById('screen-lobby');for(let i=0;i<18;i++){const e=document.createElement('div');e.className='float-sparkle';e.textContent=['✦','✧','❀','✨'][i%4];e.style.left=Math.random()*100+'%';e.style.top=(15+Math.random()*65)+'%';e.style.fontSize=(10+Math.random()*16)+'px';e.style.animationDelay=(Math.random()*4)+'s';lb.appendChild(e)}}
 window.LiliDress={
 equip:equipItem,
-equipSet:equipSet,showSetDetail:showSetDetail,togglePanel:()=>document.getElementById('wardrobe-panel').classList.toggle('collapsed'),togglePhotoUI:()=>document.querySelector('.photo-controls').classList.toggle('hide'),
+equipSet:equipSet,setFace:(f)=>setFace(f,true),faceRandom:()=>{setFace(StarFace.random(DATA))},faceReset:()=>{state.face={};setFace({},true)},showSetDetail:showSetDetail,togglePanel:()=>document.getElementById('wardrobe-panel').classList.toggle('collapsed'),togglePhotoUI:()=>document.querySelector('.photo-controls').classList.toggle('hide'),
 show:showScreen,
 state:()=>({...state}),
 undo:undo,

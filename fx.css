@@ -57,3 +57,15 @@ body:not(.fx-hasjoy) .fx-joy{display:none}
 .fx-drag .fx-joy.idle{opacity:0}
 .fx-drag .fx-joy i{width:34px;height:34px;margin:-17px;opacity:.55;box-shadow:0 0 22px #ff9be0,0 0 0 10px #ffffff14}
 .fx-joy{scale:var(--joy,1)}
+/* in-game: hide hub VIP skin background & account widgets (account still reachable via lobby 设置→账号) */
+html.fx-game .premium-skin-layer,body.fx-game .premium-skin-layer,
+html.fx-game .account-trigger,body.fx-game .account-trigger,
+html.fx-game #profile-vip-mark,body.fx-game #profile-vip-mark,
+html.fx-game .premium-shortcuts,body.fx-game .premium-shortcuts,
+html.fx-game .appearance-shortcuts,body.fx-game .appearance-shortcuts,
+html.fx-game .premium-xp-toast,body.fx-game .premium-xp-toast{display:none!important}
+body.fx-game.premium-site-theme{background:#0b0a18!important}
+.fx-hud{max-width:calc(100% - 84px);overflow:hidden;flex-wrap:nowrap}
+.fx-hud{gap:4px}
+.fx-hud .chip{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-left:7px;padding-right:7px}
+@media (max-width:420px){.fx-hud .chip{font-size:12px}}

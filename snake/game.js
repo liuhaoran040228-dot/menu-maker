@@ -41,6 +41,7 @@ let countdownNumber = 3;
 
 let currentSel = null;
 let stage = 0;
+let startTime = 0;
 
 // Board layout (computed each frame)
 let cellSize = 32;
@@ -71,7 +72,7 @@ function computeBoardLayout() {
   const availH = FX.H - topSpace - bottomSpace;
   
   cellSize = Math.floor(Math.min(availW / COLS, availH / ROWS));
-  cellSize = Math.max(24, Math.min(cellSize, 48)); // clamp
+  cellSize = Math.max(24, Math.min(cellSize, 48));
   
   boardW = COLS * cellSize;
   boardH = ROWS * cellSize;
@@ -271,6 +272,7 @@ function initGame() {
   startGrace = 1.2;
   countdownTimer = 3;
   countdownNumber = 3;
+  startTime = 0;
   
   dashBtn.setCd(0);
   shieldBtn.setCd(0);
@@ -399,6 +401,7 @@ function update(dt) {
     if (countdownTimer <= 0) {
       countdownNumber = 0;
       FX.banner('开始！');
+      startTime = FX.time;
     }
     return;
   }
@@ -816,15 +819,19 @@ function endGame(victory) {
   store.bestScore = best;
   store.save();
   
+  const playTime = Math.round(FX.time - startTime);
   const stars = victory ? (snake.length >= targetLength + 5 ? 3 : snake.length >= targetLength ? 2 : 1) : 0;
   
   Lobby.reportResult({
-    win: !!won,
+    win: victory,
     stage: currentSel ? currentSel.stage : 0,
     stars,
     coins: Math.floor(score / 10),
     gems: Math.floor(score / 50),
-    win: victory
+    score,
+    time: playTime,
+    combo,
+    length: snake.length
   });
 }
 
@@ -833,7 +840,6 @@ function updateHUD() {
   const targetStr = currentSel && currentSel.mode === 'story' ? ` 目标 ${snake.length}/${targetLength}` : '';
   
   FX.hud(`
-    <a class="fx-icon" href="../tools.html">‹</a>
     <span class="chip">🏆 ${score}</span>
     <span class="chip">📏 ${Math.max(0, snake.length)}</span>
     ${targetStr}
@@ -858,13 +864,12 @@ function draw(ctx) {
   
   FX.motes(ctx, '#ffddee');
   
-  // Draw board panel
   ctx.save();
   ctx.shadowColor = 'rgba(0,0,0,0.4)';
   ctx.shadowBlur = 20;
   ctx.shadowOffsetY = 8;
-  ctx.fillStyle = 'rgba(255,255,255,0.75)';
-  ctx.strokeStyle = 'rgba(100,150,255,0.3)';
+  ctx.fillStyle = 'rgba(255,255,255,0.85)';
+  ctx.strokeStyle = 'rgba(100,150,255,0.4)';
   ctx.lineWidth = 4;
   const radius = 16;
   ctx.beginPath();
@@ -875,22 +880,20 @@ function draw(ctx) {
   ctx.shadowOffsetY = 0;
   ctx.restore();
   
-  // Draw checkerboard
   for (let gy = 0; gy < ROWS; gy++) {
     for (let gx = 0; gx < COLS; gx++) {
       const x = boardX + gx * cellSize;
       const y = boardY + gy * cellSize;
       
-      const cellColor = (gx + gy) % 2 === 0 ? 'rgba(220,235,255,0.5)' : 'rgba(200,220,240,0.4)';
+      const cellColor = (gx + gy) % 2 === 0 ? 'rgba(220,235,255,0.6)' : 'rgba(200,220,240,0.5)';
       ctx.fillStyle = cellColor;
       ctx.fillRect(x + 1, y + 1, cellSize - 2, cellSize - 2);
       
-      ctx.fillStyle = 'rgba(0,0,0,0.05)';
+      ctx.fillStyle = 'rgba(0,0,0,0.06)';
       ctx.fillRect(x + 1, y + cellSize - 2, cellSize - 2, 1);
     }
   }
   
-  // Draw obstacles
   obstacles.forEach(ob => {
     const pos = gridToScreen(ob.x, ob.y);
     const size = cellSize * 0.85;
@@ -906,7 +909,6 @@ function draw(ctx) {
     ctx.strokeRect(pos.x - size/2, pos.y - size/2, size, size);
   });
   
-  // Draw portals
   portals.forEach(p => {
     const pos = gridToScreen(p.x, p.y);
     
@@ -928,7 +930,6 @@ function draw(ctx) {
     ctx.stroke();
   });
   
-  // Draw boss bombs
   if (boss && boss.active) {
     boss.bombs.forEach(b => {
       const pos = gridToScreen(b.x, b.y);
@@ -949,7 +950,6 @@ function draw(ctx) {
     });
   }
   
-  // Draw food
   food.forEach(f => {
     const pos = gridToScreen(f.x, f.y);
     
@@ -973,7 +973,6 @@ function draw(ctx) {
     ctx.restore();
   });
   
-  // Draw enemies
   enemies.forEach(en => {
     const pos = gridToScreen(en.rx, en.ry);
     let img;
@@ -998,7 +997,6 @@ function draw(ctx) {
     }
   });
   
-  // Draw boss
   if (boss && boss.active) {
     const pos = gridToScreen(boss.rx, boss.ry);
     
@@ -1012,7 +1010,6 @@ function draw(ctx) {
     ctx.drawImage(img, pos.x - size/2, pos.y - size/2, size, size);
     ctx.filter = 'none';
     
-    // HP bar
     const barW = cellSize * 1.2;
     const barH = 6;
     ctx.fillStyle = 'rgba(0,0,0,0.5)';
@@ -1021,7 +1018,6 @@ function draw(ctx) {
     ctx.fillRect(pos.x - barW/2, pos.y - size/2 - 12, barW * (boss.hp / 3), barH);
   }
   
-  // Draw snake
   if (snake.length > 0) {
     const bodyGrad = ctx.createLinearGradient(boardX, boardY, boardX + boardW, boardY + boardH);
     bodyGrad.addColorStop(0, currentSel && currentSel.skin && currentSel.skin.filter !== 'none' ? '#88dd88' : '#66cc66');
@@ -1053,7 +1049,6 @@ function draw(ctx) {
     
     ctx.stroke();
     
-    // Shadow
     ctx.strokeStyle = 'rgba(0,0,0,0.15)';
     ctx.lineWidth = cellSize * 0.68;
     ctx.stroke();
@@ -1061,7 +1056,6 @@ function draw(ctx) {
     ctx.filter = 'none';
     ctx.globalAlpha = 1;
     
-    // Draw head
     const chibis = {lan:'lan-chibi',mo:'mo-chibi',li:'li-chibi',xing:'xing-chibi',hu:'hu-chibi'};
     const charKey = currentSel ? currentSel.char : 'lan';
     const chibiImg = FX.img(chibis[charKey]);
@@ -1081,7 +1075,6 @@ function draw(ctx) {
     ctx.restore();
     ctx.filter = 'none';
     
-    // Shield effect
     if (shieldActive) {
       ctx.strokeStyle = 'rgba(102,204,255,0.7)';
       ctx.lineWidth = 3;
@@ -1098,7 +1091,6 @@ function draw(ctx) {
     }
   }
   
-  // Countdown overlay
   if (countdownNumber > 0) {
     ctx.fillStyle = 'rgba(0,0,0,0.6)';
     ctx.fillRect(0, 0, FX.W, FX.H);

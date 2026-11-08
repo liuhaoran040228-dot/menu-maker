@@ -1,6 +1,9 @@
 /* Premium presentation is driven by the account-state RPC, never user metadata. */
 window.StarPremium=(()=>{'use strict';
 const root=new URL('.',document.currentScript.src).href;
+const gameFolders=new Set(['space-shooter','snake','fighter','monster-loot','moe-runner','lili-merge','lili-match','lili-2048','lili-fortune','lili-dressup','xiuxian','story','survivor','td']);
+const gamePage=window.STAR_GAME_PAGE===true||gameFolders.has(location.pathname.slice(new URL(root).pathname.length).split('/')[0]);
+if(gamePage)document.body.dataset.gameShell='true';
 const thresholds=[1,3,6,12,24,36,60,96];
 const titles=['星海初绽','月汐流光','银河逐梦','幻夜星冠','晶海绮梦','月神华章','极光圣翼','星穹帝冕'];
 const themes=[
@@ -30,8 +33,9 @@ perksDialog=document.createElement('dialog');perksDialog.className='premium-dial
 for(const d of [themeDialog,perksDialog])d.addEventListener('click',e=>{if(e.target===d){const r=d.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)d.close()}});
 toast=document.createElement('div');toast.className='premium-xp-toast';toast.setAttribute('role','status');document.body.append(toast);
 }
-function open(which){if(!state)return;renderPopups();(which==='themes'?themeDialog:perksDialog).showModal();}
+function open(which){if(which==='perks'){location.href=root+'vip-center.html';return;}if(!state)return;renderPopups();(which==='themes'?themeDialog:perksDialog).showModal();}
 function applyBackground(s,userId,active){
+if(gamePage){document.body.classList.remove('premium-site-theme');document.body.dataset.siteTheme='default';document.querySelectorAll('.premium-skin-layer').forEach(el=>el.remove());document.documentElement.style.removeProperty('--premium-bg');return;}
 let id=s?.profile?.background_id||'default';const theme=themes.find(x=>x.id===id);if(!userId||(theme?.tier&&!active))id='default';
 const key=userId+':'+id;if(key===lastThemeKey)return;lastThemeKey=key;
 const chosen=themes.find(x=>x.id===id);document.body.classList.toggle('premium-site-theme',!!chosen?.file);if(!document.querySelector('.premium-skin-layer')){const L=document.createElement('div');L.className='premium-skin-layer';L.setAttribute('aria-hidden','true');document.body.prepend(L);}document.body.dataset.siteTheme=id;
@@ -42,6 +46,7 @@ function render({data,user,active,button,rotateButton}){
  state=data;const tier=active?Number(data?.vip?.tier||0):0,l=Number(data?.profile?.level||1),frame=active?Number(data?.entitlements?.frame_rank||0):(l>=20?4:l>=10?2:l>=5?1:0);
  document.body.dataset.vipTier=tier;document.body.dataset.accountLevel=l;
  for(const b of [button,rotateButton]){
+ if(gamePage){b.classList.remove('premium-account');b.dataset.tier='0';b.setAttribute('aria-label','我的账号');continue;}
  b.dataset.tier=tier;b.classList.toggle('premium-account',tier>0);
  if(!tier&&b.querySelector('svg')?.dataset.tier){b.querySelector('svg').outerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M4.5 21v-2a7.5 7.5 0 0 1 15 0v2"/></svg>';}
  if(tier){const svg=b.querySelector('svg');if(svg&&svg.dataset.tier!==String(tier)){svg.outerHTML=glyph(tier).replace('<svg ','<svg data-tier="'+tier+'" ');}const caption=b.querySelector('span');if(caption)caption.textContent='VIP'+tier;}
@@ -64,8 +69,7 @@ function renderPopups(){if(!themeDialog||!state)return;const allowed=state.entit
  themeDialog.querySelector('.premium-close').onclick=()=>themeDialog.close();
  for(const btn of themeDialog.querySelectorAll('[data-theme]'))btn.onclick=async()=>{btn.disabled=true;try{await handlers.setBackground(btn.dataset.theme);}catch(e){const f=themeDialog.querySelector('#premium-theme-feedback');if(f)f.textContent=e.message;}finally{btn.disabled=false;}};
  themeDialog.querySelector('#premium-download').onclick=async()=>{const t=themes.find(x=>x.id===current);if(!t?.file||!allowed.includes(t.id))return;const b=await fetch(root+'assets/'+t.file).then(r=>r.blob()),url=URL.createObjectURL(b),a=document.createElement('a');a.href=url;a.download='星糖宇宙-'+t.name+'.webp';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
- const unlocks=['鲸落海城壁纸 · 樱糖粉皮肤','樱色约定壁纸 · 跑酷生命 +1','银河来信壁纸 · 星河蓝皮肤','霓虹夜航壁纸 · 跑酷生命 +2','晶海绮梦壁纸 · 晶辉铭牌','月神花庭壁纸 · 跑酷生命 +3','极光天轨壁纸 · 冰翼流光','星穹帝宫壁纸 · 幻彩帝冕'];
- perksDialog.innerHTML=`<header class="premium-modal-head"><span>STAR CANDY · PRESTIGE</span><h2>每一颗星，都值得闪耀</h2><p>累计兑换月数升级 · 年卡计 12 月 · 权益逐级累加</p><button type="button" class="premium-close" aria-label="关闭等级权益">×</button></header><div class="premium-modal-body"><div class="tier-ladder">${thresholds.map((n,i)=>`<article class="tier-row ${tier===i+1?'current':''}"><div>${badge(i+1)}<small>累计 ${n} 月</small></div><section><b>${unlocks[i]}</b><p>共 ${i+1} 款专属背景/壁纸 · ${(1+(i+1)/10).toFixed(1)}× 经验</p><span>VIP${i+1}专属头像挂件 · ${i>=6?'流光羽翼':i>=4?'冠冕':'星钻'}徽章 · ${i>=5?'渐变':'星辉'}昵称</span></section></article>`).join('')}</div><h3>账号成长也有礼物</h3><div class="level-perk-list"><p><b>Lv.1</b> 每日登录 +10 基础经验；游戏活跃每 60 秒 +5 基础经验，每日10次。</p><p><b>Lv.5</b> 解锁月光花园背景、星芒头像框；游戏每日上限12次。</p><p><b>Lv.10</b> 解锁秘境森林背景、月辉头像框；游戏每日上限14次。</p><p><b>Lv.15</b> 游戏每日上限16次，之后不再增加。</p><p><b>Lv.20 / 40</b> 太阳 / 皇冠成长图标，解锁曜日华章 / 星王冠冕挂件。</p></div><p class="premium-info">经验加成由服务器计算并取整；重登不重复领取。活跃时长、每日上限与背景解锁均由后台校验。历史永久会员保留权益，按 VIP8 展示。VIP1–VIP8各有专属头像框与悬挂徽章；Lv.5/10/20/40成长挂件无需会员。到期隐藏VIP挂件，续期恢复原选择。游戏皮肤是静态网页内的便捷门槛，不是防破解 DRM。</p></div>`;
+ perksDialog.innerHTML=`<header class="premium-modal-head"><h2>贵族规则中心</h2><button type="button" class="premium-close" aria-label="关闭">×</button></header><div class="premium-modal-body"><a href="${root}vip-center.html">查看全部等级、星糖与背景规则 ›</a></div>`;
  perksDialog.querySelector('.premium-close').onclick=()=>perksDialog.close();
 }
 function xpToast(gain){if(!gain||!toast)return;toast.textContent='✦ +'+gain+' XP · 星光成长';toast.classList.add('show');setTimeout(()=>toast.classList.remove('show'),2600);}

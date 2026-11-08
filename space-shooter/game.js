@@ -9,12 +9,13 @@ let sel = null;
 let state = {
   running: false, score: 0, coins: 0, gems: 0,
   px: 150, py: 270, vx: 0, vy: 0, rot: 0,
-  starRot: 0, shootCd: 0, iframes: 0,
+  shootCd: 0, iframes: 0, dashCd: 0, dashTime: 0,
   enemies: [], bullets: [], powerups: [],
   boss: null, bossHp: 0, bossTotalHp: 0, bossPhase: 0,
   stageTime: 0, waveIdx: 0, waveSpawned: false,
   combo: 0, comboTime: 0, hp: 3, maxHp: 3,
-  stageClear: false, missionKills: 0, missionGraze: 0, missionNoHit: true
+  stageClear: false, missionKills: 0, missionGraze: 0, missionNoHit: true,
+  charState: 'idle', charTime: 0, charAnim: []
 };
 
 const STAGES = [
@@ -24,7 +25,7 @@ const STAGES = [
     {t:8, formation:'swarm', enemy:'slime', count:6, y:120},
     {t:13, formation:'dual', enemy:'alien', count:4, y:150},
     {t:18, formation:'line', enemy:'slime', count:3, y:110, spacing:140},
-    {t:22, boss:true, hp:120, phases:3}
+    {t:22, boss:true, hp:120, phases:2}
   ]},
   {id:'moon', name:'月面基地', bg:'bg-moon', props:[], waves:[
     {t:1, formation:'line', enemy:'turret', count:2, y:100, spacing:250},
@@ -32,7 +33,7 @@ const STAGES = [
     {t:9, formation:'line', enemy:'bat', count:3, y:130, spacing:180},
     {t:14, formation:'v', enemy:'bat', count:5, y:100},
     {t:19, formation:'swarm', enemy:'slime', count:4, y:120},
-    {t:24, boss:true, hp:150, phases:3}
+    {t:24, boss:true, hp:150, phases:2}
   ]},
   {id:'neon', name:'霓虹都市', bg:'bg-neon', props:[{img:'prop-lantern',speed:.4,y:300,h:240,gap:500,alpha:.8}], waves:[
     {t:1, formation:'swarm', enemy:'bat', count:5, y:90},
@@ -40,7 +41,7 @@ const STAGES = [
     {t:10, formation:'dual', enemy:'bat', count:6, y:100},
     {t:15, formation:'v', enemy:'alien', count:5, y:110},
     {t:20, formation:'swarm', enemy:'slime', count:5, y:100},
-    {t:26, boss:true, hp:180, phases:3}
+    {t:26, boss:true, hp:180, phases:2}
   ]},
   {id:'undersea', name:'深海遗迹', bg:'bg-undersea', props:[{img:'prop-coral',speed:.5,y:280,h:300,gap:480,alpha:.85}], waves:[
     {t:1, formation:'v', enemy:'alien', count:5, y:100},
@@ -48,7 +49,7 @@ const STAGES = [
     {t:11, formation:'swarm', enemy:'bat', count:4, y:110},
     {t:16, formation:'dual', enemy:'bat', count:8, y:90},
     {t:22, formation:'line', enemy:'slime', count:4, y:140, spacing:120},
-    {t:28, boss:true, hp:220, phases:4}
+    {t:28, boss:true, hp:220, phases:3}
   ]},
   {id:'station', name:'太空站', bg:'bg-station', props:[], waves:[
     {t:1, formation:'line', enemy:'turret', count:4, y:100, spacing:130},
@@ -56,7 +57,7 @@ const STAGES = [
     {t:11, formation:'swarm', enemy:'alien', count:7, y:100},
     {t:16, formation:'dual', enemy:'bat', count:10, y:80},
     {t:23, formation:'line', enemy:'turret', count:3, y:110, spacing:160},
-    {t:29, boss:true, hp:280, phases:4}
+    {t:29, boss:true, hp:280, phases:3}
   ]},
   {id:'sakura', name:'樱花神社', bg:'bg-sakura', props:[{img:'prop-sakura',speed:.35,y:320,h:220,gap:460,alpha:.88}], waves:[
     {t:1, formation:'swarm', enemy:'alien', count:6, y:90},
@@ -64,7 +65,7 @@ const STAGES = [
     {t:11, formation:'line', enemy:'slime', count:4, y:130, spacing:150},
     {t:16, formation:'dual', enemy:'bat', count:12, y:85},
     {t:24, formation:'swarm', enemy:'alien', count:6, y:95},
-    {t:31, boss:true, hp:320, phases:4}
+    {t:31, boss:true, hp:320, phases:3}
   ]}
 ];
 
@@ -77,11 +78,11 @@ const ENEMY_DEFS = {
 };
 
 const CHAR_SPRITES = {
-  lan: ['whale-idle','whale-run','whale-jump','whale-attack','whale-cast'],
-  mo: ['mo-chibi','mo-chibi','mo-chibi','mo-chibi','mo-chibi'],
-  li: ['li-chibi','li-chibi','li-chibi','li-chibi','li-chibi'],
-  xing: ['xing-chibi','xing-chibi','xing-chibi','xing-chibi','xing-chibi'],
-  hu: ['hu-chibi','hu-chibi','hu-chibi','hu-chibi','hu-chibi']
+  lan: {idle:'whale-idle', run:'whale-run', jump:'whale-jump', attack:'whale-attack', cast:'whale-cast'},
+  mo: {idle:'mo-chibi', run:'mo-chibi', jump:'mo-chibi', attack:'mo-chibi', cast:'mo-chibi'},
+  li: {idle:'li-chibi', run:'li-chibi', jump:'li-chibi', attack:'li-chibi', cast:'li-chibi'},
+  xing: {idle:'xing-chibi', run:'xing-chibi', jump:'xing-chibi', attack:'xing-chibi', cast:'xing-chibi'},
+  hu: {idle:'hu-chibi', run:'hu-chibi', jump:'hu-chibi', attack:'hu-chibi', cast:'hu-chibi'}
 };
 
 let scrollX = 0, parallaxLayers = [];
@@ -101,6 +102,8 @@ function startRun(selection) {
   state.vy = 0;
   state.iframes = 0;
   state.shootCd = 0;
+  state.dashCd = 0;
+  state.dashTime = 0;
   state.enemies = [];
   state.bullets = [];
   state.powerups = [];
@@ -115,6 +118,8 @@ function startRun(selection) {
   state.missionKills = 0;
   state.missionGraze = 0;
   state.missionNoHit = true;
+  state.charState = 'idle';
+  state.charTime = 0;
   scrollX = 0;
 
   const stg = STAGES[sel.stage];
@@ -171,7 +176,7 @@ function spawnBoss() {
   state.boss = {
     id: 'boss', def, x: FX.W - 150, y: 150,
     hp: wave.hp, shootCd: .5, time: 0, phase: 0,
-    maxPhases: wave.phases, hit: 0
+    maxPhases: wave.phases, hit: 0, patternCycle: 0
   };
   state.bossHp = wave.hp;
   state.bossTotalHp = wave.hp;
@@ -183,23 +188,36 @@ function spawnBoss() {
 
 function updatePlayer(dt) {
   const jstick = FX.joystick({side: 'left'});
-  const spd = 300 * sel.stats.speed;
+  const spd = 280 * sel.stats.speed;
   state.vx = jstick.x * spd;
   state.vy = jstick.y * spd;
   state.px = Math.max(60, Math.min(FX.W * 0.6, state.px + state.vx * dt));
   state.py = Math.max(110, Math.min(FX.H - 60, state.py + state.vy * dt));
-  state.rot = FX.lerp(state.rot, state.vy * .1, .2);
-  state.starRot += dt * 3;
+  
   state.iframes = Math.max(0, state.iframes - dt);
+  state.dashCd = Math.max(0, state.dashCd - dt);
+  state.dashTime = Math.max(0, state.dashTime - dt);
+
+  const moving = Math.hypot(state.vx, state.vy) > 20;
+  if (state.dashTime > 0) {
+    state.charState = 'jump';
+  } else if (moving) {
+    state.charState = 'run';
+  } else {
+    state.charState = 'idle';
+  }
+  state.charTime += dt;
 
   state.shootCd -= dt;
   if (state.shootCd <= 0) {
     const ang = 0;
     const dmg = sel.stats.atk;
-    for (let i = 0; i < 1 + Math.floor(dmg); i++) {
-      spawnBullet(state.px + 40, state.py - 20 + i * 15 - 7, ang, 400, 'player', dmg);
+    const bulletCount = 1 + Math.floor(dmg * 0.5);
+    for (let i = 0; i < bulletCount; i++) {
+      const spread = (bulletCount - 1) * 10;
+      spawnBullet(state.px + 40, state.py - 20 + i * 10 - spread / 2, ang, 420, 'player', dmg);
     }
-    state.shootCd = .12;
+    state.shootCd = 0.1;
   }
 }
 
@@ -210,10 +228,12 @@ function updateEnemies(dt) {
 
     if (e.id === 'bat') {
       e.vy = Math.sin(e.time * 4) * 80;
+    } else if (e.id === 'slime') {
+      e.y += Math.sin(e.time * 2) * 20 * dt;
     }
 
     e.x += e.vx * dt;
-    e.y += e.vy * dt;
+    e.y = Math.max(80, Math.min(FX.H - 80, e.y));
 
     if (e.def.shoot) {
       e.shootCd -= dt;
@@ -234,12 +254,13 @@ function updateEnemies(dt) {
 
     if (e.hp <= 0) {
       explode(e.x, e.y, 50);
-      state.score += Math.floor(100 * (1 + state.combo * .15));
+      const baseScore = Math.floor(100 * (1 + state.combo * .15));
+      state.score += baseScore;
       state.combo++;
       state.comboTime = 2.5;
       state.missionKills++;
       if (Math.random() > .65) spawnPowerup(e.x, e.y);
-      FX.text(e.x, e.y, `+${Math.floor(100 * (1 + state.combo * .15))}`, {color: '#ffeb3b', size: 18, crit: state.combo > 5});
+      FX.text(e.x, e.y, `+${baseScore}`, {color: '#ffeb3b', size: 18, crit: state.combo > 5});
       return false;
     }
     return true;
@@ -250,6 +271,7 @@ function updateBoss(dt) {
   if (!state.boss) return;
   const b = state.boss;
   b.time += dt;
+  b.patternCycle += dt;
   b.hit = Math.max(0, b.hit - dt);
 
   b.x = FX.lerp(b.x, FX.W - 200 + Math.sin(b.time * .8) * 100, .02);
@@ -262,32 +284,34 @@ function updateBoss(dt) {
     FX.banner(`⚠ Boss 阶段 ${b.phase + 1}`);
     FX.shake(18);
     FX.ring(b.x, b.y, {color: '#ff00ff', r: 150, life: .6});
+    b.patternCycle = 0;
   }
 
   b.shootCd -= dt;
   if (b.shootCd <= 0) {
     const ang = Math.atan2(state.py - b.y, state.px - b.x);
+    
     if (b.phase === 0) {
-      for (let i = 0; i < 8; i++) {
-        spawnBullet(b.x, b.y, (Math.PI * 2 / 8) * i + b.time, 120, 'enemy', 1);
+      const bulletCount = Math.floor(b.patternCycle * 1.5) % 12 + 6;
+      for (let i = 0; i < bulletCount; i++) {
+        spawnBullet(b.x, b.y, (Math.PI * 2 / bulletCount) * i + b.time, 120, 'enemy', 1);
       }
     } else if (b.phase === 1) {
-      for (let i = -3; i <= 3; i++) {
-        spawnBullet(b.x, b.y, ang + i * .25, 150, 'enemy', 1);
-      }
-    } else if (b.phase === 2) {
-      for (let i = 0; i < 12; i++) {
-        spawnBullet(b.x, b.y, (Math.PI * 2 / 12) * i, 130, 'enemy', 1);
+      for (let i = -4; i <= 4; i++) {
+        spawnBullet(b.x, b.y, ang + i * .2, 150, 'enemy', 1);
       }
       for (let i = 0; i < 6; i++) {
-        spawnBullet(b.x, b.y, (Math.PI * 2 / 6) * i + Math.PI / 6, 100, 'enemy', 1);
+        spawnBullet(b.x, b.y, (Math.PI * 2 / 6) * i, 100, 'enemy', 1);
       }
-    } else {
+    } else if (b.phase === 2) {
       for (let i = 0; i < 16; i++) {
-        spawnBullet(b.x, b.y, (Math.PI * 2 / 16) * i + b.time * 2, 140, 'enemy', 1);
+        spawnBullet(b.x, b.y, (Math.PI * 2 / 16) * i + b.time * 1.5, 140, 'enemy', 1);
+      }
+      for (let i = -2; i <= 2; i++) {
+        spawnBullet(b.x, b.y, ang + i * .3, 160, 'enemy', 1);
       }
     }
-    b.shootCd = .35 - .05 * b.phase;
+    b.shootCd = Math.max(.25, .45 - .08 * b.phase);
   }
 
   if (b.hp <= 0) {
@@ -335,7 +359,7 @@ function checkCollisions() {
           FX.burst(bul.x, bul.y, {n: 8, color: '#ff6600', speed: 220, life: .35, size: 4, glow: true});
           FX.shake(6);
           FX.trail(bul.x, bul.y, '#ff6600', 4);
-          if (state.bossHp % 20 < bul.dmg) FX.hitstop(.08);
+          if (state.bossHp % 25 < bul.dmg) FX.hitstop(.08);
         }
       }
     } else if (bul.type === 'enemy') {
@@ -392,7 +416,7 @@ function spawnBullet(x, y, ang, spd, type, dmg) {
 
 function spawnPowerup(x, y) {
   const types = ['heart', 'star', 'chest'];
-  state.powerups.push({type: types[Math.floor(Math.random() * types.length)], x, y, time: 0});
+  state.powerups.push({type: types[Math.floor(Math.random() * types.length)], x, y, time: 0, vx: 0, vy: 0});
 }
 
 function updatePowerups(dt) {
@@ -402,9 +426,13 @@ function updatePowerups(dt) {
     const dx = state.px - p.x, dy = state.py - p.y;
     const dist = Math.hypot(dx, dy);
     if (dist < 180) {
-      p.x += Math.sign(dx) * 280 * dt;
-      p.y += Math.sign(dy) * 280 * dt;
+      p.vx += Math.sign(dx) * 500 * dt;
+      p.vy += Math.sign(dy) * 500 * dt;
+      p.vx *= 0.95;
+      p.vy *= 0.95;
     }
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
     if (dist < 50) {
       if (p.type === 'heart') state.hp = Math.min(state.maxHp, state.hp + 1);
       else if (p.type === 'star') state.score += 200;
@@ -468,7 +496,7 @@ function checkGameEnd() {
     FX.running = false;
     const stars = 0;
     Lobby.reportResult({
-      win: false, stage: sel.stage, stars, coins: state.coins, gems: state.gems,
+      stage: sel.stage, stars, coins: state.coins, gems: state.gems,
       missionsProgress: {kills: state.missionKills, graze: state.missionGraze, nohit: state.missionNoHit ? 1 : 0}
     });
     return;
@@ -518,27 +546,46 @@ function draw(ctx) {
 
 function drawPlayer(ctx) {
   if (state.iframes > 0 && Math.floor(state.iframes * 12) % 2 === 0) return;
-  const sprites = CHAR_SPRITES[sel?.char || 'lan'];
-  const charImg = FX.img(sprites[0]);
+  
+  const charMap = CHAR_SPRITES[sel?.char || 'lan'];
+  const spriteKey = state.charState === 'attack' ? 'attack' : state.charState === 'jump' ? 'jump' : state.charState === 'run' ? 'run' : 'idle';
+  const charImg = FX.img(charMap[spriteKey]);
   const starImg = FX.img('item-star');
 
   ctx.save();
   ctx.filter = 'none';
+  
+  const starRot = (FX.time * 2) % (Math.PI * 2);
   if (starImg && starImg.naturalWidth) {
-    ctx.save(); ctx.translate(state.px, state.py - 6); ctx.rotate(state.starRot); ctx.scale(1, 0.45);
-    ctx.globalAlpha = .95; const sw = 96, sh = sw * starImg.naturalHeight / starImg.naturalWidth;
-    ctx.drawImage(starImg, -sw / 2, -sh / 2, sw, sh); ctx.restore();
+    ctx.save();
+    ctx.translate(state.px, state.py - 40);
+    ctx.rotate(starRot);
+    ctx.scale(1, 0.45);
+    ctx.globalAlpha = .95;
+    const sw = 120, sh = sw * starImg.naturalHeight / starImg.naturalWidth;
+    ctx.drawImage(starImg, -sw / 2, -sh / 2, sw, sh);
+    ctx.restore();
   }
   ctx.filter = sel?.skin?.filter || 'none';
 
-  for (let i = 0; i < 4; i++) {
-    const trailX = state.px - i * 12;
-    const trailY = state.py + Math.sin(FX.time * 8 + i) * .5;
-    FX.trail(trailX, trailY, '#ffeb3b', 3);
+  for (let i = 0; i < 3; i++) {
+    const trailAlpha = 0.3 - i * 0.1;
+    ctx.globalAlpha = trailAlpha;
+    const trailX = state.px - i * 16;
+    const trailY = state.py + Math.sin(FX.time * 8 + i) * 2;
+    FX.trail(trailX, trailY, '#ffeb3b', 4);
   }
+  ctx.globalAlpha = 1;
 
-  const sy = 1 + Math.sin(FX.time * 6) * .08;
-  FX.drawSprite(ctx, charImg, state.px, state.py, 140, {rot: state.rot, sy, alpha: state.iframes > 0 && Math.floor(FX.time * 14) % 2 ? 0.55 : 1});
+  const bobY = state.charState === 'run' ? Math.sin(state.charTime * 8) * 6 : state.charState === 'jump' ? -15 : 0;
+  const sy = state.charState === 'run' ? 1 + Math.sin(state.charTime * 8 + Math.PI / 2) * 0.1 : 1;
+  const sx = 1;
+  
+  FX.drawSprite(ctx, charImg, state.px, state.py + bobY, 165, {
+    sx, sy, 
+    alpha: state.iframes > 0 && Math.floor(FX.time * 14) % 2 ? 0.55 : 1,
+    glow: state.dashTime > 0
+  });
 
   ctx.restore();
 }
@@ -547,8 +594,9 @@ function drawEnemy(ctx, e) {
   const img = FX.img(e.def.sprite);
   ctx.save();
   ctx.filter = `hue-rotate(${e.def.hue}deg)${e.hit > 0 ? ' brightness(3)' : ''}`;
-  const wobble = Math.sin(e.wobble + e.time * 4) * .05;
-  FX.drawSprite(ctx, img, e.x, e.y, e.def.h, {sx: 1 + wobble, sy: 1 - wobble});
+  const wobble = Math.sin(e.wobble + e.time * 4) * .06;
+  const bobY = e.id === 'bat' ? Math.sin(e.time * 4) * 8 : 0;
+  FX.drawSprite(ctx, img, e.x, e.y + bobY, e.def.h, {sx: 1 + wobble, sy: 1 - wobble});
   ctx.restore();
 }
 
@@ -557,7 +605,7 @@ function drawBoss(ctx) {
   const img = FX.img(b.def.sprite);
   ctx.save();
   ctx.filter = `hue-rotate(${b.def.hue}deg)${b.hit > 0 ? ' brightness(3)' : ''}`;
-  const pulse = 1 + Math.sin(b.time * 3) * .06;
+  const pulse = 1 + Math.sin(b.time * 3) * .08;
   FX.drawSprite(ctx, img, b.x, b.y, 300, {sx: pulse, sy: pulse, glow: true});
   ctx.restore();
 }
@@ -565,14 +613,27 @@ function drawBoss(ctx) {
 function drawBullet(ctx, b) {
   ctx.save();
   if (b.type === 'player') {
-    ctx.filter = 'none'; ctx.globalCompositeOperation = 'lighter';
-    ctx.fillStyle = 'rgba(80,220,255,.35)'; ctx.beginPath(); ctx.ellipse(b.x - 8, b.y, 22, 9, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#7ff6ff'; ctx.beginPath(); ctx.ellipse(b.x, b.y, 12, 5, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(b.x + 3, b.y, 3, 0, Math.PI * 2); ctx.fill();
+    ctx.filter = 'none';
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.fillStyle = 'rgba(80,220,255,.35)';
+    ctx.beginPath();
+    ctx.ellipse(b.x - 8, b.y, 22, 9, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#7ff6ff';
+    ctx.beginPath();
+    ctx.ellipse(b.x, b.y, 12, 5, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.arc(b.x + 3, b.y, 3, 0, Math.PI * 2);
+    ctx.fill();
     FX.trail(b.x - 12, b.y, '#00ffff', 4);
   } else {
     ctx.filter = 'none';
-    ctx.fillStyle = 'rgba(255,90,200,.3)'; ctx.beginPath(); ctx.arc(b.x, b.y, 15, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = 'rgba(255,90,200,.3)';
+    ctx.beginPath();
+    ctx.arc(b.x, b.y, 15, 0, Math.PI * 2);
+    ctx.fill();
     ctx.fillStyle = '#ff80ff';
     ctx.beginPath();
     ctx.arc(b.x, b.y, 9, 0, Math.PI * 2);
@@ -588,8 +649,9 @@ function drawBullet(ctx, b) {
 function drawPowerup(ctx, p) {
   const icons = {heart: 'item-heart', star: 'item-star', chest: 'item-chest'};
   const img = FX.img(icons[p.type]);
-  const bob = Math.sin(p.time * 5) * 5;
-  FX.drawSprite(ctx, img, p.x, p.y + bob, 50, {sy: 1 + Math.sin(p.time * 6) * .12, glow: true});
+  const bob = Math.sin(p.time * 5) * 6;
+  const pulse = 1 + Math.sin(p.time * 6) * .15;
+  FX.drawSprite(ctx, img, p.x, p.y + bob, 55, {sy: pulse, glow: true});
 }
 
 const {cv} = FX.init({landscape: true, logicalH: 540});

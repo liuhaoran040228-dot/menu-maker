@@ -12,6 +12,10 @@ let selectedTower = null;
 let hoverCell = null;
 let gameSpeed = 1;
 let gameTime = 0;
+let showTowerMenu = false;
+let towerMenuPos = null;
+let showUpgradeSellMenu = false;
+let upgradeSellMenuPos = null;
 
 const MAPS = [
   {id:'garden', name:'花园', bg:'bg-garden', rows:12, cols:6, path:[[3,0],[3,3],[1,3],[1,7],[4,7],[4,11]]},
@@ -26,8 +30,7 @@ const TOWER_DEFS = [
   {id:'lan', name:'蓝蓝', role:'单体', color:'#66ccff', cost:100, damage:45, range:2.8, rate:1.2, splash:0},
   {id:'mo', name:'小模', role:'减速', color:'#88dd99', cost:120, damage:20, range:2.5, rate:1.5, splash:0, slow:0.4},
   {id:'li', name:'栗栗', role:'群攻', color:'#ffcc66', cost:150, damage:25, range:2.2, rate:0.8, splash:1.5},
-  {id:'xing', name:'星眠', role:'狙击', color:'#dd99ff', cost:130, damage:70, range:4.0, rate:2.0, splash:0},
-  {id:'hu', name:'橙铃', role:'灼烧', color:'#ff9966', cost:110, damage:30, range:2.6, rate:1.3, splash:0.8}
+  {id:'xing', name:'星眠', role:'狙击', color:'#dd99ff', cost:130, damage:70, range:4.0, rate:2.0, splash:0}
 ];
 
 const ENEMY_DEFS = {
@@ -81,16 +84,16 @@ function getUpgradeCost(level) {
 }
 
 function cellToScreen(c, r) {
-  const cellSize = Math.min((W-40)/6, (H-200)/12);
+  const cellSize = Math.min((W-40)/6, (H-240)/12);
   const offsetX = (W - cellSize*6) / 2;
-  const offsetY = 120;
+  const offsetY = 140;
   return {x: offsetX + (c+0.5)*cellSize, y: offsetY + (r+0.5)*cellSize, size: cellSize};
 }
 
 function screenToCell(x, y) {
-  const cellSize = Math.min((W-40)/6, (H-200)/12);
+  const cellSize = Math.min((W-40)/6, (H-240)/12);
   const offsetX = (W - cellSize*6) / 2;
-  const offsetY = 120;
+  const offsetY = 140;
   const c = Math.floor((x-offsetX)/cellSize);
   const r = Math.floor((y-offsetY)/cellSize);
   return {c, r};
@@ -129,8 +132,12 @@ function initGame(sel) {
     started: false
   };
   
-  selectedTowerType = 'lan';
+  selectedTowerType = null;
   selectedTower = null;
+  showTowerMenu = false;
+  towerMenuPos = null;
+  showUpgradeSellMenu = false;
+  upgradeSellMenuPos = null;
   gameTime = 0;
   gameSpeed = 1;
   
@@ -163,7 +170,7 @@ function startWave() {
   updateHUD();
 }
 
-function placeTower(c, r) {
+function placeTower(c, r, towerId) {
   if (!['build','play'].includes(gameState.mode)) return;
   
   const map = gameState.map;
@@ -175,19 +182,17 @@ function placeTower(c, r) {
   
   const existing = gameState.towers.find(t => t.c===c && t.r===r);
   if (existing) {
-    selectedTower = existing;
-    selectedTowerType = existing.id;
     return;
   }
   
-  const def = getTowerDef(selectedTowerType);
+  const def = getTowerDef(towerId);
   if (gameState.gold < def.cost) {
     return;
   }
   
   const screen = cellToScreen(c, r);
   const tower = {
-    id: selectedTowerType,
+    id: towerId,
     c: c,
     r: r,
     x: screen.x,
@@ -203,6 +208,9 @@ function placeTower(c, r) {
   
   FX.burst(screen.x, screen.y, {n:15, color:def.color, speed:150, life:0.6, size:5, glow:true});
   FX.ring(screen.x, screen.y, {color:def.color, r:80, life:0.5});
+  
+  showTowerMenu = false;
+  towerMenuPos = null;
   
   updateHUD();
 }
@@ -221,6 +229,9 @@ function upgradeTower() {
   FX.burst(selectedTower.x, selectedTower.y, {n:20, color:'#ffd700', speed:180, life:0.6, size:6, glow:true});
   FX.text(selectedTower.x, selectedTower.y-60, 'Lv.' + selectedTower.level, {color:'#ffe6cc', size:20, crit:true});
   
+  showUpgradeSellMenu = false;
+  upgradeSellMenuPos = null;
+  
   updateHUD();
 }
 
@@ -237,6 +248,9 @@ function sellTower() {
   selectedTower = null;
   
   FX.burst(x, y, {n:12, color:'#ffcc99', speed:120, life:0.5, size:5});
+  
+  showUpgradeSellMenu = false;
+  upgradeSellMenuPos = null;
   
   updateHUD();
 }
@@ -260,8 +274,7 @@ function useSkill(skillId) {
     
     gameState.enemies.forEach(e => {
       if (distance(e.x, e.y, screen.x, screen.y) < 250) {
-        e.hp -= 50;
-        FX.burst(e.x, e.y, {n:12, color:'#ff9900', speed:150, life:0.5, size:6});
+        damageEnemy(e, 50, {color:'#ffdd00'});
       }
     });
   } else if (skillId === 'freeze') {
@@ -278,6 +291,11 @@ function useSkill(skillId) {
   }
   
   skill.cooldown = skill.cd;
+  updateHUD();
+}
+
+function toggleSpeed() {
+  gameSpeed = gameSpeed === 1 ? 2 : 1;
   updateHUD();
 }
 
@@ -495,15 +513,14 @@ function endGame(won) {
     stage: currentSel.stage,
     stars: won ? 3 : Math.min(2, Math.floor(gameState.wave/3)),
     coins: gameState.gold,
-    gems: Math.floor(gameState.score/100),
-    win: won
+    gems: Math.floor(gameState.score/100)
   });
 }
 
 // === DRAW ===
 function drawGame(ctx) {
   const map = gameState.map;
-  const cellSize = Math.min((W-40)/6, (H-200)/12);
+  const cellSize = Math.min((W-40)/6, (H-240)/12);
   
   // Background
   const bgImg = FX.img(map.bg);
@@ -517,7 +534,7 @@ function drawGame(ctx) {
   
   // Grid background
   const offsetX = (W - cellSize*6) / 2;
-  const offsetY = 120;
+  const offsetY = 140;
   
   ctx.fillStyle = 'rgba(0,0,0,0.3)';
   ctx.fillRect(offsetX-10, offsetY-10, cellSize*6+20, cellSize*12+20);
@@ -528,7 +545,7 @@ function drawGame(ctx) {
     pathCells.add(p.c+','+p.r);
   });
   
-  // Draw path polyline (wide continuous road)
+  // Draw path polyline
   ctx.save();
   ctx.strokeStyle = 'rgba(140,120,160,0.9)';
   ctx.lineWidth = cellSize * 0.85;
@@ -598,24 +615,20 @@ function drawGame(ctx) {
       const screen = cellToScreen(c, r);
       
       if (!isRoad) {
-        // Build spots
         ctx.fillStyle = ((r+c)%2 ? 'rgba(100,120,140,0.15)' : 'rgba(120,140,160,0.15)');
         ctx.fillRect(screen.x - cellSize*0.45, screen.y - cellSize*0.45, cellSize*0.9, cellSize*0.9);
         
-        // Build spot border
         ctx.strokeStyle = 'rgba(200,220,255,0.2)';
         ctx.lineWidth = 1;
         ctx.setLineDash([4,4]);
         ctx.strokeRect(screen.x - cellSize*0.4, screen.y - cellSize*0.4, cellSize*0.8, cellSize*0.8);
         ctx.setLineDash([]);
         
-        // Center dot
         ctx.fillStyle = 'rgba(200,220,255,0.3)';
         ctx.beginPath();
         ctx.arc(screen.x, screen.y, 3, 0, Math.PI*2);
         ctx.fill();
         
-        // Plus icon for empty buildable spots
         if (!gameState.towers.find(t => t.c===c && t.r===r)) {
           ctx.strokeStyle = 'rgba(200,220,255,0.25)';
           ctx.lineWidth = 2;
@@ -641,7 +654,6 @@ function drawGame(ctx) {
     const def = getTowerDef(t.id);
     const screen = cellToScreen(t.c, t.r);
     
-    // Pedestal
     ctx.fillStyle = 'rgba(100,80,120,0.6)';
     ctx.beginPath();
     ctx.arc(screen.x, screen.y+10, cellSize*0.35, 0, Math.PI*2);
@@ -652,7 +664,6 @@ function drawGame(ctx) {
     ctx.arc(screen.x, screen.y+8, cellSize*0.3, 0, Math.PI*2);
     ctx.fill();
     
-    // Range ring when selected
     if (t === selectedTower) {
       ctx.strokeStyle = def.color;
       ctx.lineWidth = 2;
@@ -665,7 +676,6 @@ function drawGame(ctx) {
       ctx.globalAlpha = 1;
     }
     
-    // Tower chibi
     const img = FX.img(t.id+'-chibi');
     const scale = 0.7 + t.level*0.15;
     if (currentSel && currentSel.skin && currentSel.skin.filter) {
@@ -674,7 +684,6 @@ function drawGame(ctx) {
     FX.drawSprite(ctx, img, screen.x, screen.y, 80*scale);
     ctx.filter = 'none';
     
-    // Level stars
     for (let i=0; i<t.level; i++) {
       ctx.fillStyle = def.color;
       ctx.shadowColor = def.color;
@@ -703,7 +712,6 @@ function drawGame(ctx) {
     
     ctx.restore();
     
-    // HP bar
     const barW = e.boss ? 70 : 50;
     const barH = 5;
     const barY = e.y - (e.boss ? 60 : 45);
@@ -719,7 +727,6 @@ function drawGame(ctx) {
     ctx.lineWidth = 1;
     ctx.strokeRect(e.x-barW/2, barY, barW, barH);
     
-    // Shield indicator
     if (e.shield) {
       ctx.strokeStyle = '#ffcc00';
       ctx.lineWidth = 2;
@@ -730,7 +737,6 @@ function drawGame(ctx) {
       ctx.globalAlpha = 1;
     }
     
-    // Boss crown
     if (e.boss) {
       ctx.fillStyle = '#ffdd00';
       ctx.font = 'bold 20px sans-serif';
@@ -752,7 +758,6 @@ function drawGame(ctx) {
     ctx.shadowBlur = 0;
     ctx.globalAlpha = 1;
     
-    // Trail
     ctx.strokeStyle = p.color;
     ctx.lineWidth = 2;
     ctx.globalAlpha = 0.3;
@@ -768,61 +773,112 @@ function drawGame(ctx) {
   FX.drawFX(ctx);
   FX.vignette(ctx);
   
-  // Tower selection UI card (compact, no overlaps)
-  if (selectedTower) {
+  // Tower build menu
+  if (showTowerMenu && towerMenuPos) {
+    const menuR = 100;
+    const cx = towerMenuPos.x;
+    const cy = towerMenuPos.y;
+    
+    // Semi-transparent backdrop
+    ctx.fillStyle = 'rgba(0,0,0,0.3)';
+    ctx.fillRect(0, 0, W, H);
+    
+    TOWER_DEFS.forEach((def, i) => {
+      const angle = (i / TOWER_DEFS.length) * Math.PI * 2 - Math.PI/2;
+      const bx = cx + Math.cos(angle) * menuR;
+      const by = cy + Math.sin(angle) * menuR;
+      
+      // Button circle
+      ctx.fillStyle = gameState.gold >= def.cost ? def.color : 'rgba(100,100,100,0.8)';
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(bx, by, 30, 0, Math.PI*2);
+      ctx.fill();
+      ctx.stroke();
+      
+      // Icon
+      const img = FX.img(def.id+'-chibi');
+      FX.drawSprite(ctx, img, bx, by, 40);
+      
+      // Cost label
+      ctx.fillStyle = 'rgba(0,0,0,0.8)';
+      const labelW = 40;
+      const labelH = 16;
+      ctx.fillRect(bx-labelW/2, by+30, labelW, labelH);
+      
+      ctx.fillStyle = gameState.gold >= def.cost ? '#ffff99' : '#ff8888';
+      ctx.font = 'bold 11px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(def.cost, bx, by+38);
+    });
+  }
+  
+  // Upgrade/Sell menu
+  if (showUpgradeSellMenu && upgradeSellMenuPos && selectedTower) {
+    const menuR = 90;
+    const cx = upgradeSellMenuPos.x;
+    const cy = upgradeSellMenuPos.y;
+    
+    ctx.fillStyle = 'rgba(0,0,0,0.3)';
+    ctx.fillRect(0, 0, W, H);
+    
     const def = getTowerDef(selectedTower.id);
-    const screen = cellToScreen(selectedTower.c, selectedTower.r);
-    const panelW = 160;
-    const panelH = 70;
-    let panelX = screen.x - panelW/2;
-    let panelY = screen.y - 130;
-    
-    // Clamp to screen
-    if (panelX < 10) panelX = 10;
-    if (panelX + panelW > W - 10) panelX = W - panelW - 10;
-    if (panelY < 10) panelY = 10;
-    if (panelY + panelH > H - 200) panelY = H - panelH - 200;
-    
-    // Background panel
-    ctx.fillStyle = 'rgba(0,0,0,0.9)';
-    ctx.strokeStyle = def.color;
-    ctx.lineWidth = 2;
-    ctx.fillRect(panelX, panelY, panelW, panelH);
-    ctx.strokeRect(panelX, panelY, panelW, panelH);
-    
-    // Title
-    ctx.fillStyle = '#fff';
-    ctx.font = 'bold 12px sans-serif';
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'top';
-    ctx.fillText(def.name + ' Lv.' + selectedTower.level, panelX+8, panelY+5);
-    
-    // Stats row with icons
-    ctx.font = '10px sans-serif';
-    ctx.fillStyle = '#ccc';
-    const dmg = Math.floor(def.damage*(1+(selectedTower.level-1)*0.5));
-    const range = (def.range+(selectedTower.level-1)*0.3).toFixed(1);
     
     // Upgrade button
     if (selectedTower.level < 3) {
+      const angle = -Math.PI/2 - Math.PI/4;
+      const bx = cx + Math.cos(angle) * menuR;
+      const by = cy + Math.sin(angle) * menuR;
+      
       const upgCost = getUpgradeCost(selectedTower.level);
-      ctx.fillStyle = gameState.gold >= upgCost ? '#88ff88' : '#ff8888';
-      ctx.fillText('⬆ ' + upgCost, panelX+8, panelY+28);
-    } else {
-      ctx.fillStyle = '#ffd700';
-      ctx.fillText('満', panelX+8, panelY+28);
+      ctx.fillStyle = gameState.gold >= upgCost ? '#88ff88' : 'rgba(100,100,100,0.8)';
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(bx, by, 30, 0, Math.PI*2);
+      ctx.fill();
+      ctx.stroke();
+      
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 20px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('⬆', bx, by);
+      
+      ctx.fillStyle = 'rgba(0,0,0,0.8)';
+      ctx.fillRect(bx-20, by+25, 40, 16);
+      ctx.fillStyle = gameState.gold >= upgCost ? '#ffff99' : '#ff8888';
+      ctx.font = 'bold 11px sans-serif';
+      ctx.fillText(upgCost, bx, by+33);
     }
     
     // Sell button
-    const refund = Math.floor(selectedTower.spent * 0.65);
-    ctx.fillStyle = '#ffcc99';
-    ctx.fillText('💰 ' + refund, panelX+8, panelY+47);
+    const sellAngle = -Math.PI/2 + Math.PI/4;
+    const sbx = cx + Math.cos(sellAngle) * menuR;
+    const sby = cy + Math.sin(sellAngle) * menuR;
     
-    // Stats on right
-    ctx.fillStyle = '#aabbcc';
-    ctx.textAlign = 'right';
-    ctx.fillText('攻:' + dmg, panelX+panelW-8, panelY+28);
-    ctx.fillText('距:' + range, panelX+panelW-8, panelY+47);
+    ctx.fillStyle = '#ffcc99';
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(sbx, sby, 30, 0, Math.PI*2);
+    ctx.fill();
+    ctx.stroke();
+    
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 20px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('💰', sbx, sby);
+    
+    const refund = Math.floor(selectedTower.spent * 0.65);
+    ctx.fillStyle = 'rgba(0,0,0,0.8)';
+    ctx.fillRect(sbx-20, sby+25, 40, 16);
+    ctx.fillStyle = '#ffff99';
+    ctx.font = 'bold 11px sans-serif';
+    ctx.fillText(refund, sbx, sby+33);
   }
   
   // Props at bottom
@@ -839,15 +895,16 @@ function drawGame(ctx) {
 // === HUD ===
 function updateHUD() {
   const chips = [
-    '波 ' + gameState.wave + '/' + WAVES.length,
-    '💰 ' + gameState.gold,
-    '❤️ ' + gameState.lives,
-    '击 ' + gameState.kills
-  ].slice(0, 4);
+    '<span class="chip" style="cursor:pointer" onclick="window.__game.toggleSpeed()">×' + gameSpeed + '</span>',
+    '<span class="chip" style="cursor:pointer" onclick="window.__game.startWave()">▶ 波 ' + gameState.wave + '/' + WAVES.length + '</span>',
+    '<span class="chip">💰 ' + gameState.gold + '</span>',
+    '<span class="chip">❤️ ' + gameState.lives + '</span>',
+    '<span class="chip">击 ' + gameState.kills + '</span>'
+  ];
   
   const content = `
     <a class="fx-icon" href="../tools.html">‹</a>
-    ${chips.map(c => `<span class="chip">${c}</span>`).join('')}
+    ${chips.join('')}
     <span class="grow"></span>
   `;
   
@@ -855,48 +912,37 @@ function updateHUD() {
 }
 
 // === INPUT ===
-const waveBtn = FX.button({
-  icon: 'item-star',
-  color: '#ffd700',
-  size: 90,
-  right: 20,
-  bottom: 20,
-  key: 'Space',
-  onPress: startWave
+const bottomBtns = [];
+
+// Build tower buttons (4 towers)
+TOWER_DEFS.forEach((def, i) => {
+  const btn = FX.button({
+    icon: def.id+'-chibi',
+    color: def.color,
+    size: 52,
+    bottom: 16,
+    right: 80 + (TOWER_DEFS.length-1-i)*62,
+    onPress: () => {
+      selectedTowerType = def.id;
+      selectedTower = null;
+      showTowerMenu = false;
+      showUpgradeSellMenu = false;
+    }
+  });
+  bottomBtns.push(btn);
 });
 
-const upgradeBtn = FX.button({
-  icon: 'item-weapon',
-  color: '#88ff88',
-  size: 70,
-  right: 130,
-  bottom: 25,
-  key: 'KeyU',
-  onPress: upgradeTower
-});
-
-const sellBtn = FX.button({
-  icon: 'item-chest',
-  color: '#ffcc99',
-  size: 70,
-  right: 220,
-  bottom: 25,
-  key: 'KeyS',
-  onPress: sellTower
-});
-
-const skillBtns = [];
+// Skill buttons (3 skills in HUD top row, right side)
 SKILLS.forEach((skill, i) => {
-  skillBtns.push(FX.button({
+  FX.button({
     icon: skill.icon,
     color: skill.color,
-    size: 65,
-    right: 25 + i*85,
-    bottom: 115,
-    key: 'Digit' + (i+1),
+    size: 48,
+    bottom: 96 + i*58,
+    right: 12,
     cd: skill.cd,
     onPress: () => useSkill(skill.id)
-  }));
+  });
 });
 
 cv.addEventListener('pointerdown', e => {
@@ -904,11 +950,90 @@ cv.addEventListener('pointerdown', e => {
   const x = (e.clientX - rect.left) * W / rect.width;
   const y = (e.clientY - rect.top) * H / rect.height;
   
-  if (y < 100 || y > H-150) return;
+  if (showTowerMenu && towerMenuPos) {
+    const menuR = 100;
+    const cx = towerMenuPos.x;
+    const cy = towerMenuPos.y;
+    
+    let clickedTower = null;
+    TOWER_DEFS.forEach((def, i) => {
+      const angle = (i / TOWER_DEFS.length) * Math.PI * 2 - Math.PI/2;
+      const bx = cx + Math.cos(angle) * menuR;
+      const by = cy + Math.sin(angle) * menuR;
+      
+      if (distance(x, y, bx, by) < 30) {
+        clickedTower = def;
+      }
+    });
+    
+    if (clickedTower) {
+      placeTower(towerMenuPos.c, towerMenuPos.r, clickedTower.id);
+      return;
+    } else {
+      showTowerMenu = false;
+      towerMenuPos = null;
+      return;
+    }
+  }
+  
+  if (showUpgradeSellMenu && upgradeSellMenuPos && selectedTower) {
+    const menuR = 90;
+    const cx = upgradeSellMenuPos.x;
+    const cy = upgradeSellMenuPos.y;
+    
+    // Check upgrade
+    if (selectedTower.level < 3) {
+      const angle = -Math.PI/2 - Math.PI/4;
+      const bx = cx + Math.cos(angle) * menuR;
+      const by = cy + Math.sin(angle) * menuR;
+      
+      if (distance(x, y, bx, by) < 30) {
+        upgradeTower();
+        return;
+      }
+    }
+    
+    // Check sell
+    const sellAngle = -Math.PI/2 + Math.PI/4;
+    const sbx = cx + Math.cos(sellAngle) * menuR;
+    const sby = cy + Math.sin(sellAngle) * menuR;
+    
+    if (distance(x, y, sbx, sby) < 30) {
+      sellTower();
+      return;
+    }
+    
+    showUpgradeSellMenu = false;
+    upgradeSellMenuPos = null;
+    return;
+  }
+  
+  if (y < 100 || y > H-200) return;
   
   const cell = screenToCell(x, y);
   if (cell.c >= 0 && cell.c < gameState.map.cols && cell.r >= 0 && cell.r < gameState.map.rows) {
-    placeTower(cell.c, cell.r);
+    const map = gameState.map;
+    
+    if (gameState.roadSet.has(cell.c+','+cell.r)) {
+      return;
+    }
+    
+    const existing = gameState.towers.find(t => t.c===cell.c && t.r===cell.r);
+    if (existing) {
+      selectedTower = existing;
+      const screen = cellToScreen(cell.c, cell.r);
+      showUpgradeSellMenu = true;
+      upgradeSellMenuPos = {x: screen.x, y: screen.y, c: cell.c, r: cell.r};
+      showTowerMenu = false;
+      towerMenuPos = null;
+    } else {
+      const screen = cellToScreen(cell.c, cell.r);
+      showTowerMenu = true;
+      towerMenuPos = {x: screen.x, y: screen.y, c: cell.c, r: cell.r};
+      showUpgradeSellMenu = false;
+      upgradeSellMenuPos = null;
+      selectedTower = null;
+    }
   }
 });
 
@@ -917,7 +1042,7 @@ cv.addEventListener('pointermove', e => {
   const rect = cv.getBoundingClientRect();
   const x = (e.clientX - rect.left) * W / rect.width;
   const y = (e.clientY - rect.top) * H / rect.height;
-  if (y >= 100 && y <= H-150) {
+  if (y >= 100 && y <= H-200) {
     const cell = screenToCell(x, y);
     if (cell.c >= 0 && cell.c < gameState.map.cols && cell.r >= 0 && cell.r < gameState.map.rows) {
       hoverCell = cell;
@@ -1001,7 +1126,9 @@ window.__game = {
     kills: gameState?.kills || 0,
     towers: gameState?.towers.length || 0,
     enemies: gameState?.enemies.length || 0
-  })
+  }),
+  toggleSpeed: () => toggleSpeed(),
+  startWave: () => startWave()
 };
 
 })();

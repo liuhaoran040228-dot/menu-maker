@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>星糖宇宙 · 好友</title>
+  <link rel="stylesheet" href="app-shell.css">
+  <link rel="stylesheet" href="platform.css">
+  <link rel="stylesheet" href="community.css">
+<link rel="stylesheet" href="community-discovery.css"><link rel="icon" href="data:,"></head>
+<body class="app-page" data-tab="me">
+  <div class="demo-banner">本地演示 · 不是真实好友/公会 · 不会发送消息</div>
+  
+  <div class="app-container">
+    <header class="app-header">
+      <h1>好友</h1>
+      <nav class="header-nav">
+        <a href="#" class="nav-link" data-section="friends">好友</a>
+        <a href="guild.html" class="nav-link">公会</a>
+      </nav>
+    </header>
+
+    <main class="app-main">
+      <section class="friends-section">
+        <div class="section-tabs">
+          <button class="tab-btn active" data-tab="all">全部</button>
+          <button class="tab-btn" data-tab="requests">请求<span class="badge" id="request-count"></span></button>
+          <button class="tab-btn" data-tab="blocked">黑名单</button>
+        </div>
+
+        <div class="search-box">
+          <input type="text" id="friend-search" placeholder="搜索好友或 AI 机器人..." class="search-input">
+          <button id="search-btn" class="btn-icon">🔍</button>
+        </div>
+
+        <div class="search-results" id="search-results" style="display:none;">
+          <button class="btn-back" id="back-search">← 返回</button>
+          <div id="search-list" class="friend-list"></div>
+        </div>
+
+        <div class="tab-content" id="all-tab">
+          <div id="friends-list" class="friend-list"></div>
+          <div class="empty-state" id="friends-empty" style="display:none;">
+            <p>还没有好友</p>
+            <p class="text-muted">搜索或添加 AI 测试机器人开始</p>
+          </div>
+        </div>
+
+        <div class="tab-content" id="requests-tab" style="display:none;">
+          <div id="requests-list" class="friend-list"></div>
+          <div class="empty-state" id="requests-empty" style="display:none;">
+            <p>没有待处理请求</p>
+          </div>
+        </div>
+
+        <div class="tab-content" id="blocked-tab" style="display:none;">
+          <div id="blocked-list" class="friend-list"></div>
+          <div class="empty-state" id="blocked-empty" style="display:none;">
+            <p>黑名单为空</p>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="app-footer">
+      <a href="me.html" class="footer-link">← 返回大厅</a>
+    </footer>
+  </div>
+
+  
+  <script src="platform.js"></script>
+  <script src="vip.js"></script>
+  <script src="community.js"></script>
+<script src="community-discovery.js"></script><nav class="app-tabs" aria-label="主导航"></nav><script src="app-shell.js"></script></body>
+</html>

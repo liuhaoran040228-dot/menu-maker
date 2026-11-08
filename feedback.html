@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><link rel="icon" href="data:,"><link rel="stylesheet" href="app-shell.css"><link rel="stylesheet" href="platform.css"><title>意见反馈 · 星糖宇宙</title></head>
+<body class="app-page" data-tab="me">
+<header class="app-topbar"><a href="me.html" class="app-profile" aria-label="返回我的宇宙"><svg viewBox="0 0 24 24" aria-hidden="true" style="width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.7;"><path d="M19 12H5M12 19l-7-7 7-7"/></svg><span><b>意见反馈</b></span></a></header>
+<main class="app-main">
+<div class="page-heading"><h1>意见反馈</h1><p>💾 本地草稿 · 未发送</p></div>
+<div class="feedback-notice" role="status"><strong>⚠ 重要：</strong> 此表单保存为本地草稿。请复制或导出内容后，通过商店卖家反馈渠道提交。我们不会自动发送。</div>
+<div class="feedback-form">
+<div class="form-group">
+<label for="feedbackType">反馈类型</label>
+<select id="feedbackType" aria-describedby="typeHint"><option value="">-- 选择 --</option><option value="bug">🐛 问题报告</option><option value="feature">💡 功能建议</option><option value="content">📝 内容反馈</option><option value="other">💬 其他</option></select><small id="typeHint" class="form-hint">帮助分类你的反馈</small>
+</div>
+<div class="form-group">
+<label for="feedbackTitle">标题</label>
+<input type="text" id="feedbackTitle" placeholder="简洁描述反馈内容" maxlength="60" aria-describedby="titleHint"><small id="titleHint" class="form-hint">最多 60 字</small>
+</div>
+<div class="form-group">
+<label for="feedbackContent">详情</label>
+<textarea id="feedbackContent" placeholder="详细说明...\n你遇到的问题或建议是什么？" maxlength="1000" rows="6" aria-describedby="contentHint"></textarea><small id="contentHint" class="form-hint">最多 1000 字</small>
+</div>
+<div class="form-group">
+<label for="feedbackContext">环境信息</label>
+<textarea id="feedbackContext" readonly rows="2" aria-describedby="contextDesc"></textarea><small id="contextDesc" class="form-hint">自动填充，便于排查</small>
+</div>
+<div class="form-actions">
+<button type="button" id="feedbackSave" class="action-button primary">保存草稿</button>
+<button type="button" id="feedbackCopy" class="action-button secondary">复制内容</button>
+<button type="button" id="feedbackExport" class="action-button secondary">导出 TXT</button>
+<button type="button" id="feedbackClear" class="action-button text">清空</button>
+</div>
+</div>
+<div id="feedbackStatus" class="form-status" role="status" aria-live="polite"></div>
+</main>
+<nav class="app-tabs" aria-label="主导航"></nav>
+<script src="app-shell.js"></script><script src="platform.js"></script><script src="vip.js"></script>
+</body></html>

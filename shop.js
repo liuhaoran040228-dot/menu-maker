@@ -5,7 +5,7 @@
  const $=id=>document.getElementById(id), params=new URLSearchParams(location.search);
  const mock=params.get('mock')==='1', live=!mock&&window.STAR_SHOP_LIVE===true;
  const daily=[0,20,30,40,55,70,90,115,150];
- const categories=[['all','✧','精选'],['outfit','♧','服饰套装'],['background','▧','背景'],['avatar','♡','头像'],['bubble','☁','聊天气泡'],['pendant','♛','挂件']];
+ const categories=[['all','','精选'],['outfit','','服饰'],['background','','背景'],['bubble','','气泡'],['pendant','','挂件'],['avatar','','头像']];
  const labels={avatar:'原创头像',bubble:'聊天气泡',pendant:'华丽挂件',background:'整屏皮肤',outfit:'整套服饰'};
  let connected=false,visitKey;
  let catalog=window.StarShopCatalog||[], category='all', busy=false, selected=null, timer, loading=false, requestSerial=0;
@@ -98,6 +98,7 @@
  $('retryBtn').onclick=refresh;
  document.addEventListener('visibilitychange',()=>{if(live&&!document.hidden&&!busy)refresh();});
  window.addEventListener('vipchange',()=>{if(live)refresh();else render();});
+ $('modeNotice').hidden=live;
  $('modeNotice').textContent=mock?'独立演示 · 余额与商品操作仅在当前页面有效，不连接账号':live?'星糖商城 · 账号同步 · 星糖仅限站内使用':'本地预览 · 商城未开放，暂不领取或扣款';
  render();
  if(live){const script=document.createElement('script');script.src='vip.js';script.onerror=()=>{$('catalogStatus').textContent='账号组件加载失败，请刷新重试';};script.onload=()=>{if(window.StarAccount)refresh();};document.body.append(script);}

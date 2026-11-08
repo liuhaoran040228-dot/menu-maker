@@ -1,18 +1,652 @@
-/* integration overrides */
-.sc-gacha-results-modal{width:min(94vw,480px)!important;max-width:none!important;padding:18px!important;background:linear-gradient(160deg,rgba(14,32,30,.97),rgba(30,22,10,.97))!important;color:#fbe7b0}
-.sc-gacha-results-title{color:#ffd56a;text-align:center;font-size:22px;font-weight:900;letter-spacing:4px;margin-bottom:12px}
-.sc-gacha-results-grid.multi{gap:8px!important}
-.sc-gacha-results-grid.single .sc-gacha-card{width:150px}
-.sc-gacha-card{min-height:96px}
-.sc-gacha-item-img{width:100%;height:70%;object-fit:contain}
-.sc-gacha-item-name{font-size:10px;text-align:center;line-height:1.2;margin-top:2px}
-.sc-gacha-results-grid.multi{grid-template-columns:repeat(5,minmax(0,1fr))!important}
+/* overrides.css – 云阙问仙 · 修仙换装 */
 
-.hl-break-btn{position:relative!important;flex-shrink:0;left:auto!important;top:auto!important;bottom:auto!important;transform:none!important;display:block;width:min(60%,240px)!important;margin:6px auto 8px!important;background:linear-gradient(135deg,rgba(150,105,10,.9),rgba(255,200,60,.8))!important;color:#fff8dc!important;text-shadow:0 0 8px #000}
-.hl-bottom{padding-bottom:64px!important;max-height:min(220px,30vh)!important}
-/* gacha results: roomy responsive grid */
-.sc-gacha-results-modal{width:min(96vw,500px)!important;max-height:92%!important;overflow-y:auto!important}
-.sc-gacha-results-grid.multi{grid-template-columns:repeat(auto-fill,minmax(84px,1fr))!important;gap:10px!important}
-.sc-gacha-results-grid.multi .sc-gacha-card{min-height:0;aspect-ratio:3/4}
-.sc-gacha-item-name{font-size:11px!important}
-.hl-doll-wrap{height:96%!important;width:auto!important;max-width:60%;aspect-ratio:640/960}
+/* ========================================
+   VIEWPORT & SAFE AREAS
+   ======================================== */
+html,
+body {
+  height: 100dvh;
+  overflow: hidden;
+}
+
+#app {
+  height: 100dvh;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+/* ========================================
+   XIANXIA PALETTE ENHANCEMENTS
+   ======================================== */
+:root {
+  --jade: #00d4aa;
+  --jade-dark: #008866;
+  --jade-glass: rgba(0, 212, 170, 0.12);
+  --gold: #ffd700;
+  --gold-dark: #cc9900;
+  --gold-glow: rgba(255, 215, 0, 0.25);
+  --ivory: #fffef0;
+  --glass: rgba(255, 255, 255, 0.06);
+  --glass-border: rgba(255, 255, 255, 0.15);
+}
+
+/* ========================================
+   TOP RESOURCE BAR
+   ======================================== */
+.topbar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: max(56px, calc(56px + env(safe-area-inset-top)));
+  padding-top: env(safe-area-inset-top);
+  padding-left: max(16px, env(safe-area-inset-left));
+  padding-right: max(16px, env(safe-area-inset-right));
+  background: linear-gradient(
+    180deg,
+    rgba(10, 14, 26, 0.92) 0%,
+    rgba(10, 14, 26, 0.75) 60%,
+    transparent 100%
+  );
+  backdrop-filter: blur(12px);
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.topbar-back {
+  flex-shrink: 0;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 10px 14px;
+  font-size: clamp(15px, 4vw, 16px);
+  color: var(--jade);
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.topbar-back:active {
+  transform: scale(0.94);
+  background: var(--jade-glass);
+}
+
+.topbar-title {
+  flex: 1;
+  min-width: 0;
+  font-size: clamp(16px, 4.5vw, 18px);
+  font-weight: 700;
+  text-align: center;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.7);
+  background: linear-gradient(135deg, var(--gold) 0%, var(--ivory) 50%, var(--gold) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-size: 200% 100%;
+  animation: shimmer 4s linear infinite;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.topbar-balances {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+  font-size: clamp(12px, 3.2vw, 13px);
+  font-weight: 600;
+}
+
+.topbar-balances > span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  min-height: 32px;
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  white-space: nowrap;
+}
+
+/* ========================================
+   SIDE FEATURE ICONS (VERTICAL COLUMN)
+   ======================================== */
+.icon-column {
+  position: absolute;
+  top: max(110px, calc(110px + env(safe-area-inset-top)));
+  right: max(12px, env(safe-area-inset-right));
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 10;
+}
+
+.icon-column .icon-btn {
+  width: 56px;
+  height: 56px;
+  min-height: 44px;
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: 50%;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.icon-column .icon-btn:active {
+  transform: scale(0.92);
+}
+
+.icon-column .icon-btn .icon {
+  font-size: 26px;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.6));
+}
+
+.icon-column .icon-btn .label {
+  display: none;
+}
+
+/* ========================================
+   BOTTOM MAIN NAVIGATION
+   ======================================== */
+.bottom-nav {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: max(80px, calc(80px + env(safe-area-inset-bottom)));
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: max(8px, env(safe-area-inset-left));
+  padding-right: max(8px, env(safe-area-inset-right));
+  background: linear-gradient(
+    0deg,
+    rgba(10, 14, 26, 0.95) 0%,
+    rgba(10, 14, 26, 0.8) 50%,
+    transparent 100%
+  );
+  backdrop-filter: blur(16px);
+  display: flex;
+  justify-content: space-around;
+  align-items: flex-end;
+  gap: 4px;
+  z-index: 10;
+}
+
+.bottom-nav .icon-btn {
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+  padding: 8px 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-radius: 12px;
+}
+
+.bottom-nav .icon-btn:active {
+  transform: scale(0.92);
+  background: var(--glass);
+}
+
+.bottom-nav .icon-btn .icon {
+  font-size: clamp(26px, 7vw, 32px);
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.6));
+  flex-shrink: 0;
+}
+
+.bottom-nav .icon-btn .label {
+  font-size: clamp(10px, 2.8vw, 12px);
+  font-weight: 600;
+  color: var(--ivory);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  line-height: 1.2;
+}
+
+/* ========================================
+   PRIMARY ACTION BUTTON (BIG CENTER)
+   ======================================== */
+.btn-gold,
+.btn-jade {
+  min-height: 48px;
+  padding: 14px 28px;
+  font-size: clamp(14px, 4vw, 16px);
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 28px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  white-space: nowrap;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-gold {
+  background: linear-gradient(135deg, var(--gold-dark) 0%, var(--gold) 50%, var(--gold-dark) 100%);
+  border: 2px solid var(--gold);
+  box-shadow: 0 0 24px var(--gold-glow), 0 6px 16px rgba(0, 0, 0, 0.5);
+}
+
+.btn-jade {
+  background: linear-gradient(135deg, var(--jade-dark) 0%, var(--jade) 50%, var(--jade-dark) 100%);
+  border: 2px solid var(--jade);
+  box-shadow: 0 0 24px rgba(0, 212, 170, 0.4), 0 6px 16px rgba(0, 0, 0, 0.5);
+}
+
+.btn-gold:active,
+.btn-jade:active {
+  transform: scale(0.95);
+}
+
+.btn-gold::before,
+.btn-jade::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, transparent 0%, rgba(255, 255, 255, 0.15) 50%, transparent 100%);
+  transform: translateX(-100%);
+  transition: transform 0.6s ease;
+}
+
+.btn-gold:hover::before,
+.btn-jade:hover::before {
+  transform: translateX(100%);
+}
+
+/* ========================================
+   GENERAL BUTTONS & TOUCH TARGETS
+   ======================================== */
+.btn {
+  min-height: 44px;
+  padding: 12px 20px;
+  font-size: clamp(13px, 3.6vw, 15px);
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: 24px;
+  color: var(--ivory);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.btn:active {
+  transform: scale(0.96);
+}
+
+/* ========================================
+   TABS & CHIPS
+   ======================================== */
+.tabs {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.tab {
+  flex-shrink: 0;
+  min-height: 36px;
+  padding: 8px 16px;
+  font-size: clamp(12px, 3.2vw, 14px);
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.6);
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.tab.active {
+  color: var(--ivory);
+  background: linear-gradient(135deg, var(--jade-dark) 0%, var(--jade) 100%);
+  border-color: var(--jade);
+  box-shadow: 0 0 16px rgba(0, 212, 170, 0.4);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 12px;
+  font-size: clamp(11px, 3vw, 12px);
+  font-weight: 600;
+  border-radius: 14px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+  min-height: 28px;
+}
+
+.chip.active {
+  transform: scale(1.05);
+  box-shadow: 0 0 14px currentColor;
+}
+
+/* ========================================
+   GLASS PANELS & MODALS
+   ======================================== */
+.panel {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.08) 0%,
+    rgba(255, 255, 255, 0.04) 100%
+  );
+  border: 2px solid transparent;
+  border-radius: 16px;
+  padding: 16px;
+  backdrop-filter: blur(20px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  background-clip: padding-box;
+}
+
+.modal {
+  max-width: min(92vw, 480px);
+  max-height: 85dvh;
+  overflow-y: auto;
+  background: linear-gradient(
+    160deg,
+    rgba(10, 14, 26, 0.97) 0%,
+    rgba(5, 8, 16, 0.97) 100%
+  );
+  border: 2px solid transparent;
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+  animation: modalIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.modal-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 36px;
+  height: 36px;
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  color: var(--ivory);
+  cursor: pointer;
+  z-index: 1;
+  transition: all 0.2s ease;
+  border-radius: 50%;
+}
+
+.modal-close:active {
+  transform: scale(0.88);
+  background: var(--glass);
+}
+
+/* ========================================
+   TILES & GRIDS
+   ======================================== */
+.tile {
+  position: relative;
+  aspect-ratio: 1;
+  min-height: 64px;
+  background: var(--glass);
+  border: 2px solid var(--glass-border);
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tile:active {
+  transform: scale(0.94);
+}
+
+.grid {
+  display: grid;
+  gap: 12px;
+}
+
+.grid-2 {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.grid-3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.grid-4 {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+/* ========================================
+   TOASTS
+   ======================================== */
+#toasts {
+  position: absolute;
+  top: max(80px, calc(80px + env(safe-area-inset-top)));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+  max-width: 90%;
+}
+
+.toast {
+  padding: 12px 20px;
+  background: rgba(10, 14, 26, 0.92);
+  border: 1px solid var(--glass-border);
+  border-radius: 24px;
+  font-size: clamp(12px, 3.5vw, 14px);
+  font-weight: 500;
+  color: var(--ivory);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(12px);
+  animation: toastIn 0.3s ease, toastOut 0.3s ease 2.7s forwards;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+/* ========================================
+   HUB VIP OVERLAY HIDING
+   ======================================== */
+.premium-skin-layer,
+.account-trigger,
+#profile-vip-mark,
+.premium-shortcuts,
+.appearance-shortcuts,
+.premium-xp-toast {
+  display: none !important;
+}
+
+body.premium-site-theme {
+  background: var(--bg-dark) !important;
+}
+
+/* ========================================
+   INTEGRATION OVERRIDES (KEEP EXISTING)
+   ======================================== */
+.sc-gacha-results-modal {
+  width: min(94vw, 480px) !important;
+  max-width: none !important;
+  max-height: 92dvh !important;
+  padding: 18px !important;
+  background: linear-gradient(160deg, rgba(14, 32, 30, 0.97), rgba(30, 22, 10, 0.97)) !important;
+  color: #fbe7b0;
+  overflow-y: auto !important;
+}
+
+.sc-gacha-results-title {
+  color: #ffd56a;
+  text-align: center;
+  font-size: clamp(18px, 5vw, 22px);
+  font-weight: 900;
+  letter-spacing: 3px;
+  margin-bottom: 12px;
+}
+
+.sc-gacha-results-grid.multi {
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)) !important;
+  gap: 10px !important;
+}
+
+.sc-gacha-results-grid.multi .sc-gacha-card {
+  min-height: 0;
+  aspect-ratio: 3 / 4;
+}
+
+.sc-gacha-results-grid.single .sc-gacha-card {
+  width: 150px;
+  margin: 0 auto;
+}
+
+.sc-gacha-card {
+  min-height: 96px;
+}
+
+.sc-gacha-item-img {
+  width: 100%;
+  height: 70%;
+  object-fit: contain;
+}
+
+.sc-gacha-item-name {
+  font-size: clamp(10px, 2.8vw, 11px) !important;
+  text-align: center;
+  line-height: 1.2;
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hl-break-btn {
+  position: relative !important;
+  flex-shrink: 0;
+  left: auto !important;
+  top: auto !important;
+  bottom: auto !important;
+  transform: none !important;
+  display: block;
+  width: min(64%, 260px) !important;
+  min-height: 48px;
+  margin: 8px auto !important;
+  padding: 14px 20px;
+  background: linear-gradient(135deg, rgba(150, 105, 10, 0.92), rgba(255, 200, 60, 0.85)) !important;
+  color: #fff8dc !important;
+  font-size: clamp(14px, 4vw, 16px);
+  font-weight: 700;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+  border-radius: 28px;
+  transition: all 0.2s ease;
+}
+
+.hl-break-btn:active {
+  transform: scale(0.95) !important;
+}
+
+.hl-bottom {
+  padding-bottom: max(64px, calc(64px + env(safe-area-inset-bottom))) !important;
+  max-height: min(240px, 32dvh) !important;
+  overflow-y: auto;
+}
+
+.hl-doll-wrap {
+  height: 96% !important;
+  width: auto !important;
+  max-width: 62%;
+  aspect-ratio: 640 / 960;
+  margin: 0 auto;
+}
+
+/* ========================================
+   SMOOTH TRANSITIONS
+   ======================================== */
+.screen,
+.modal,
+.panel,
+.btn,
+.tab,
+.chip,
+.tile,
+.icon-btn,
+.topbar-back {
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ========================================
+   SCROLLBAR STYLING (WEBKIT)
+   ======================================== */
+.modal::-webkit-scrollbar,
+.hl-bottom::-webkit-scrollbar {
+  width: 6px;
+}
+
+.modal::-webkit-scrollbar-track,
+.hl-bottom::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+}
+
+.modal::-webkit-scrollbar-thumb,
+.hl-bottom::-webkit-scrollbar-thumb {
+  background: var(--jade);
+  border-radius: 3px;
+}
+
+.modal::-webkit-scrollbar-thumb:hover,
+.hl-bottom::-webkit-scrollbar-thumb:hover {
+  background: var(--jade-dark);
+}
+/* modals must capture taps (modalRoot itself is pointer-events:none) */
+#modalRoot > *{pointer-events:auto}
+#modalRoot .modal, #modalRoot > div > div{color:#24372c}
+#modalRoot .sa-modal, #modalRoot .sa-modal *:not(button):not(.sa-btn){color:#24372c!important;text-shadow:none!important}
+#modalRoot .sa-modal h3{color:#8a6410!important}

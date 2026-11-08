@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><link rel="icon" href="data:,"><link rel="stylesheet" href="app-shell.css"><link rel="stylesheet" href="platform.css"><title>设置 · 星糖宇宙</title></head>
+<body class="app-page" data-tab="me">
+<header class="app-topbar"><a href="me.html" class="app-profile" aria-label="返回我的宇宙"><svg viewBox="0 0 24 24" aria-hidden="true" style="width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.7;"><path d="M19 12H5M12 19l-7-7 7-7"/></svg><span><b>设置</b></span></a></header>
+<main class="app-main">
+<div class="page-heading"><h1>设置</h1><p>主题 · 声音 · 通知偏好</p></div>
+<div class="settings-form">
+<div class="setting-group">
+<div class="setting-header"><h2>主题</h2></div>
+<div class="radio-group" role="group" aria-label="主题选择">
+<label class="radio-label"><input type="radio" name="theme" value="system" aria-describedby="themeSystemDesc"><span>跟随系统</span></label><small id="themeSystemDesc" class="hint">自动亮/暗</small>
+<label class="radio-label"><input type="radio" name="theme" value="light" aria-describedby="themeLightDesc"><span>浅色</span></label><small id="themeLightDesc" class="hint">始终亮色</small>
+<label class="radio-label"><input type="radio" name="theme" value="dark" aria-describedby="themeDarkDesc"><span>深色</span></label><small id="themeDarkDesc" class="hint">始终暗色</small>
+</div>
+</div>
+<div class="setting-group">
+<div class="setting-header"><h2>声音</h2><small class="setting-note">界面音效偏好</small></div>
+<label class="checkbox-label"><input type="checkbox" id="soundEnabled"><span>启用音效</span></label><small class="hint">点击、提示、成功音</small>
+<div class="volume-control" id="volumeControl" hidden>
+<label for="soundVolume">音量</label>
+<input type="range" id="soundVolume" min="0" max="100" value="70" aria-label="音量调整">
+<small id="volumeValue" class="hint">70%</small>
+</div>
+</div>
+<div class="setting-group">
+<div class="setting-header"><h2>通知</h2><small class="setting-note">平台公告偏好</small></div>
+<label class="checkbox-label"><input type="checkbox" id="notificationEnabled" checked><span>启用平台公告</span></label><small class="hint">本地系统公告提示，不是浏览器推送</small>
+</div>
+<div class="setting-group">
+<div class="setting-header"><h2>缓存与数据</h2><small class="setting-note">平台设置与缓存</small></div>
+<button type="button" id="clearCache" class="action-button secondary">清除平台缓存</button><small class="hint">仅清除本页面设置，保留游戏数据与登录状态</small>
+</div>
+<div class="setting-group">
+<div class="setting-header"><h2>账号</h2></div>
+<button type="button" id="logoutBtn" class="action-button secondary">退出登录</button><small class="hint">使用账号对话框退出</small>
+</div>
+</div>
+<div id="settingsStatus" class="form-status" role="status" aria-live="polite"></div>
+<section class="rule-panel"><h2>帮助与安全</h2><p>退出登录：打开账号窗口后点击「退出登录」。清理可丢弃缓存不删除登录、会员、游戏存档、个人资料或反馈草稿。</p><p>声音偏好仅预留给平台，暂不控制独立游戏。公告开关不申请浏览器推送，不影响聊天消息。</p><button type="button" class="rule-action" onclick="window.StarOnboarding.open()">重新查看新手引导</button> <a href="privacy.html">隐私政策</a> · <a href="feedback.html">反馈 / 举报草稿</a></section></main>
+<nav class="app-tabs" aria-label="主导航"></nav>
+<script src="app-shell.js"></script><script src="platform.js"></script><script src="vip.js"></script>
+</body></html>

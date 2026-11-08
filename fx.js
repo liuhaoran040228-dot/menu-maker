@@ -20,8 +20,9 @@
   // Joystick
   let joyActive = false, joyBaseX = 0, joyBaseY = 0;
   let joyOutX = 0, joyOutY = 0, joyTargetX = 0, joyTargetY = 0;
-  let joyPointerId = null;
-  const JOY_RADIUS = 52, JOY_DEADZONE = 0.12;
+  let joyPointerId = null, joyFadeState = 'hidden'; // hidden | fadein | visible | fadeout
+  let joyFadeTimer = 0;
+  const JOY_RADIUS = 55, JOY_DEADZONE = 0.12, JOY_FADE_IN = 0.08, JOY_FADE_OUT = 0.15;
   
   // Input
   const keys = new Set();
@@ -92,7 +93,7 @@
     pauseBtn = document.createElement('button');
     pauseBtn.className = 'fx-icon';
     pauseBtn.textContent = '⏸';
-    pauseBtn.style.cssText = 'position:absolute;right:10px;top:10px;z-index:10;';
+    pauseBtn.style.cssText = 'position:absolute;right:calc(10px + env(safe-area-inset-right));top:calc(10px + env(safe-area-inset-top));z-index:10;';
     pauseBtn.addEventListener('click', togglePause);
     hud.appendChild(pauseBtn);
     
@@ -118,6 +119,9 @@
     stage.addEventListener('pointerup', onPointerUp);
     stage.addEventListener('pointercancel', onPointerUp);
     
+    const releaseAll = () => { keys.clear(); joyPointerId = null; joyActive = false; joyTargetX = joyTargetY = 0; for (const btn of buttons) { btn.el.classList.remove('down'); btn.isDown = false; btn.pointerId = null; } };
+    window.addEventListener('blur', releaseAll);
+    document.addEventListener('visibilitychange', () => { if (document.hidden) releaseAll(); });
     document.addEventListener('visibilitychange', () => {
       if (document.hidden && runningFlag && overEl.classList.contains('hide')) {
         pauseState = true;
@@ -151,7 +155,6 @@
   // Assets
   FX.skinMap = {};
   FX.baseMap = {};
-  // Side-view sprites (all face RIGHT). pose for chibi in this game: 'idle' | 'run'
   FX.useSideSprites = (pose = 'idle') => {
     const ids = ['lan', 'mo', 'li', 'xing', 'hu'], m = {};
     ids.forEach(c => { m[c + '-chibi'] = 'side-' + c + '-' + pose; });
@@ -260,22 +263,65 @@
       joy.active = false;
     }
     
-    if (joyActive) {
-      joyEl.classList.remove('idle');
-      joyEl.classList.add('on');
-      joyEl.style.left = joyBaseX + 'px';
-      joyEl.style.bottom = joyBaseY + 'px';
-      joyKnob.style.transform = `translate(${joyOutX * JOY_RADIUS}px, ${-joyOutY * JOY_RADIUS}px)`;
-    } else if (joy.active) {
-      joyEl.classList.remove('idle');
-      joyEl.classList.add('on');
-      joyEl.style.left = '90px';
-      joyEl.style.bottom = '90px';
-      joyKnob.style.transform = `translate(${joyOutX * JOY_RADIUS}px, ${-joyOutY * JOY_RADIUS}px)`;
+    // Handle fade states
+    const dragMode = FX.controlMode === 'drag';
+    if (dragMode) {
+      if (joyActive) {
+        if (joyFadeState === 'hidden') {
+          joyFadeState = 'fadein';
+          joyFadeTimer = 0;
+        }
+        if (joyFadeState === 'fadein') {
+          joyFadeTimer += dt;
+          if (joyFadeTimer >= JOY_FADE_IN) {
+            joyFadeState = 'visible';
+            joyFadeTimer = 0;
+          }
+        }
+      } else {
+        if (joyFadeState === 'visible' || joyFadeState === 'fadein') {
+          joyFadeState = 'fadeout';
+          joyFadeTimer = 0;
+        }
+        if (joyFadeState === 'fadeout') {
+          joyFadeTimer += dt;
+          if (joyFadeTimer >= JOY_FADE_OUT) {
+            joyFadeState = 'hidden';
+            joyFadeTimer = 0;
+          }
+        }
+      }
+      
+      let opacity = 0;
+      if (joyFadeState === 'visible') opacity = 1;
+      else if (joyFadeState === 'fadein') opacity = joyFadeTimer / JOY_FADE_IN;
+      else if (joyFadeState === 'fadeout') opacity = 1 - joyFadeTimer / JOY_FADE_OUT;
+      
+      if (opacity > 0) {
+        joyEl.style.opacity = opacity;
+        joyEl.classList.remove('idle');
+        joyEl.classList.add('on');
+        joyEl.style.left = joyBaseX + 'px';
+        joyEl.style.bottom = joyBaseY + 'px';
+        joyKnob.style.transform = `translate(${joyOutX * JOY_RADIUS}px, ${-joyOutY * JOY_RADIUS}px)`;
+      } else {
+        joyEl.classList.add('idle');
+        joyEl.classList.remove('on');
+      }
     } else {
-      joyEl.classList.add('idle');
-      joyEl.classList.remove('on');
-      joyKnob.style.transform = '';
+      // Fixed stick mode
+      if (joy.active) {
+        joyEl.style.opacity = 1;
+        joyEl.classList.remove('idle');
+        joyEl.classList.add('on');
+        joyEl.style.left = 'calc(90px + env(safe-area-inset-left))';
+        joyEl.style.bottom = 'calc(90px + env(safe-area-inset-bottom))';
+        joyKnob.style.transform = `translate(${joyOutX * JOY_RADIUS}px, ${-joyOutY * JOY_RADIUS}px)`;
+      } else {
+        joyEl.classList.add('idle');
+        joyEl.classList.remove('on');
+        joyKnob.style.transform = '';
+      }
     }
   }
   
@@ -290,8 +336,8 @@
     const rect = stage.getBoundingClientRect();
     const x = e.clientX - rect.left, y = e.clientY - rect.top;
     const dragMode = FX.controlMode === 'drag';
-    const isLeft = (dragMode && !tapHandler) ? true : x < rect.width / 2;
     
+    // Check buttons first
     let hitBtn = false;
     for (const btn of buttons) {
       const br = btn.el.getBoundingClientRect();
@@ -309,14 +355,19 @@
       }
     }
     
-    if (!hitBtn && isLeft && joyPointerId === null) {
+    if (hitBtn) return;
+    
+    // In drag mode, left half is joystick (unless tap handler exists and handles it)
+    const isLeft = x < rect.width / 2;
+    
+    if (dragMode && isLeft && joyPointerId === null) {
       joyPointerId = e.pointerId;
       joyActive = true;
       joyBaseX = x;
       joyBaseY = rect.height - y;
       stage.setPointerCapture(e.pointerId);
       onPointerMove(e);
-    } else if (!hitBtn && !isLeft && tapHandler) {
+    } else if (!isLeft && tapHandler) {
       tapHandler(x, y);
     }
   }
@@ -330,7 +381,7 @@
       if (dist > JOY_RADIUS) {
         joyTargetX = dx / dist;
         joyTargetY = dy / dist;
-        if (FX.controlMode === 'drag') { // relative drag: base follows finger (leash)
+        if (FX.controlMode === 'drag') {
           joyBaseX += joyTargetX * (dist - JOY_RADIUS);
           joyBaseY += joyTargetY * (dist - JOY_RADIUS);
         }
@@ -554,7 +605,7 @@
     ctx.drawImage(src, -w / 2, -h, w, h);
     ctx.restore();
   };
-  // Cache filtered sprites (canvas filters are very slow per-draw on mobile)
+  
   const _tint = new Map();
   function tintCache(img, f) {
     const k = img.src + '|' + f;
@@ -570,7 +621,6 @@
     return c;
   }
   
-
   FX.controlMode = (() => { try { return localStorage.getItem('fx-ctrl') || 'drag'; } catch (e) { return 'drag'; } })();
   document.documentElement.classList.toggle('fx-drag', FX.controlMode === 'drag');
   FX.setControl = m => { FX.controlMode = m; try { localStorage.setItem('fx-ctrl', m); } catch (e) {} document.documentElement.classList.toggle('fx-drag', m === 'drag'); };
@@ -578,7 +628,7 @@
   FX.dist = (ax, ay, bx, by) => Math.hypot(bx - ax, by - ay);
   FX.randInt = (a, b) => Math.floor(a + Math.random() * (b - a + 1));
   FX.pick = arr => arr[Math.floor(Math.random() * arr.length)];
-  // Crisp spinning gold coin
+  
   FX.coin = function(ctx, x, y, r, t) {
     const sx = Math.max(0.12, Math.abs(Math.cos(t * 4)));
     ctx.save(); ctx.translate(x, y); ctx.filter = 'none'; ctx.globalCompositeOperation = 'source-over';
@@ -650,7 +700,6 @@
   };
   
   FX.drawFX = function(ctx) {
-    // Update and draw particles
     for (let i = particles.length - 1; i >= 0; i--) {
       const p = particles[i];
       if (!pauseState && hitstopTimer <= 0) {
@@ -675,7 +724,6 @@
       ctx.restore();
     }
     
-    // Draw texts
     for (let i = texts.length - 1; i >= 0; i--) {
       const txt = texts[i];
       if (!pauseState && hitstopTimer <= 0) {
@@ -708,7 +756,6 @@
       ctx.restore();
     }
     
-    // Draw rings
     for (let i = rings.length - 1; i >= 0; i--) {
       const ring = rings[i];
       if (!pauseState && hitstopTimer <= 0) ring.life -= dt;
@@ -731,7 +778,6 @@
       ctx.restore();
     }
     
-    // Draw flash
     for (let i = flashList.length - 1; i >= 0; i--) {
       const flash = flashList[i];
       if (!pauseState && hitstopTimer <= 0) flash.life -= dt;
@@ -782,3 +828,4 @@
     return data;
   };
 })();
+try{document.documentElement.classList.add('fx-game');}catch(e){}

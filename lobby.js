@@ -143,7 +143,7 @@
   function createRoot() {
     root = createElement('div', 'lobby-root');
     root.style.cssText = `
-      position: fixed; inset: 0; z-index: 50;
+      position: fixed; inset: 0; z-index: 9000;
       overflow: hidden; touch-action: none; user-select: none;
       font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB', sans-serif;
       background: #0a0a0f;
@@ -151,320 +151,642 @@
     document.body.appendChild(root);
     injectStyles();
   }
+function injectStyles() {
+  const style = createElement('style');
+  style.textContent = `
+    @keyframes shimmer {
+      0%, 100% { opacity: 0.8; transform: translateX(-100%); }
+      50% { opacity: 1; transform: translateX(100%); }
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.05); opacity: 0.9; }
+    }
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+    @keyframes breathe {
+      0%, 100% { transform: scale(1) translateY(0); }
+      50% { transform: scale(1.02) translateY(-5px); }
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-15px); }
+    }
+    @keyframes slideInUp {
+      from { transform: translateY(100%); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    @keyframes slideInDown {
+      from { transform: translateY(-100%); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    @keyframes starReveal {
+      0% { transform: scale(0) rotate(-180deg); opacity: 0; }
+      60% { transform: scale(1.2) rotate(10deg); opacity: 1; }
+      100% { transform: scale(1) rotate(0); opacity: 1; }
+    }
+    @keyframes glowPulse {
+      0%, 100% { box-shadow: 0 0 20px currentColor; }
+      50% { box-shadow: 0 0 40px currentColor, 0 0 60px currentColor; }
+    }
+    @keyframes twirl {
+      0% { transform: rotateY(0) scale(1); }
+      50% { transform: rotateY(180deg) scale(1.2); }
+      100% { transform: rotateY(360deg) scale(1); }
+    }
 
-  function injectStyles() {
-    const style = createElement('style');
-    style.textContent = `
-      @keyframes shimmer {
-        0%, 100% { opacity: 0.8; transform: translateX(-100%); }
-        50% { opacity: 1; transform: translateX(100%); }
-      }
-      @keyframes pulse {
-        0%, 100% { transform: scale(1); opacity: 1; }
-        50% { transform: scale(1.05); opacity: 0.9; }
-      }
-      @keyframes bounce {
-        0%, 100% { transform: translateY(0); }
-        50% { transform: translateY(-10px); }
-      }
-      @keyframes breathe {
-        0%, 100% { transform: scale(1) translateY(0); }
-        50% { transform: scale(1.02) translateY(-5px); }
-      }
-      @keyframes float {
-        0%, 100% { transform: translateY(0); }
-        50% { transform: translateY(-15px); }
-      }
-      @keyframes slideInUp {
-        from { transform: translateY(100%); opacity: 0; }
-        to { transform: translateY(0); opacity: 1; }
-      }
-      @keyframes slideInDown {
-        from { transform: translateY(-100%); opacity: 0; }
-        to { transform: translateY(0); opacity: 1; }
-      }
-      @keyframes fadeIn {
-        from { opacity: 0; }
-        to { opacity: 1; }
-      }
-      @keyframes spin {
-        to { transform: rotate(360deg); }
-      }
-      @keyframes starReveal {
-        0% { transform: scale(0) rotate(-180deg); opacity: 0; }
-        60% { transform: scale(1.2) rotate(10deg); opacity: 1; }
-        100% { transform: scale(1) rotate(0); opacity: 1; }
-      }
-      @keyframes glowPulse {
-        0%, 100% { box-shadow: 0 0 20px currentColor; }
-        50% { box-shadow: 0 0 40px currentColor, 0 0 60px currentColor; }
-      }
-      @keyframes twirl {
-        0% { transform: rotateY(0) scale(1); }
-        50% { transform: rotateY(180deg) scale(1.2); }
-        100% { transform: rotateY(360deg) scale(1); }
-      }
+    .lobby-root * { box-sizing: border-box; }
+    
+    
+    .lobby-panel {
+      background: linear-gradient(135deg, rgba(139,92,246,0.15), rgba(236,72,153,0.15));
+      backdrop-filter: blur(14px);
+      border-radius: 22px;
+      border: 1px solid rgba(255,255,255,0.1);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    }
 
-      .lobby-root * { box-sizing: border-box; }
+    .lobby-btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      padding: 12px 24px; border-radius: 16px; border: none;
+      background: linear-gradient(135deg, #a855f7, #ec4899);
+      color: white; font-size: clamp(14px, 3vw, 16px); font-weight: 600;
+      cursor: pointer; transition: all 250ms cubic-bezier(0.2, 0.9, 0.3, 1.2);
+      min-width: 52px; min-height: 44px; white-space: nowrap; text-overflow: ellipsis; overflow: hidden;
+      box-shadow: 0 4px 20px rgba(168,85,247,0.4);
+    }
+    .lobby-btn:active { transform: scale(0.94); }
+    .lobby-btn.secondary {
+      background: linear-gradient(135deg, rgba(100,100,120,0.6), rgba(80,80,100,0.6));
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+    .lobby-btn.gold {
+      background: linear-gradient(135deg, #fbbf24, #f59e0b);
+      box-shadow: 0 4px 20px rgba(251,191,36,0.5);
+    }
+
+    .lobby-icon-btn {
+      width: 48px; height: 48px; border-radius: 50%;
+      background: rgba(139,92,246,0.2);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.1);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: all 250ms;
+      font-size: 24px;
+      flex-shrink: 0;
+    }
+    .lobby-icon-btn:active { transform: scale(0.94); }
+
+    .lobby-card {
+      background: linear-gradient(135deg, rgba(139,92,246,0.1), rgba(236,72,153,0.1));
+      backdrop-filter: blur(10px);
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.05);
+      padding: 16px;
+      transition: all 300ms;
+    }
+    .lobby-card:active { transform: scale(0.98); }
+
+    .lobby-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.8);
+      backdrop-filter: blur(10px);
+      display: flex; align-items: center; justify-content: center;
+      animation: fadeIn 300ms;
+      z-index: 100;
+      overscroll-behavior: contain;
+    }
+
+    .lobby-screen {
+      position: absolute; inset: 0;
+      opacity: 0; pointer-events: none;
+      transition: opacity 400ms;
+    }
+    .lobby-screen.active {
+      opacity: 1; pointer-events: auto;
+    }
+
+    .lobby-rarity-frame {
+      position: relative;
+      border-radius: 12px;
+      padding: 3px;
+      overflow: hidden;
+    }
+    .lobby-rarity-frame::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 12px;
+      padding: 2px;
+      background: linear-gradient(45deg, currentColor, transparent, currentColor);
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+    }
+    .lobby-rarity-frame.ur { box-shadow: 0 0 18px #ff4fd8, 0 0 34px #7af3ff; animation: urGlow 2.4s linear infinite; }
+    .lobby-rarity-frame.ur::before { background: conic-gradient(from 0deg, #ff4fd8, #ffd76a, #7af3ff, #b38cff, #ff4fd8) !important; }
+    @keyframes urGlow { 0%,100% { filter: hue-rotate(0deg); } 50% { filter: hue-rotate(40deg) brightness(1.15); } }
+    .lobby-rarity-frame.ur::after, .lobby-rarity-frame.ssr::after {
+      content: '';
+      position: absolute;
+      inset: -100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+      animation: shimmer 2s infinite;
+    }
+
+    .lobby-stat-bar {
+      height: 8px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 4px;
+      overflow: hidden;
+      position: relative;
+    }
+    .lobby-stat-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #a855f7, #ec4899);
+      border-radius: 4px;
+      transition: width 600ms cubic-bezier(0.2, 0.9, 0.3, 1);
+    }
+
+    .lobby-badge {
+      position: absolute;
+      top: -4px; right: -4px;
+      width: 12px; height: 12px;
+      background: #ef4444;
+      border-radius: 50%;
+      border: 2px solid #0a0a0f;
+      animation: pulse 2s infinite;
+      z-index: 1;
+    }
+
+    .lobby-speech-bubble {
+      position: absolute;
+      bottom: 120%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: white;
+      color: #0a0a0f;
+      padding: 12px 16px;
+      border-radius: 16px;
+      font-size: 14px;
+      white-space: nowrap;
+      animation: slideInDown 300ms;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+      z-index: 10;
+      pointer-events: none;
+    }
+    .lobby-speech-bubble::after {
+      content: '';
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 8px solid transparent;
+      border-top-color: white;
+    }
+
+    .lobby-top-bar {
+      position: absolute;
+      top: env(safe-area-inset-top, 0);
+      left: env(safe-area-inset-left, 0);
+      right: env(safe-area-inset-right, 0);
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 max(12px, env(safe-area-inset-left, 12px)) 0 max(12px, env(safe-area-inset-right, 12px));
+      background: linear-gradient(180deg, rgba(0,0,0,0.4), transparent);
+      backdrop-filter: blur(8px);
+      z-index: 20;
+    }
+
+    .lobby-player-info {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+      flex: 0 1 auto;
+    }
+
+    .lobby-player-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 2px solid rgba(255,255,255,0.3);
+      object-fit: cover;
+      flex-shrink: 0;
+    }
+
+    .lobby-player-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: white;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 80px;
+    }
+
+    .lobby-player-level {
+      font-size: 11px;
+      padding: 2px 6px;
+      background: linear-gradient(135deg, #a855f7, #ec4899);
+      border-radius: 8px;
+      color: white;
+      font-weight: 600;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .lobby-currency-hud {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      flex: 0 1 auto;
+      min-width: 0;
+      max-width: 50%;
+    }
+
+    .lobby-currency-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 8px;
+      background: rgba(0,0,0,0.5);
+      backdrop-filter: blur(10px);
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.1);
+      font-size: clamp(11px, 2.5vw, 13px);
+      font-weight: 600;
+      color: white;
+      white-space: nowrap;
+      min-width: 0;
+    }
+
+    .lobby-currency-item img {
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+    }
+
+    .lobby-currency-item span {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .lobby-currency-add {
+      width: 18px;
+      height: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255,255,255,0.2);
+      border-radius: 50%;
+      font-size: 12px;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: all 200ms;
+    }
+    .lobby-currency-add:active { transform: scale(0.9); }
+
+    .lobby-side-column {
+      position: absolute;
+      top: calc(env(safe-area-inset-top, 0) + 60px);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      z-index: 15;
+    }
+
+    .lobby-side-column.left {
+      left: max(12px, env(safe-area-inset-left, 12px));
+    }
+
+    .lobby-side-column.right {
+      right: max(12px, env(safe-area-inset-right, 12px));
+    }
+
+    .lobby-side-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .lobby-side-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: rgba(139,92,246,0.3);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      transition: all 250ms;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+    .lobby-side-item:active .lobby-side-icon { transform: scale(0.94); }
+
+    .lobby-side-label {
+      font-size: 10px;
+      color: white;
+      font-weight: 600;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+      white-space: nowrap;
+    }
+
+    .lobby-character-showcase {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 5;
+    }
+    .lobby-character-showcase::before {
+      content: '';
+      position: absolute;
+      bottom: -30px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 250px;
+      height: 30px;
+      background: radial-gradient(ellipse, rgba(0,0,0,0.5), transparent);
+      filter: blur(15px);
+    }
+    .lobby-character-showcase::after {
+      content: '';
+      position: absolute;
+      inset: -40px;
+      background: radial-gradient(circle at center, rgba(168,85,247,0.2), transparent 70%);
+      pointer-events: none;
+      animation: pulse 3s infinite;
+    }
+
+    .lobby-char-nameplate {
+      margin-top: 16px;
+      padding: 8px 20px;
+      background: linear-gradient(135deg, rgba(139,92,246,0.3), rgba(236,72,153,0.3));
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      border: 1px solid rgba(255,255,255,0.2);
+      font-size: 16px;
+      font-weight: 600;
+      color: white;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+    }
+
+    .lobby-bottom-bar {
+      position: absolute;
+      bottom: env(safe-area-inset-bottom, 0);
+      left: env(safe-area-inset-left, 0);
+      right: env(safe-area-inset-right, 0);
+      height: 64px;
+      background: linear-gradient(180deg, transparent, rgba(0,0,0,0.6));
+      backdrop-filter: blur(14px);
+      border-top: 1px solid rgba(255,255,255,0.1);
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      padding: 0 max(12px, env(safe-area-inset-left, 12px)) 0 max(12px, env(safe-area-inset-right, 12px));
+      z-index: 20;
+    }
+
+    .lobby-nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+      padding: 4px 8px;
+      min-width: 48px;
+      transition: all 200ms;
+    }
+    .lobby-nav-item:active { transform: scale(0.94); }
+
+    .lobby-nav-icon {
+      font-size: 22px;
+      transition: transform 200ms;
+    }
+    .lobby-nav-item.active .lobby-nav-icon {
+      transform: scale(1.2);
+    }
+
+    .lobby-nav-label {
+      font-size: 10px;
+      color: rgba(255,255,255,0.7);
+      font-weight: 600;
+    }
+    .lobby-nav-item.active .lobby-nav-label {
+      color: #a855f7;
+    }
+
+    .lobby-start-btn {
+      position: absolute;
+      bottom: calc(env(safe-area-inset-bottom, 0) + 76px);
+      right: max(20px, env(safe-area-inset-right, 20px));
+      min-width: 140px;
+      height: 60px;
+      padding: 0 24px;
+      border-radius: 30px;
+      background: linear-gradient(135deg, #fbbf24, #f59e0b);
+      border: none;
+      font-size: 18px;
+      font-weight: 700;
+      color: white;
+      cursor: pointer;
+      box-shadow: 0 8px 30px rgba(251,191,36,0.6);
+      animation: pulse 2s infinite;
+      z-index: 18;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+    }
+    .lobby-start-btn:active { transform: scale(0.94); animation: none; }
+
+    .lobby-start-text {
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .lobby-start-stage {
+      font-size: 11px;
+      opacity: 0.9;
+      font-weight: 500;
+    }
+
+    .lobby-mode-toggle {
+      position: absolute;
+      bottom: calc(env(safe-area-inset-bottom, 0) + 148px);
+      right: max(20px, env(safe-area-inset-right, 20px));
+      display: flex;
+      gap: 8px;
+      background: rgba(0,0,0,0.5);
+      backdrop-filter: blur(10px);
+      padding: 4px;
+      border-radius: 20px;
+      border: 1px solid rgba(255,255,255,0.1);
+      z-index: 17;
+    }
+
+    .lobby-mode-chip {
+      padding: 8px 16px;
+      border-radius: 16px;
+      background: transparent;
+      border: 2px solid transparent;
+      cursor: pointer;
+      transition: all 250ms;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      color: rgba(255,255,255,0.7);
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .lobby-mode-chip.active {
+      background: linear-gradient(135deg, rgba(168,85,247,0.3), rgba(236,72,153,0.3));
+      border-color: #a855f7;
+      color: white;
+      box-shadow: 0 0 20px rgba(168,85,247,0.5);
+    }
+    .lobby-mode-chip:active { transform: scale(0.94); }
+
+    .lobby-close {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      z-index: 100;
+    }
+
+    .lobby-panel-header {
+      position: sticky;
+      top: 0;
+      background: linear-gradient(180deg, rgba(10,10,15,0.95), rgba(10,10,15,0.8));
+      backdrop-filter: blur(10px);
+      padding: 16px 48px 12px 16px;
+      margin: -24px -24px 16px -24px;
+      border-radius: 22px 22px 0 0;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      z-index: 10;
+    }
+
+    .lobby-panel-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: white;
+      margin: 0;
+    }
+
+    .lobby-panel-tabs {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .lobby-tab {
+      padding: 8px 16px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: rgba(255,255,255,0.6);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 250ms;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .lobby-tab.active {
+      background: linear-gradient(135deg, rgba(168,85,247,0.3), rgba(236,72,153,0.3));
+      border-color: #a855f7;
+      color: white;
+    }
+    .lobby-tab:active { transform: scale(0.94); }
+
+    .lobby-panel-content {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+      padding: 0 0 24px 0;
+    }
+
+    @media (orientation: portrait) {
+      .lobby-side-column {
+        flex-direction: row !important;
+        top: auto !important;
+        bottom: calc(env(safe-area-inset-bottom, 0) + 76px);
+        left: 50% !important;
+        right: auto !important;
+        transform: translateX(-50%);
+        max-width: calc(100vw - 160px);
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
       
-      .lobby-panel {
-        background: linear-gradient(135deg, rgba(139,92,246,0.15), rgba(236,72,153,0.15));
-        backdrop-filter: blur(20px);
-        border-radius: 22px;
-        border: 1px solid rgba(255,255,255,0.1);
-        box-shadow: 0 20px 60px rgba(0,0,0,0.5);
-      }
-
-      .lobby-btn {
-        display: inline-flex; align-items: center; justify-content: center;
-        padding: 12px 24px; border-radius: 16px; border: none;
-        background: linear-gradient(135deg, #a855f7, #ec4899);
-        color: white; font-size: 16px; font-weight: 600;
-        cursor: pointer; transition: all 250ms cubic-bezier(0.2, 0.9, 0.3, 1.2);
-        min-width: 52px; min-height: 52px;
-        box-shadow: 0 4px 20px rgba(168,85,247,0.4);
-      }
-      .lobby-btn:active { transform: scale(0.95); }
-      .lobby-btn.secondary {
-        background: linear-gradient(135deg, rgba(100,100,120,0.6), rgba(80,80,100,0.6));
-        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-      }
-      .lobby-btn.gold {
-        background: linear-gradient(135deg, #fbbf24, #f59e0b);
-        box-shadow: 0 4px 20px rgba(251,191,36,0.5);
-      }
-
-      .lobby-icon-btn {
-        width: 46px; height: 46px; border-radius: 50%;
-        background: rgba(139,92,246,0.2);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255,255,255,0.1);
-        display: flex; align-items: center; justify-content: center;
-        cursor: pointer; transition: all 250ms;
-        font-size: 22px;
-        flex-shrink: 0;
-      }
-      .lobby-icon-btn:active { transform: scale(0.9); }
-
-      .lobby-card {
-        background: linear-gradient(135deg, rgba(139,92,246,0.1), rgba(236,72,153,0.1));
-        backdrop-filter: blur(10px);
-        border-radius: 16px;
-        border: 1px solid rgba(255,255,255,0.05);
-        padding: 16px;
-        transition: all 300ms;
-      }
-      .lobby-card:active { transform: scale(0.98); }
-
-      .lobby-overlay {
-        position: absolute; inset: 0;
-        background: rgba(0,0,0,0.8);
-        backdrop-filter: blur(10px);
-        display: flex; align-items: center; justify-content: center;
-        animation: fadeIn 300ms;
-        z-index: 100;
-      }
-
-      .lobby-screen {
-        position: absolute; inset: 0;
-        opacity: 0; pointer-events: none;
-        transition: opacity 400ms;
-      }
-      .lobby-screen.active {
-        opacity: 1; pointer-events: auto;
-      }
-
-      .lobby-rarity-frame {
-        position: relative;
-        border-radius: 12px;
-        padding: 3px;
-        overflow: hidden;
-      }
-      .lobby-rarity-frame::before {
-        content: '';
-        position: absolute;
-        inset: 0;
-        border-radius: 12px;
-        padding: 2px;
-        background: linear-gradient(45deg, currentColor, transparent, currentColor);
-        -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-        -webkit-mask-composite: xor;
-        mask-composite: exclude;
-      }
-      .lobby-rarity-frame.ur { box-shadow: 0 0 18px #ff4fd8, 0 0 34px #7af3ff; animation: urGlow 2.4s linear infinite; }
-      .lobby-rarity-frame.ur::before { background: conic-gradient(from 0deg, #ff4fd8, #ffd76a, #7af3ff, #b38cff, #ff4fd8) !important; }
-      @keyframes urGlow { 0%,100% { filter: hue-rotate(0deg); } 50% { filter: hue-rotate(40deg) brightness(1.15); } }
-      .lobby-rarity-frame.ur::after, .lobby-rarity-frame.ssr::after {
-        content: '';
-        position: absolute;
-        inset: -100%;
-        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-        animation: shimmer 2s infinite;
-      }
-
-      .lobby-stat-bar {
-        height: 8px;
-        background: rgba(255,255,255,0.1);
-        border-radius: 4px;
-        overflow: hidden;
-        position: relative;
-      }
-      .lobby-stat-bar-fill {
-        height: 100%;
-        background: linear-gradient(90deg, #a855f7, #ec4899);
-        border-radius: 4px;
-        transition: width 600ms cubic-bezier(0.2, 0.9, 0.3, 1);
-      }
-
-      .lobby-badge {
-        position: absolute;
-        top: -4px; right: -4px;
-        width: 12px; height: 12px;
-        background: #ef4444;
-        border-radius: 50%;
-        border: 2px solid #0a0a0f;
-        animation: pulse 2s infinite;
-        z-index: 1;
-      }
-
-      .lobby-speech-bubble {
-        position: absolute;
-        bottom: 120%;
-        left: 50%;
-        transform: translateX(-50%);
-        background: white;
-        color: #0a0a0f;
-        padding: 12px 16px;
-        border-radius: 16px;
-        font-size: 14px;
-        white-space: nowrap;
-        animation: slideInDown 300ms;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-        z-index: 10;
-        pointer-events: none;
-      }
-      .lobby-speech-bubble::after {
-        content: '';
-        position: absolute;
-        top: 100%;
-        left: 50%;
-        transform: translateX(-50%);
-        border: 8px solid transparent;
-        border-top-color: white;
-      }
-
-      .lobby-currency-hud {
-        position: absolute;
-        top: max(20px, env(safe-area-inset-top, 20px));
-        right: max(20px, env(safe-area-inset-right, 20px));
-        display: flex;
-        gap: 12px;
-        z-index: 10;
-      }
-      .lobby-currency-item {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        padding: 8px 12px;
-        background: rgba(0,0,0,0.6);
-        backdrop-filter: blur(10px);
-        border-radius: 20px;
-        border: 1px solid rgba(255,255,255,0.1);
-        font-size: 14px;
-        font-weight: 600;
-        color: white;
+      .lobby-character-showcase {
+        top: 40%;
       }
 
       .lobby-start-btn {
-        position: absolute;
-        bottom: max(40px, env(safe-area-inset-bottom, 40px));
-        right: max(40px, env(safe-area-inset-right, 40px));
-        width: 80px; height: 80px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, #fbbf24, #f59e0b);
-        border: none;
-        font-size: 36px;
-        color: white;
-        cursor: pointer;
-        box-shadow: 0 8px 30px rgba(251,191,36,0.6);
-        animation: pulse 2s infinite;
-        z-index: 10;
-      }
-      .lobby-start-btn:active { transform: scale(0.95); animation: none; }
-
-      .lobby-side-menu {
-        position: absolute;
-        left: max(20px, env(safe-area-inset-left, 20px));
-        top: calc(max(20px, env(safe-area-inset-top, 20px)) + 66px);
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-        z-index: 10;
-        max-height: calc(100vh - 160px);
-        overflow-y: auto;
-      }
-
-      .lobby-character-showcase {
-        position: absolute;
+        bottom: calc(env(safe-area-inset-bottom, 0) + 76px);
         left: 50%;
-        top: 50%;
-        transform: translate(-50%, -50%);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-      }
-      .lobby-character-showcase::before {
-        content: '';
-        position: absolute;
-        bottom: -20px;
-        left: 50%;
+        right: auto;
         transform: translateX(-50%);
-        width: 200px;
-        height: 20px;
-        background: radial-gradient(ellipse, rgba(0,0,0,0.4), transparent);
-        filter: blur(10px);
-      }
-      .lobby-character-showcase::after {
-        content: '';
-        position: absolute;
-        inset: -30px;
-        background: radial-gradient(circle at center, rgba(168,85,247,0.2), transparent 70%);
-        pointer-events: none;
-        animation: pulse 3s infinite;
+        min-width: 70%;
+        max-width: calc(100vw - 40px);
       }
 
-      .lobby-close {
-        position: absolute !important;
-        top: 12px !important;
-        left: 12px !important;
-        z-index: 10;
+      .lobby-mode-toggle {
+        bottom: calc(env(safe-area-inset-bottom, 0) + 148px);
+        left: 50%;
+        right: auto;
+        transform: translateX(-50%);
       }
+    }
 
-      @media (orientation: portrait) {
-        .lobby-side-menu {
-          flex-direction: row !important;
-          top: auto !important;
-          bottom: max(20px, env(safe-area-inset-bottom, 20px));
-          left: 50% !important;
-          transform: translateX(-50%);
-          max-height: none;
-          max-width: calc(100vw - 40px);
-          overflow-x: auto;
-        }
-        .lobby-character-showcase {
-          top: 40%;
-        }
+    @media (max-width: 440px) {
+      .lobby-currency-item {
+        font-size: 11px;
+        padding: 3px 6px;
       }
-
-      @media (max-width: 844px) {
-        .lobby-side-menu {
-          grid-template-columns: repeat(3, 1fr);
-        }
+      .lobby-currency-item img {
+        width: 16px;
+        height: 16px;
       }
-    `;
-    document.head.appendChild(style);
-  }
+      .lobby-player-name {
+        max-width: 60px;
+      }
+    }
+  `;
+  document.head.appendChild(style);
+}
 
   // ==================== Title Screen ====================
   function showTitleScreen(onComplete) {
@@ -642,12 +964,15 @@
       const skin = (config.skins || []).find(s => s.id === state.selectedSkin && (!s.char || s.char === char.id));
 
       const charImg = createElement('img', '', container);
-      charImg.src = `../assets/${(skin && skin.img) || char.img}.webp`;
+      const HERO = ['lan','mo','li','xing','hu'].includes(char.id) && !(skin && skin.img) ? char.id + '-hero' : null;
+      charImg.className = 'lobby-hero-img';
+      charImg.src = `../assets/${HERO || (skin && skin.img) || char.img}.webp`;
+      if (HERO) charImg.onerror = () => { charImg.onerror = null; charImg.src = `../assets/${char.img}.webp`; };
       charImg.style.cssText = `
         max-width: 100%;
         max-height: 100%;
         object-fit: contain;
-        filter: ${skin?.filter || 'none'} drop-shadow(0 20px 40px rgba(0,0,0,0.5));
+        filter: ${skin?.filter || 'none'} var(--hero-rim, drop-shadow(0 0 0 transparent)) drop-shadow(0 14px 18px rgba(0,0,0,0.35));
         animation: breathe 4s infinite ease-in-out;
         position: relative;
         z-index: 1;
@@ -684,276 +1009,376 @@
   }
 
   // ==================== Currency HUD ====================
-  function createCurrencyHUD(parent) {
-    const hud = createElement('div', 'lobby-currency-hud', parent);
+function createCurrencyHUD(parent) {
+  const hud = createElement('div', 'lobby-currency-hud', parent);
 
-    function update() {
-      clearChildren(hud);
-      (config.currency || []).forEach(curr => {
-        const item = createElement('div', 'lobby-currency-item', hud);
-        
-        const icon = createElement('img', '', item);
-        icon.src = `../assets/${curr.icon}.webp`;
-        icon.style.cssText = 'width: 24px; height: 24px;';
-        
-        const amount = createElement('span', '', item);
-        amount.textContent = formatNumber(state.currency[curr.id] || 0);
-        amount.dataset.currencyId = curr.id;
-      });
-    }
-
-    update();
-    return { update };
+  function update() {
+    clearChildren(hud);
+    const currencies = (config.currency || []).slice(0, 3);
+    currencies.forEach(curr => {
+      const item = createElement('div', 'lobby-currency-item', hud);
+      
+      const icon = createElement('img', '', item);
+      icon.src = `../assets/${curr.icon}.webp`;
+      
+      const amount = createElement('span', '', item);
+      amount.textContent = formatNumber(state.currency[curr.id] || 0);
+      amount.dataset.currencyId = curr.id;
+      
+      const add = createElement('div', 'lobby-currency-add', item);
+      add.textContent = '+';
+      add.onclick = (e) => {
+        e.stopPropagation();
+        Audio.tap();
+        vibrate();
+        openPanel('shop');
+      };
+    });
   }
+
+  update();
+  return { update };
+}
 
   // ==================== Side Menu ====================
-  function createSideMenu(parent) {
-    const menu = createElement('div', 'lobby-side-menu', parent);
-
-    const menuItems = [
-      { icon: '👗', name: 'wardrobe', label: '换装' },
-      ...(config.slots ? [{ icon: '🎒', name: 'bag', label: '背包' }] : []),
-      { icon: '👥', name: 'chars', label: '角色' },
-      { icon: '🗺', name: 'stages', label: '关卡' },
-      { icon: '📜', name: 'missions', label: '任务' },
-      { icon: '🎁', name: 'daily', label: '礼物' },
-      { icon: '⚙', name: 'settings', label: '设置' }
-    ];
-
-    menuItems.forEach(item => {
-      const btn = createElement('div', 'lobby-icon-btn', menu);
-      btn.textContent = item.icon;
-      btn.title = item.label;
-      btn.dataset.open = item.name;
-      btn.style.position = 'relative';
-      
-      if (item.name === 'daily') {
-        const today = new Date().toDateString();
-        if (state.dailyClaimDate !== today) {
-          createElement('div', 'lobby-badge', btn);
-        }
-      }
-
-      btn.onclick = () => {
-        Audio.tap();
-        vibrate();
-        if (item.name === 'stages') {
-          openPanel('stages');
-        } else {
-          openPanel(item.name);
-        }
-      };
-    });
-
-    return menu;
-  }
+function createSideMenu(parent) {
+  // Deprecated - now using side columns in showLobby
+  return null;
+}
 
   // ==================== Mode Toggle ====================
-  function createModeToggle(parent) {
-    const container = createElement('div', '', parent);
-    container.style.cssText = `
-      position: absolute;
-      bottom: max(140px, env(safe-area-inset-bottom, 140px));
-      right: max(40px, env(safe-area-inset-right, 40px));
-      display: flex;
-      gap: 8px;
-    `;
+function createModeToggle(parent) {
+  const container = createElement('div', 'lobby-mode-toggle', parent);
 
-    (config.modes || []).forEach(mode => {
-      const chip = createElement('div', 'lobby-card', container);
-      chip.style.cssText = `
-        padding: 10px;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border: 2px solid transparent;
-        transition: all 250ms;
-        width: 52px;
-        height: 52px;
-      `;
-      
-      const icon = createElement('img', '', chip);
-      icon.src = `../assets/${mode.icon}.webp`;
-      icon.style.cssText = 'width: 32px; height: 32px;';
-      
-      chip.dataset.mode = mode.id;
-
-      chip.onclick = () => {
-        Audio.tap();
-        vibrate();
-        state.selectedMode = mode.id;
-        updateModeSelection();
-      };
-    });
-
-    function updateModeSelection() {
-      container.querySelectorAll('[data-mode]').forEach(chip => {
-        if (chip.dataset.mode === state.selectedMode) {
-          chip.style.borderColor = '#a855f7';
-          chip.style.background = 'linear-gradient(135deg, rgba(168,85,247,0.3), rgba(236,72,153,0.3))';
-          chip.style.boxShadow = '0 0 20px rgba(168,85,247,0.5)';
-        } else {
-          chip.style.borderColor = 'transparent';
-          chip.style.background = 'linear-gradient(135deg, rgba(139,92,246,0.1), rgba(236,72,153,0.1))';
-          chip.style.boxShadow = 'none';
-        }
-      });
-    }
-
-    state.selectedMode = state.selectedMode || (config.modes && config.modes[0]?.id);
-    updateModeSelection();
-
-    return { update: updateModeSelection };
-  }
-
-  // ==================== Stage Button ====================
-  function createStageButton(parent) {
-    const btn = createElement('div', 'lobby-card', parent);
-    btn.style.cssText = `
-      position: absolute;
-      bottom: calc(22px + env(safe-area-inset-bottom, 0px));
-      right: calc(150px + env(safe-area-inset-right, 0px));
-      padding: 10px 16px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      min-width: 150px;
-    `;
-    btn.dataset.open = 'stages';
-
-    function update() {
-      clearChildren(btn);
-      
-      const currentStage = (config.stages || []).find(x => x.id === state.selectedStage) || (config.stages || [])[0];
-      if (!currentStage) return;
-
-      const icon = createElement('div', '', btn);
-      icon.textContent = '🗺';
-      icon.style.cssText = 'font-size: 24px;';
-
-      const text = createElement('div', '', btn);
-      text.style.cssText = 'flex: 1;';
-      
-      const name = createElement('div', '', text);
-      name.textContent = currentStage.name || '关卡';
-      name.style.cssText = 'font-size: 16px; font-weight: 600; color: white;';
-
-      const stars = createElement('div', '', text);
-      const stageStars = state.stageProgress[currentStage.id] || 0;
-      stars.textContent = '⭐'.repeat(stageStars) + '☆'.repeat(3 - stageStars);
-      stars.style.cssText = 'font-size: 12px; margin-top: 4px; opacity: 0.8;';
-    }
-
-    btn.onclick = () => {
+  (config.modes || []).forEach(mode => {
+    const chip = createElement('div', 'lobby-mode-chip', container);
+    chip.dataset.mode = mode.id;
+    
+    const icon = createElement('img', '', chip);
+    icon.src = `../assets/${mode.icon}.webp`;
+    icon.style.cssText = 'width: 20px; height: 20px;';
+    
+    const label = createElement('span', '', chip);
+    label.textContent = mode.name || mode.id;
+    
+    chip.onclick = () => {
       Audio.tap();
       vibrate();
-      openPanel('stages');
+      state.selectedMode = mode.id;
+      updateModeSelection();
     };
+  });
 
-    update();
-    return { update };
+  function updateModeSelection() {
+    container.querySelectorAll('[data-mode]').forEach(chip => {
+      if (chip.dataset.mode === state.selectedMode) {
+        chip.classList.add('active');
+      } else {
+        chip.classList.remove('active');
+      }
+    });
   }
 
+  state.selectedMode = state.selectedMode || (config.modes && config.modes[0]?.id);
+  updateModeSelection();
+
+  return { update: updateModeSelection };
+}
+
+  // ==================== Stage Button ====================
+function createStageButton(parent) {
+  const btn = createElement('button', 'lobby-start-btn', parent);
+  btn.id = 'lobby-start';
+
+  function update() {
+    clearChildren(btn);
+    
+    const currentStage = (config.stages || []).find(x => x.id === state.selectedStage) || (config.stages || [])[0];
+    
+    const text = createElement('div', 'lobby-start-text', btn);
+    text.textContent = '开始';
+    
+    if (currentStage) {
+      const stage = createElement('div', 'lobby-start-stage', btn);
+      stage.textContent = currentStage.name || '关卡';
+    }
+  }
+
+  btn.onclick = () => {
+    Audio.claim();
+    vibrate(20);
+    
+    const selection = getSelection();
+    if (config.onStart) {
+      Lobby.hide();
+      (newRoundKey(), config.onStart(selection));
+    }
+  };
+
+  update();
+  return { update };
+}
+
   // ==================== Main Lobby ====================
-  function showLobby() {
-    setScreen('lobby');
-    clearChildren(root);
+function showLobby() {
+  setScreen('lobby');
+  clearChildren(root);
+  document.documentElement.classList.add('fx-in-lobby');
 
-    const screen = createElement('div', 'lobby-screen active', root);
+  const screen = createElement('div', 'lobby-screen active', root);
 
-    createParallaxScene(screen);
+  createParallaxScene(screen);
 
-    const backBtn = createElement('div', 'lobby-icon-btn', screen);
-    backBtn.textContent = '🏠';
-    backBtn.style.cssText = `
-      position: absolute;
-      top: max(20px, env(safe-area-inset-top, 20px));
-      left: max(20px, env(safe-area-inset-left, 20px));
-      z-index: 10;
-    `;
-    backBtn.onclick = () => {
-      window.location.href = '../tools.html';
+  // Top bar
+  const topBar = createElement('div', 'lobby-top-bar', screen);
+  
+  const playerInfo = createElement('div', 'lobby-player-info', topBar);
+  
+  const avatar = createElement('img', 'lobby-player-avatar', playerInfo);
+  const char = config.chars.find(c => c.id === state.selectedChar) || config.chars[0];
+  avatar.src = `../assets/${char.chibi}.webp`;
+  
+  const name = createElement('div', 'lobby-player-name', playerInfo);
+  name.textContent = char.name || '旅行者';
+  
+  const level = createElement('div', 'lobby-player-level', playerInfo);
+  level.textContent = 'Lv.1';
+
+  const currencyHUD = createCurrencyHUD(topBar);
+
+  const settingsBtn = createElement('div', 'lobby-icon-btn', topBar);
+  settingsBtn.textContent = '⚙';
+  settingsBtn.style.flexShrink = '0';
+  settingsBtn.onclick = () => {
+    Audio.tap();
+    vibrate();
+    openPanel('settings');
+  };
+
+  // Left side column
+  const leftColumn = createElement('div', 'lobby-side-column left', screen);
+  [
+    { icon: '📜', label: '任务', name: 'missions', badge: state.missions?.some(m => m.progress >= m.target && !m.claimed) },
+    { icon: '🎁', label: '签到', name: 'daily', badge: state.dailyClaimDate !== new Date().toDateString() },
+    { icon: '👥', label: '角色', name: 'chars' },
+    { icon: '🗺', label: '关卡', name: 'stages' }
+  ].forEach(item => {
+    const sideItem = createElement('div', 'lobby-side-item', leftColumn);
+    sideItem.dataset.open = item.name;
+    
+    const icon = createElement('div', 'lobby-side-icon', sideItem);
+    icon.textContent = item.icon;
+    if (item.badge) createElement('div', 'lobby-badge', icon);
+    
+    const label = createElement('div', 'lobby-side-label', sideItem);
+    label.textContent = item.label;
+    
+    sideItem.onclick = () => {
+      Audio.tap();
+      vibrate();
+      openPanel(item.name);
     };
+  });
 
-    const showcase = createCharacterShowcase(screen);
-    const currencyHUD = createCurrencyHUD(screen);
-    createSideMenu(screen);
-    const modeToggle = createModeToggle(screen);
-    const stageBtn = createStageButton(screen);
+  // Right side column
+  const rightColumn = createElement('div', 'lobby-side-column right', screen);
+  [
+    { icon: '👑', label: 'VIP', name: 'vip' },
+    { icon: '🛒', label: '商店', name: 'shop' },
+    { icon: '🎒', label: '背包', name: 'bag', hide: !config.slots },
+    { icon: '👗', label: '衣橱', name: 'wardrobe' }
+  ].filter(i => !i.hide).forEach(item => {
+    const sideItem = createElement('div', 'lobby-side-item', rightColumn);
+    sideItem.dataset.open = item.name;
+    
+    const icon = createElement('div', 'lobby-side-icon', sideItem);
+    icon.textContent = item.icon;
+    
+    const label = createElement('div', 'lobby-side-label', sideItem);
+    label.textContent = item.label;
+    
+    sideItem.onclick = () => {
+      Audio.tap();
+      vibrate();
+      openPanel(item.name);
+    };
+  });
 
-    const startBtn = createElement('button', 'lobby-start-btn', screen);
-    startBtn.id = 'lobby-start';
-    startBtn.textContent = '▶';
-    startBtn.onclick = () => {
-      Audio.claim();
-      vibrate(20);
+  // Character showcase
+  const showcase = createCharacterShowcase(screen);
+
+  // Mode toggle
+  if (config.modes && config.modes.length > 1) {
+    createModeToggle(screen);
+  }
+
+  // Start button
+  createStageButton(screen);
+
+  // Bottom nav bar
+  const bottomBar = createElement('div', 'lobby-bottom-bar', screen);
+  [
+    { icon: '🏠', label: '大厅', name: 'lobby' },
+    { icon: '👥', label: '角色', name: 'chars' },
+    { icon: '👗', label: '衣橱', name: 'wardrobe' },
+    { icon: '🎒', label: '背包', name: 'bag', hide: !config.slots },
+    { icon: '🛒', label: '商店', name: 'shop' }
+  ].filter(i => !i.hide).forEach((item, idx) => {
+    const navItem = createElement('div', 'lobby-nav-item', bottomBar);
+    if (idx === 0) navItem.classList.add('active');
+    
+    const icon = createElement('div', 'lobby-nav-icon', navItem);
+    icon.textContent = item.icon;
+    
+    const label = createElement('div', 'lobby-nav-label', navItem);
+    label.textContent = item.label;
+    
+    navItem.onclick = () => {
+      Audio.tap();
+      vibrate();
       
-      const selection = getSelection();
-      if (config.onStart) {
-        Lobby.hide();
-        (newRoundKey(), config.onStart(selection));
+      bottomBar.querySelectorAll('.lobby-nav-item').forEach(n => n.classList.remove('active'));
+      navItem.classList.add('active');
+      
+      if (item.name !== 'lobby') {
+        openPanel(item.name);
       }
     };
+  });
 
-    screen._showcase = showcase;
-    screen._currencyHUD = currencyHUD;
-    screen._stageBtn = stageBtn;
-    screen._modeToggle = modeToggle;
+  try { setupImmersion(screen, showcase); } catch (e) {}
+  screen._showcase = showcase;
+  screen._currencyHUD = currencyHUD;
+}
+
+
+  // ==================== Scene immersion (lobbyhero) ====================
+  const SCENE_TONE = {
+    'bg-arena':  {sun:'left', rim:'#ffb37a', grade:'rgba(255,140,90,.16)', shaft:'rgba(255,214,150,.22)', fg:'prop-coral', bub:true,  wave:true},
+    'bg-undersea':{rim:'#8fe9ff', grade:'rgba(60,170,255,.14)', shaft:'rgba(180,240,255,.22)', fg:'prop-coral', bub:true, wave:false},
+    'bg-space':  {rim:'#b9a4ff', grade:'rgba(90,80,220,.14)',  shaft:'rgba(190,170,255,.16)', fg:'prop-crystal', bub:false, wave:false},
+    'bg-rail':   {rim:'#ffc6e8', grade:'rgba(220,120,220,.12)', shaft:'rgba(255,220,240,.2)', fg:'prop-sakura', bub:false, wave:false},
+    'lobbybg-story':  {sun:'right', rim:'#ffe3a8', grade:'rgba(90,80,200,.14)', shaft:'rgba(255,236,190,.16)', fg:'prop-lantern', bub:false, wave:false},
+    'lobbybg-snake':  {sun:'right', rim:'#fff0c8', grade:'rgba(255,190,140,.10)', shaft:'rgba(255,250,220,.2)', fg:'prop-coral', bub:true, wave:false},
+    'lobbybg-td':     {sun:'left',  rim:'#fff4c0', grade:'rgba(120,200,120,.10)', shaft:'rgba(255,250,210,.22)', fg:'prop-flowers', bub:false, wave:false},
+    'lobbybg-survivor':{sun:'left', rim:'#c8a8ff', grade:'rgba(90,50,180,.18)', shaft:'rgba(200,170,255,.14)', fg:'prop-crystal', bub:false, wave:false},
+    'lobbybg-lili-merge':{sun:'right', rim:'#ffd0e4', grade:'rgba(255,150,200,.10)', shaft:'rgba(255,235,245,.2)', fg:'prop-flowers', bub:true, wave:false},
+    'lobbybg-lili-match':{sun:'left', rim:'#ffcf8a', grade:'rgba(200,120,50,.12)', shaft:'rgba(255,220,150,.24)', fg:'prop-pine', bub:false, wave:false},
+    'lobbybg-lili-2048':{sun:'right', rim:'#ffc878', grade:'rgba(255,150,70,.13)', shaft:'rgba(255,215,150,.22)', fg:'prop-lantern', bub:false, wave:false},
+    'lobbybg-lili-fortune':{sun:'left', rim:'#ffc08a', grade:'rgba(150,80,170,.14)', shaft:'rgba(255,200,170,.18)', fg:'prop-flowers', bub:false, wave:false},
+    'bg-forest': {rim:'#c9a6ff', grade:'rgba(60,40,140,.16)',  shaft:'rgba(200,255,220,.16)', fg:'prop-flowers', bub:false, wave:false}
+  };
+  function setupImmersion(screen, showcase) {
+    const bg = (config.bg && config.bg[0]) || 'bg-space';
+    const T = SCENE_TONE[bg] || SCENE_TONE['bg-space'];
+    screen.classList.add('lobby-immersive');
+    showcase = screen.querySelector('.lobby-character-showcase'); if (!showcase) return;
+        const fx = createElement('div', 'lobby-amb', screen);
+    fx.innerHTML = `<div class="lobby-grade" style="background:linear-gradient(180deg,transparent 30%,${T.grade})"></div>`
+      + [0,1,2].map(i => `<div class="lobby-shaft" style="left:${12 + i*22}%;animation-delay:${-i*2.3}s;background:linear-gradient(180deg,${T.shaft},transparent 80%)"></div>`).join('')
+      + (T.wave ? '<div class="lobby-wave w1"></div><div class="lobby-wave w2"></div>' : '');
+    // contact shadow + AO under hero feet
+    createElement('div', 'lobby-contact', showcase);
+    // scene-light tint & sun-side rim, masked to the sprite silhouette
+    const sunL = (T.sun || 'left') === 'left';
+    const syncTint = () => {
+      const im = showcase.querySelector('img.lobby-hero-img'); if (!im) return;
+      let t = showcase.querySelector('.lobby-hero-tint');
+      if (!t) { t = createElement('div', 'lobby-hero-tint', showcase); }
+      const u = `url("${im.src}")`;
+      t.style.cssText = `-webkit-mask-image:${u};mask-image:${u};background:linear-gradient(${sunL ? '100deg' : '260deg'},${T.rim}cc 0%,${T.rim}33 28%,transparent 55%),linear-gradient(180deg,transparent 55%,${T.grade.replace(/[\d.]+\)$/, '.55)')})`;
+      t.style.animation = getComputedStyle(im).animation;
+    };
+    new MutationObserver(syncTint).observe(showcase, {childList: true, subtree: true, attributes: true, attributeFilter: ['src']});
+    syncTint();
+    screen.style.setProperty('--hero-rim', `drop-shadow(${sunL ? -2 : 2}px -1px 2px ${T.rim}bb) drop-shadow(0 0 6px ${T.rim}44)`);
+    // foreground props on the sides only, never over the hero
+    const fg = createElement('div', 'lobby-fg', screen);
+    fg.innerHTML = `<img src="../assets/${T.fg}.webp" class="l" alt=""><img src="../assets/${T.fg}.webp" class="r" alt="">`;
+    fg.querySelectorAll('img').forEach(im => im.onerror = () => im.remove());
+    // bubbles / sparkles in front of the scene but light and sparse
+    const cv = createElement('canvas', 'lobby-fgp', screen);
+    const ctx = cv.getContext('2d'); let W, H;
+    const fit = () => { W = cv.width = innerWidth; H = cv.height = innerHeight; }; fit(); addEventListener('resize', fit);
+    const P = Array.from({length: 26}, () => ({x: Math.random(), y: Math.random(), r: 1 + Math.random() * (T.bub ? 4 : 2), v: .0006 + Math.random() * .0012, ph: Math.random() * 6}));
+    (function loop(t) {
+      if (!cv.isConnected) return;
+      ctx.clearRect(0, 0, W, H);
+      P.forEach(p => {
+        p.y -= p.v; if (p.y < -0.05) { p.y = 1.05; p.x = Math.random(); }
+        const x = (p.x + Math.sin(t * .001 + p.ph) * .01) * W, y = p.y * H, a = .35 + .3 * Math.sin(t * .003 + p.ph);
+        ctx.beginPath(); ctx.arc(x, y, p.r, 0, 6.283);
+        if (T.bub) { ctx.strokeStyle = `rgba(255,255,255,${a})`; ctx.lineWidth = 1; ctx.stroke(); ctx.fillStyle = `rgba(255,255,255,${a*.25})`; ctx.fill(); }
+        else { ctx.fillStyle = `rgba(255,250,220,${a})`; ctx.fill(); }
+      });
+      requestAnimationFrame(loop);
+    })(0);
+    // gentle parallax with pointer / tilt
+    const layers = screen.querySelectorAll(':scope > div:first-child > div');
+    const move = (nx, ny) => {
+      layers.forEach((l, i) => l.style.translate = `${nx * (6 + i*8)}px ${ny * (4 + i*5)}px`);
+      fg.style.translate = `${nx * 22}px ${ny * 8}px`;
+      showcase.style.translate = `${nx * 10}px 0`;
+    };
+    screen.addEventListener('pointermove', e => move(e.clientX / innerWidth - .5, e.clientY / innerHeight - .5));
+    addEventListener('deviceorientation', e => { if (e.gamma != null) move(Math.max(-1, Math.min(1, e.gamma / 30)) * .5, Math.max(-1, Math.min(1, (e.beta - 40) / 30)) * .3); });
   }
 
   // ==================== Panel System ====================
-  function openPanel(name) {
-    const overlay = createElement('div', 'lobby-overlay', root);
-    
-    const panel = createElement('div', 'lobby-panel', overlay);
-    panel.style.cssText = `
-      max-width: 90vw;
-      max-height: 85vh;
-      width: ${name === 'wardrobe' || name === 'bag' ? '800px' : '600px'};
-      padding: 24px;
-      position: relative;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      animation: slideInUp 400ms cubic-bezier(0.2, 0.9, 0.3, 1);
-      margin-top: 70px;
-    `;
+function openPanel(name) {
+  const overlay = createElement('div', 'lobby-overlay', root);
+  
+  const panel = createElement('div', 'lobby-panel', overlay);
+  panel.style.cssText = `
+    max-width: min(90vw, 800px);
+    max-height: min(90vh, calc(100dvh - 40px));
+    width: ${['wardrobe', 'bag', 'shop'].includes(name) ? '800px' : '600px'};
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    animation: slideInUp 400ms cubic-bezier(0.2, 0.9, 0.3, 1);
+  `;
 
-    const closeBtn = createElement('button', 'lobby-icon-btn lobby-close', panel);
-    closeBtn.textContent = '✕';
-    closeBtn.onclick = () => {
+  const closeBtn = createElement('button', 'lobby-icon-btn lobby-close', panel);
+  closeBtn.textContent = '✕';
+  closeBtn.onclick = () => {
+    Audio.tap();
+    overlay.remove();
+  };
+
+  const header = createElement('div', 'lobby-panel-header', panel);
+  const title = createElement('h2', 'lobby-panel-title', header);
+  const titleMap = {
+    wardrobe: '衣橱', bag: '背包', chars: '角色', missions: '任务',
+    daily: '签到', settings: '设置', stages: '关卡', shop: '商店', vip: 'VIP'
+  };
+  title.textContent = titleMap[name] || name;
+
+  const content = createElement('div', 'lobby-panel-content', panel);
+
+  overlay.onclick = (e) => {
+    if (e.target === overlay) {
       Audio.tap();
       overlay.remove();
-    };
-
-    const content = createElement('div', '', panel);
-    content.style.cssText = `
-      flex: 1;
-      overflow-y: auto;
-      margin-top: 40px;
-    `;
-
-    overlay.onclick = (e) => {
-      if (e.target === overlay) {
-        Audio.tap();
-        overlay.remove();
-      }
-    };
-
-    switch(name) {
-      case 'wardrobe': renderWardrobePanel(content, overlay, panel); break;
-      case 'bag': renderBagPanel(content, panel); break;
-      case 'chars': renderCharsPanel(content); break;
-      case 'missions': renderMissionsPanel(content); break;
-      case 'daily': renderDailyPanel(content); break;
-      case 'settings': renderSettingsPanel(content); break;
-      case 'stages': renderStagesPanel(content, overlay); break;
     }
+  };
 
-    return overlay;
+  switch(name) {
+    case 'wardrobe': renderWardrobePanel(content, overlay, panel, header); break;
+    case 'bag': renderBagPanel(content, panel, header); break;
+    case 'chars': renderCharsPanel(content, header); break;
+    case 'missions': renderMissionsPanel(content, header); break;
+    case 'daily': renderDailyPanel(content, header); break;
+    case 'settings': renderSettingsPanel(content, header); break;
+    case 'stages': renderStagesPanel(content, overlay, header); break;
+    case 'shop': renderShopPanel(content, header); break;
+    case 'vip': renderVipPanel(content, header); break;
   }
+
+  return overlay;
+}
 
   // ==================== Wardrobe Panel ====================
   function renderWardrobePanel(parent, overlay, panel) {
@@ -1663,275 +2088,345 @@
   }
 
   // ==================== Missions Panel ====================
-  function renderMissionsPanel(parent) {
-    const container = createElement('div', '', parent);
-    container.style.cssText = 'display: flex; flex-direction: column; gap: 16px;';
+function renderMissionsPanel(parent, header) {
+  const tabs = createElement('div', 'lobby-panel-tabs', header);
+  ['每日', '成就'].forEach((t, i) => {
+    const tab = createElement('div', 'lobby-tab', tabs);
+    tab.textContent = t;
+    if (i === 0) tab.classList.add('active');
+    tab.onclick = () => {
+      Audio.tap();
+      tabs.querySelectorAll('.lobby-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      clearChildren(parent);
+      i === 0 ? renderDailyMissions(parent) : renderAchievements(parent);
+    };
+  });
 
-    const title = createElement('h2', '', container);
-    title.textContent = '每日任务';
-    title.style.cssText = 'margin: 0; color: white; font-size: 20px;';
+  renderDailyMissions(parent);
+}
 
-    if (!state.missions || state.missions.length === 0) {
-      state.missions = [
-        { id: 'play_3', target: 3, progress: 0, reward: { coin: 100 }, claimed: false, name: '游玩3次' },
-        { id: 'kill_50', target: 50, progress: 0, reward: { gem: 10 }, claimed: false, name: '击败50个敌人' },
-        { id: 'win_1', target: 1, progress: 0, reward: { coin: 200, gem: 5 }, claimed: false, name: '获得胜利' }
-      ];
-    }
+function renderDailyMissions(parent) {
+  const container = createElement('div', '', parent);
+  container.style.cssText = 'display: flex; flex-direction: column; gap: 12px;';
 
-    state.missions.forEach(mission => {
-      const card = createElement('div', 'lobby-card', container);
-      card.style.cssText = `
-        display: flex;
-        align-items: center;
-        gap: 16px;
-        padding: 16px;
-        opacity: ${mission.claimed ? 0.5 : 1};
-      `;
-
-      const info = createElement('div', '', card);
-      info.style.cssText = 'flex: 1;';
-
-      const name = createElement('div', '', info);
-      name.textContent = mission.name;
-      name.style.cssText = 'color: white; font-weight: 600; margin-bottom: 8px;';
-
-      const progressBar = createElement('div', 'lobby-stat-bar', info);
-      const fill = createElement('div', 'lobby-stat-bar-fill', progressBar);
-      fill.style.width = `${Math.min(mission.progress / mission.target * 100, 100)}%`;
-
-      const progressText = createElement('div', '', info);
-      progressText.textContent = `${mission.progress} / ${mission.target}`;
-      progressText.style.cssText = 'font-size: 12px; color: rgba(255,255,255,0.7); margin-top: 4px;';
-
-      const rewardDiv = createElement('div', '', card);
-      rewardDiv.style.cssText = 'display: flex; gap: 8px; align-items: center;';
-
-      Object.entries(mission.reward || {}).forEach(([currId, amount]) => {
-        const curr = (config.currency || []).find(c => c.id === currId);
-        if (curr) {
-          const icon = createElement('img', '', rewardDiv);
-          icon.src = `../assets/${curr.icon}.webp`;
-          icon.style.cssText = 'width: 24px; height: 24px;';
-
-          const amountSpan = createElement('span', '', rewardDiv);
-          amountSpan.textContent = '+' + amount;
-          amountSpan.style.cssText = 'color: #fbbf24; font-weight: 600;';
-        }
-      });
-
-      const btn = createElement('button', 'lobby-btn secondary', card);
-      btn.style.cssText = 'min-width: 80px;';
-      
-      if (mission.claimed) {
-        btn.textContent = '已领取';
-        btn.disabled = true;
-        btn.style.opacity = '0.5';
-      } else if (mission.progress >= mission.target) {
-        btn.textContent = '领取';
-        btn.className = 'lobby-btn gold';
-        btn.onclick = () => {
-          Audio.claim();
-          vibrate(15);
-          
-          Object.entries(mission.reward || {}).forEach(([currId, amount]) => {
-            state.currency[currId] = (state.currency[currId] || 0) + amount;
-          });
-          
-          mission.claimed = true;
-          saveState();
-
-          const lobbyScreen = root.querySelector('[data-lobby-screen="lobby"]');
-          if (lobbyScreen && lobbyScreen._currencyHUD) {
-            lobbyScreen._currencyHUD.update();
-          }
-
-          clearChildren(parent);
-          renderMissionsPanel(parent);
-        };
-      } else {
-        btn.textContent = '进行中';
-        btn.disabled = true;
-      }
-    });
+  if (!state.missions || state.missions.length === 0) {
+    state.missions = [
+      { id: 'play_3', target: 3, progress: 0, reward: { coin: 100 }, claimed: false, name: '游玩3次' },
+      { id: 'kill_50', target: 50, progress: 0, reward: { gem: 10 }, claimed: false, name: '击败50个敌人' },
+      { id: 'win_1', target: 1, progress: 0, reward: { coin: 200, gem: 5 }, claimed: false, name: '获得胜利' }
+    ];
   }
 
-  // ==================== Daily Gift Panel ====================
-  function renderDailyPanel(parent) {
-    const container = createElement('div', '', parent);
-    container.style.cssText = 'display: flex; flex-direction: column; gap: 24px; align-items: center;';
-
-    const title = createElement('h2', '', container);
-    title.textContent = '每日礼物';
-    title.style.cssText = 'margin: 0; color: white; font-size: 24px;';
-
-    const today = new Date().toDateString();
-    const canClaim = state.dailyClaimDate !== today;
-
-    const giftBox = createElement('div', '', container);
-    giftBox.style.cssText = `
-      font-size: 120px;
-      cursor: ${canClaim ? 'pointer' : 'default'};
-      transition: transform 300ms;
-      filter: ${canClaim ? 'none' : 'grayscale(1) opacity(0.5)'};
+  state.missions.forEach(mission => {
+    const card = createElement('div', 'lobby-card', container);
+    card.style.cssText = `
+      display: flex; align-items: center; gap: 12px; padding: 12px;
+      opacity: ${mission.claimed ? 0.5 : 1};
     `;
-    giftBox.textContent = '🎁';
 
-    if (canClaim) {
-      giftBox.style.animation = 'bounce 1s infinite';
-      giftBox.onclick = () => {
+    const info = createElement('div', '', card);
+    info.style.cssText = 'flex: 1; min-width: 0;';
+
+    const name = createElement('div', '', info);
+    name.textContent = mission.name;
+    name.style.cssText = 'color: white; font-weight: 600; margin-bottom: 6px; font-size: 14px;';
+
+    const progressBar = createElement('div', 'lobby-stat-bar', info);
+    const fill = createElement('div', 'lobby-stat-bar-fill', progressBar);
+    fill.style.width = `${Math.min(mission.progress / mission.target * 100, 100)}%`;
+
+    const progressText = createElement('div', '', info);
+    progressText.textContent = `${mission.progress} / ${mission.target}`;
+    progressText.style.cssText = 'font-size: 11px; color: rgba(255,255,255,0.6); margin-top: 4px;';
+
+    const rewardDiv = createElement('div', '', card);
+    rewardDiv.style.cssText = 'display: flex; gap: 6px; align-items: center; flex-shrink: 0;';
+
+    Object.entries(mission.reward || {}).forEach(([currId, amount]) => {
+      const curr = (config.currency || []).find(c => c.id === currId);
+      if (curr) {
+        const icon = createElement('img', '', rewardDiv);
+        icon.src = `../assets/${curr.icon}.webp`;
+        icon.style.cssText = 'width: 20px; height: 20px;';
+
+        const amountSpan = createElement('span', '', rewardDiv);
+        amountSpan.textContent = '+' + amount;
+        amountSpan.style.cssText = 'color: #fbbf24; font-weight: 600; font-size: 12px;';
+      }
+    });
+
+    const btn = createElement('button', 'lobby-btn secondary', card);
+    btn.style.cssText = 'min-width: 64px; min-height: 36px; padding: 6px 12px; font-size: 13px;';
+    
+    if (mission.claimed) {
+      btn.textContent = '已领取';
+      btn.disabled = true;
+      btn.style.opacity = '0.5';
+    } else if (mission.progress >= mission.target) {
+      btn.textContent = '领取';
+      btn.className = 'lobby-btn gold';
+      btn.onclick = () => {
         Audio.claim();
-        vibrate(20);
-
-        state.dailyClaimDate = today;
+        vibrate(15);
         
-        const rewards = [
-          { coin: 500 },
-          { gem: 20 },
-          { coin: 300, gem: 10 }
-        ];
-        const reward = rewards[Math.floor(Math.random() * rewards.length)];
-
-        Object.entries(reward).forEach(([currId, amount]) => {
+        Object.entries(mission.reward || {}).forEach(([currId, amount]) => {
           state.currency[currId] = (state.currency[currId] || 0) + amount;
         });
-
+        
+        mission.claimed = true;
         saveState();
-
-        const rewardDiv = createElement('div', '', container);
-        rewardDiv.style.cssText = `
-          font-size: 18px;
-          color: #fbbf24;
-          font-weight: 600;
-          animation: slideInUp 500ms;
-        `;
-        rewardDiv.textContent = '获得: ' + Object.entries(reward).map(([k, v]) => `${v} ${k}`).join(', ');
-
-        giftBox.style.animation = 'spin 600ms';
-        giftBox.style.filter = 'grayscale(1) opacity(0.5)';
-        giftBox.onclick = null;
 
         const lobbyScreen = root.querySelector('[data-lobby-screen="lobby"]');
         if (lobbyScreen && lobbyScreen._currencyHUD) {
           lobbyScreen._currencyHUD.update();
         }
 
-        setTimeout(() => {
-          const dailyBtn = root.querySelector('[data-open="daily"]');
-          if (dailyBtn) {
-            const badge = dailyBtn.querySelector('.lobby-badge');
-            if (badge) badge.remove();
-          }
-        }, 1000);
+        clearChildren(parent);
+        renderDailyMissions(parent);
       };
+    } else {
+      btn.textContent = '进行中';
+      btn.disabled = true;
     }
+  });
+}
 
-    const status = createElement('div', '', container);
-    status.textContent = canClaim ? '点击领取今日奖励' : '明天再来吧！';
-    status.style.cssText = `
-      color: ${canClaim ? '#10b981' : 'rgba(255,255,255,0.5)'};
-      font-size: 16px;
-    `;
+function renderAchievements(parent) {
+  const text = createElement('div', '', parent);
+  text.textContent = '成就系统开发中...';
+  text.style.cssText = 'text-align: center; color: rgba(255,255,255,0.5); padding: 40px 0;';
+}
+
+  // ==================== Daily Gift Panel ====================
+function renderDailyPanel(parent, header) {
+  const container = createElement('div', '', parent);
+  container.style.cssText = 'display: flex; flex-direction: column; gap: 24px; align-items: center; padding: 24px 0;';
+
+  const today = new Date().toDateString();
+  const canClaim = state.dailyClaimDate !== today;
+
+  const giftBox = createElement('div', '', container);
+  giftBox.style.cssText = `
+    font-size: 120px;
+    cursor: ${canClaim ? 'pointer' : 'default'};
+    transition: transform 300ms;
+    filter: ${canClaim ? 'none' : 'grayscale(1) opacity(0.5)'};
+  `;
+  giftBox.textContent = '🎁';
+
+  if (canClaim) {
+    giftBox.style.animation = 'bounce 1s infinite';
+    giftBox.onclick = () => {
+      Audio.claim();
+      vibrate(20);
+
+      state.dailyClaimDate = today;
+      
+      const rewards = [
+        { coin: 500 },
+        { gem: 20 },
+        { coin: 300, gem: 10 }
+      ];
+      const reward = rewards[Math.floor(Math.random() * rewards.length)];
+
+      Object.entries(reward).forEach(([currId, amount]) => {
+        state.currency[currId] = (state.currency[currId] || 0) + amount;
+      });
+
+      saveState();
+
+      const rewardDiv = createElement('div', '', container);
+      rewardDiv.style.cssText = `
+        font-size: 18px; color: #fbbf24; font-weight: 600;
+        animation: slideInUp 500ms;
+      `;
+      rewardDiv.textContent = '获得: ' + Object.entries(reward).map(([k, v]) => `${v} ${k}`).join(', ');
+
+      giftBox.style.animation = 'spin 600ms';
+      giftBox.style.filter = 'grayscale(1) opacity(0.5)';
+      giftBox.onclick = null;
+
+      const lobbyScreen = root.querySelector('[data-lobby-screen="lobby"]');
+      if (lobbyScreen && lobbyScreen._currencyHUD) {
+        lobbyScreen._currencyHUD.update();
+      }
+
+      setTimeout(() => {
+        const dailyBtn = root.querySelector('[data-open="daily"]');
+        if (dailyBtn) {
+          const badge = dailyBtn.querySelector('.lobby-badge');
+          if (badge) badge.remove();
+        }
+      }, 1000);
+    };
   }
+
+  const status = createElement('div', '', container);
+  status.textContent = canClaim ? '点击领取今日奖励' : '明天再来吧！';
+  status.style.cssText = `
+    color: ${canClaim ? '#10b981' : 'rgba(255,255,255,0.5)'};
+    font-size: 16px; font-weight: 600;
+  `;
+}
 
   // ==================== Settings Panel ====================
-  function renderSettingsPanel(parent) {
-    const container = createElement('div', '', parent);
-    container.style.cssText = 'display: flex; flex-direction: column; gap: 20px;';
+function renderSettingsPanel(parent, header) {
+  const tabs = createElement('div', 'lobby-panel-tabs', header);
+  ['控制', '音效', '账号'].forEach((t, i) => {
+    const tab = createElement('div', 'lobby-tab', tabs);
+    tab.textContent = t;
+    if (i === 0) tab.classList.add('active');
+    tab.onclick = () => {
+      Audio.tap();
+      tabs.querySelectorAll('.lobby-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      clearChildren(parent);
+      if (i === 0) renderSettingsControl(parent);
+      else if (i === 1) renderSettingsSound(parent);
+      else renderSettingsAccount(parent);
+    };
+  });
 
-    const title = createElement('h2', '', container);
-    title.textContent = '设置';
-    title.style.cssText = 'margin: 0; color: white; font-size: 20px;';
+  renderSettingsControl(parent);
+}
 
-    const settings = [
-      { key: 'sound', label: '音效', icon: '🔊' },
-      { key: 'vibration', label: '震动', icon: '📳' },
-      { key: 'quality', label: '画质', icon: '🎨', values: ['low', 'medium', 'high'] },
-      { key: 'control', label: '移动', icon: '👆', values: ['drag', 'joy'] },
-      { key: 'joySize', label: '摇杆', icon: '🕹', values: ['s', 'm', 'l'] }
-    ];
-    if (window.FX && FX.controlMode) state.settings.control = FX.controlMode;
-    if (!state.settings.joySize) state.settings.joySize = 'm';
+function renderSettingsControl(parent) {
+  const container = createElement('div', '', parent);
+  container.style.cssText = 'display: flex; flex-direction: column; gap: 16px;';
 
-    settings.forEach(setting => {
-      const row = createElement('div', 'lobby-card', container);
-      row.style.cssText = `
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 16px;
-      `;
+  const controlMode = createElement('div', 'lobby-card', container);
+  controlMode.style.cssText = 'padding: 16px;';
+  
+  const modeLabel = createElement('div', '', controlMode);
+  modeLabel.textContent = '移动方式';
+  modeLabel.style.cssText = 'color: white; font-weight: 600; margin-bottom: 12px;';
 
-      const label = createElement('div', '', row);
-      label.style.cssText = 'display: flex; align-items: center; gap: 12px; font-size: 16px; color: white;';
-      
-      const icon = createElement('span', '', label);
-      icon.textContent = setting.icon;
-      icon.style.fontSize = '24px';
+  const modeOptions = createElement('div', '', controlMode);
+  modeOptions.style.cssText = 'display: flex; flex-direction: column; gap: 8px;';
 
-      const text = createElement('span', '', label);
-      text.textContent = setting.label;
+  [
+    { value: 'drag', label: '浮动摇杆（触摸任意位置）' },
+    { value: 'stick', label: '固定摇杆' }
+  ].forEach(opt => {
+    const option = createElement('label', '', modeOptions);
+    option.style.cssText = 'display: flex; align-items: center; gap: 12px; cursor: pointer;';
 
-      if (setting.values) {
-        const select = createElement('select', '', row);
-        select.style.cssText = `
-          padding: 8px 16px;
-          border-radius: 8px;
-          border: 1px solid rgba(255,255,255,0.2);
-          background: rgba(139,92,246,0.2);
-          color: white;
-          font-size: 14px;
-          cursor: pointer;
-        `;
-        
-        setting.values.forEach(val => {
-          const option = createElement('option', '', select);
-          option.value = val;
-          option.textContent = { low: '低', medium: '中', high: '高', drag: '拖动跟随', joy: '虚拟摇杆', s: '小', m: '中', l: '大' }[val] || val;
-          if (state.settings[setting.key] === val) option.selected = true;
-        });
+    const radio = createElement('input', '', option);
+    radio.type = 'radio';
+    radio.name = 'control-mode';
+    radio.value = opt.value;
+    radio.checked = (state.settings.control || 'drag') === opt.value;
+    radio.style.cssText = 'width: 20px; height: 20px;';
+    
+    const text = createElement('span', '', option);
+    text.textContent = opt.label;
+    text.style.cssText = 'color: white; font-size: 14px;';
 
-        select.onchange = () => {
-          Audio.tap();
-          state.settings[setting.key] = select.value;
-          if (setting.key === 'control' && window.FX && FX.setControl) FX.setControl(select.value);
-          if (setting.key === 'joySize') document.documentElement.style.setProperty('--joy', { s: .8, m: 1, l: 1.25 }[select.value]);
-          saveState();
-        };
-      } else {
-        const toggle = createElement('div', '', row);
-        toggle.style.cssText = `
-          width: 52px;
-          height: 28px;
-          border-radius: 14px;
-          background: ${state.settings[setting.key] ? '#10b981' : 'rgba(255,255,255,0.2)'};
-          position: relative;
-          cursor: pointer;
-          transition: background 250ms;
-        `;
+    radio.onchange = () => {
+      Audio.tap();
+      state.settings.control = opt.value;
+      if (window.FX && FX.setControl) FX.setControl(opt.value);
+      saveState();
+    };
+  });
 
-        const knob = createElement('div', '', toggle);
-        knob.style.cssText = `
-          width: 24px;
-          height: 24px;
-          border-radius: 50%;
-          background: white;
-          position: absolute;
-          top: 2px;
-          left: ${state.settings[setting.key] ? '26px' : '2px'};
-          transition: left 250ms;
-        `;
+  const joySizeCard = createElement('div', 'lobby-card', container);
+  joySizeCard.style.cssText = 'padding: 16px;';
 
-        toggle.onclick = () => {
-          Audio.tap();
-          state.settings[setting.key] = !state.settings[setting.key];
-          toggle.style.background = state.settings[setting.key] ? '#10b981' : 'rgba(255,255,255,0.2)';
-          knob.style.left = state.settings[setting.key] ? '26px' : '2px';
-          saveState();
-        };
-      }
-    });
-  }
+  const sizeLabel = createElement('div', '', joySizeCard);
+  sizeLabel.textContent = '摇杆大小';
+  sizeLabel.style.cssText = 'color: white; font-weight: 600; margin-bottom: 12px;';
+
+  const sizeSlider = createElement('div', '', joySizeCard);
+  sizeSlider.style.cssText = 'display: flex; gap: 12px; align-items: center;';
+
+  const slider = createElement('input', '', sizeSlider);
+  slider.type = 'range';
+  slider.min = '0';
+  slider.max = '2';
+  slider.value = { s: 0, m: 1, l: 2 }[state.settings.joySize || 'm'];
+  slider.style.cssText = 'flex: 1;';
+
+  const sizeText = createElement('span', '', sizeSlider);
+  sizeText.textContent = { s: '小', m: '中', l: '大' }[state.settings.joySize || 'm'];
+  sizeText.style.cssText = 'color: white; font-weight: 600; min-width: 24px;';
+
+  slider.oninput = () => {
+    const sizes = ['s', 'm', 'l'];
+    const size = sizes[slider.value];
+    state.settings.joySize = size;
+    sizeText.textContent = { s: '小', m: '中', l: '大' }[size];
+    document.documentElement.style.setProperty('--joy', { s: .8, m: 1, l: 1.25 }[size]);
+    saveState();
+  };
+}
+
+function renderSettingsSound(parent) {
+  const container = createElement('div', '', parent);
+  container.style.cssText = 'display: flex; flex-direction: column; gap: 16px;';
+
+  [
+    { key: 'sound', label: '音效', icon: '🔊' },
+    { key: 'vibration', label: '震动', icon: '📳' }
+  ].forEach(setting => {
+    const row = createElement('div', 'lobby-card', container);
+    row.style.cssText = 'display: flex; align-items: center; justify-content: space-between; padding: 16px;';
+
+    const label = createElement('div', '', row);
+    label.style.cssText = 'display: flex; align-items: center; gap: 12px;';
+    
+    const icon = createElement('span', '', label);
+    icon.textContent = setting.icon;
+    icon.style.fontSize = '24px';
+
+    const text = createElement('span', '', label);
+    text.textContent = setting.label;
+    text.style.cssText = 'color: white; font-weight: 600;';
+
+    const toggle = createElement('div', '', row);
+    toggle.style.cssText = `
+      width: 52px; height: 28px; border-radius: 14px;
+      background: ${state.settings[setting.key] ? '#10b981' : 'rgba(255,255,255,0.2)'};
+      position: relative; cursor: pointer; transition: background 250ms;
+    `;
+
+    const knob = createElement('div', '', toggle);
+    knob.style.cssText = `
+      width: 24px; height: 24px; border-radius: 50%; background: white;
+      position: absolute; top: 2px;
+      left: ${state.settings[setting.key] ? '26px' : '2px'};
+      transition: left 250ms;
+    `;
+
+    toggle.onclick = () => {
+      Audio.tap();
+      state.settings[setting.key] = !state.settings[setting.key];
+      toggle.style.background = state.settings[setting.key] ? '#10b981' : 'rgba(255,255,255,0.2)';
+      knob.style.left = state.settings[setting.key] ? '26px' : '2px';
+      saveState();
+    };
+  });
+}
+
+function renderSettingsAccount(parent) {
+  const container = createElement('div', '', parent);
+  container.style.cssText = 'display: flex; flex-direction: column; gap: 16px; align-items: center; padding: 24px 0;';
+
+  const vipBtn = createElement('button', 'lobby-btn gold', container);
+  vipBtn.textContent = '账号 / VIP';
+  vipBtn.style.width = '100%';
+  vipBtn.style.maxWidth = '300px';
+  vipBtn.onclick = () => {
+    Audio.tap();
+    if (window.VIP && VIP.open) {
+      VIP.open();
+    } else {
+      const t = document.querySelector('.account-trigger');
+      if (t) t.click();
+    }
+  };
+}
 
   // ==================== Stage Select ====================
   function renderStagesPanel(parent, overlay) {
@@ -2017,35 +2512,53 @@
   }
 
   // ==================== Results Screen ====================
-  function showResultsScreen(result) {
-    setScreen('result');
-    
-    const overlay = createElement('div', 'lobby-overlay', root);
-    
-    const panel = createElement('div', 'lobby-panel', overlay);
-    panel.style.cssText = `
-      width: 500px;
-      max-width: 90vw;
-      padding: 32px;
-      text-align: center;
-      animation: slideInUp 600ms cubic-bezier(0.2, 0.9, 0.3, 1);
-    `;
+function showResultsScreen(result) {
+  setScreen('result');
+  
+  const overlay = createElement('div', 'lobby-overlay', root);
+  
+  const panel = createElement('div', 'lobby-panel', overlay);
+  panel.style.cssText = `
+    max-width: min(90vw, 500px);
+    max-height: min(92dvh, calc(100dvh - 40px));
+    width: 500px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    animation: slideInUp 600ms cubic-bezier(0.2, 0.9, 0.3, 1);
+  `;
 
-    const title = createElement('h1', '', panel);
-    const _lose = result && (result.win === false || (result.win === undefined && !result.stars));
-    title.textContent = (result && result.title) || (_lose ? '挑战失败…再来一次！' : '关卡完成！');
-    if (_lose) panel.classList.add('lobby-lose');
-    title.style.cssText = `
-      margin: 0 0 24px 0;
-      font-size: 32px;
-      background: linear-gradient(135deg, #fbbf24, #ec4899);
-      ${_lose ? 'filter: hue-rotate(-40deg) saturate(.8);' : ''}
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    `;
+  const scrollContent = createElement('div', '', panel);
+  scrollContent.style.cssText = `
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+  `;
 
-    const starsDiv = createElement('div', '', panel);
-    starsDiv.style.cssText = 'font-size: 48px; margin: 24px 0;';
+  const _lose = result && (result.win === false || (result.win === undefined && !result.stars));
+  
+  const title = createElement('h1', '', scrollContent);
+  title.textContent = (result && result.title) || (_lose ? '挑战失败…' : '挑战成功！');
+  title.style.cssText = `
+    margin: 0;
+    font-size: clamp(24px, 6vw, 32px);
+    font-weight: 700;
+    background: linear-gradient(135deg, #fbbf24, #ec4899);
+    ${_lose ? 'filter: hue-rotate(-40deg) saturate(.8);' : ''}
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-align: center;
+  `;
+
+  if (!_lose && result.stars) {
+    const starsDiv = createElement('div', '', scrollContent);
+    starsDiv.style.cssText = 'font-size: 48px; display: flex; gap: 8px;';
     
     for (let i = 0; i < 3; i++) {
       const star = createElement('span', '', starsDiv);
@@ -2055,143 +2568,276 @@
         animation: starReveal 600ms ${i * 200}ms both;
       `;
     }
+  }
 
-    if (result.coins || result.gems) {
-      const rewardsDiv = createElement('div', '', panel);
-      rewardsDiv.style.cssText = 'margin: 32px 0; display: flex; gap: 24px; justify-content: center;';
+  const statsGrid = createElement('div', '', scrollContent);
+  statsGrid.style.cssText = `
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    width: 100%;
+  `;
 
-      if (result.coins) {
-        const coinDiv = createElement('div', '', rewardsDiv);
-        const coinIcon = createElement('img', '', coinDiv);
-        coinIcon.src = '../assets/item-chest.webp';
-        coinIcon.style.cssText = 'width: 48px; height: 48px;';
-        
-        const coinAmount = createElement('div', '', coinDiv);
-        coinAmount.style.cssText = 'font-size: 24px; font-weight: 600; color: #fbbf24; margin-top: 8px;';
-        animateCount(coinAmount, 0, result.coins);
-      }
+  const statItems = [
+    { key: 'score', label: '得分', icon: '🎯' },
+    { key: 'distance', label: '距离', icon: '📏', unit: '米' },
+    { key: 'kills', label: '击败', icon: '⚔' },
+    { key: 'time', label: '时间', icon: '⏱', unit: '秒' },
+    { key: 'combo', label: '连击', icon: '💫', format: (v) => result.maxCombo ? `${v}/${result.maxCombo}` : v },
+    { key: 'wave', label: '波次', icon: '🌊' },
+    { key: 'level', label: '等级', icon: '⭐' }
+  ];
 
-      if (result.gems) {
-        const gemDiv = createElement('div', '', rewardsDiv);
-        const gemIcon = createElement('img', '', gemDiv);
-        gemIcon.src = '../assets/item-star.webp';
-        gemIcon.style.cssText = 'width: 48px; height: 48px;';
-        
-        const gemAmount = createElement('div', '', gemDiv);
-        gemAmount.style.cssText = 'font-size: 24px; font-weight: 600; color: #a855f7; margin-top: 8px;';
-        animateCount(gemAmount, 0, result.gems);
+  statItems.forEach(({ key, label, icon, unit, format }) => {
+    if (result[key] !== undefined) {
+      const card = createElement('div', 'lobby-card', statsGrid);
+      card.style.cssText = 'padding: 12px; display: flex; flex-direction: column; align-items: center; gap: 4px;';
+      
+      const iconDiv = createElement('div', '', card);
+      iconDiv.textContent = icon;
+      iconDiv.style.fontSize = '24px';
+      
+      const value = createElement('div', '', card);
+      value.textContent = format ? format(result[key]) : result[key] + (unit || '');
+      value.style.cssText = 'font-size: 18px; font-weight: 700; color: white;';
+      
+      const labelDiv = createElement('div', '', card);
+      labelDiv.textContent = label;
+      labelDiv.style.cssText = 'font-size: 12px; color: rgba(255,255,255,0.7);';
+    }
+  });
+
+  if (result.stats && typeof result.stats === 'object') {
+    Object.entries(result.stats).forEach(([label, value]) => {
+      const card = createElement('div', 'lobby-card', statsGrid);
+      card.style.cssText = 'padding: 12px; display: flex; flex-direction: column; align-items: center; gap: 4px;';
+      
+      const valueDiv = createElement('div', '', card);
+      valueDiv.textContent = value;
+      valueDiv.style.cssText = 'font-size: 18px; font-weight: 700; color: white;';
+      
+      const labelDiv = createElement('div', '', card);
+      labelDiv.textContent = label;
+      labelDiv.style.cssText = 'font-size: 12px; color: rgba(255,255,255,0.7);';
+    });
+  }
+
+  if (result.stage && state.stageProgress[result.stage]) {
+    const bestKey = 'best-' + result.stage;
+    const prevBest = state[bestKey] || 0;
+    const currentScore = result.score || 0;
+    
+    if (currentScore > prevBest) {
+      state[bestKey] = currentScore;
+      saveState();
+      
+      const bestRow = createElement('div', '', scrollContent);
+      bestRow.style.cssText = 'display: flex; align-items: center; gap: 8px;';
+      
+      const bestLabel = createElement('span', '', bestRow);
+      bestLabel.textContent = `最佳得分: ${currentScore}`;
+      bestLabel.style.cssText = 'color: white; font-weight: 600;';
+      
+      const newBadge = createElement('span', '', bestRow);
+      newBadge.textContent = '新纪录!';
+      newBadge.style.cssText = `
+        background: linear-gradient(135deg, #fbbf24, #f59e0b);
+        color: white;
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+        animation: pulse 1s infinite;
+      `;
+    }
+  }
+
+  if (result.coins || result.gems) {
+    const rewardsDiv = createElement('div', '', scrollContent);
+    rewardsDiv.style.cssText = 'width: 100%; display: flex; flex-direction: column; gap: 12px;';
+
+    const rewardsLabel = createElement('div', '', rewardsDiv);
+    rewardsLabel.textContent = '奖励';
+    rewardsLabel.style.cssText = 'color: rgba(255,255,255,0.7); font-size: 14px; text-align: center;';
+
+    const rewardsRow = createElement('div', '', rewardsDiv);
+    rewardsRow.style.cssText = 'display: flex; gap: 20px; justify-content: center; flex-wrap: wrap;';
+
+    const vipBonus = state._vipCoinBonus || 0;
+
+    if (result.coins) {
+      const coinDiv = createElement('div', '', rewardsRow);
+      coinDiv.style.cssText = 'display: flex; flex-direction: column; align-items: center; gap: 8px;';
+      
+      const coinIcon = createElement('img', '', coinDiv);
+      coinIcon.src = '../assets/item-chest.webp';
+      coinIcon.style.cssText = 'width: 48px; height: 48px;';
+      
+      const coinAmount = createElement('div', '', coinDiv);
+      coinAmount.style.cssText = 'font-size: 20px; font-weight: 600; color: #fbbf24;';
+      animateCount(coinAmount, 0, result.coins);
+      
+      if (vipBonus > 0) {
+        const bonusText = createElement('div', '', coinDiv);
+        bonusText.textContent = `VIP加成 +${vipBonus}%`;
+        bonusText.style.cssText = 'font-size: 11px; color: #fbbf24; font-weight: 600;';
       }
     }
 
-    const actions = createElement('div', '', panel);
-    actions.style.cssText = 'display: flex; gap: 16px; margin-top: 32px;';
-
-    const retryBtn = createElement('button', 'lobby-btn secondary', actions);
-    retryBtn.textContent = '↻ 重试';
-    retryBtn.style.flex = '1';
-    retryBtn.onclick = () => {
-      Audio.tap();
-      vibrate();
-      overlay.remove();
+    if (result.gems) {
+      const gemDiv = createElement('div', '', rewardsRow);
+      gemDiv.style.cssText = 'display: flex; flex-direction: column; align-items: center; gap: 8px;';
       
-      const selection = getSelection();
-      if (config.onStart) {
-        (newRoundKey(), config.onStart(selection));
-      }
-    };
-
-    const lobbyBtn = createElement('button', 'lobby-btn gold', actions);
-    lobbyBtn.textContent = '🏠 大厅';
-    lobbyBtn.style.flex = '1';
-    lobbyBtn.onclick = () => {
-      Audio.tap();
-      vibrate();
-      overlay.remove();
-      Lobby.show();
-    };
-
-    setTimeout(() => {
-      Audio.claim();
-    }, 800);
+      const gemIcon = createElement('img', '', gemDiv);
+      gemIcon.src = '../assets/item-star.webp';
+      gemIcon.style.cssText = 'width: 48px; height: 48px;';
+      
+      const gemAmount = createElement('div', '', gemDiv);
+      gemAmount.style.cssText = 'font-size: 20px; font-weight: 600; color: #a855f7;';
+      animateCount(gemAmount, 0, result.gems);
+    }
   }
 
-  // ==================== Pause Menu ====================
-  function showPauseMenu() {
-    setScreen('pause');
+  const actions = createElement('div', '', panel);
+  actions.style.cssText = `
+    display: flex;
+    gap: 12px;
+    margin-top: 16px;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+  `;
+
+  const retryBtn = createElement('button', 'lobby-btn secondary', actions);
+  retryBtn.textContent = '重试';
+  retryBtn.style.flex = '1';
+  retryBtn.style.minWidth = '100px';
+  retryBtn.onclick = () => {
+    Audio.tap();
+    vibrate();
+    overlay.remove();
     
-    try {
-      if (window.FX) {
-        FX.paused = true;
-      }
-    } catch(e) {}
+    const selection = getSelection();
+    if (config.onStart) {
+      (newRoundKey(), config.onStart(selection));
+    }
+  };
 
-    const overlay = createElement('div', 'lobby-overlay', root);
+  if (!_lose && result.stage) {
+    const stageIndex = (config.stages || []).findIndex(s => s.id === result.stage);
+    const nextStage = (config.stages || [])[stageIndex + 1];
     
-    const panel = createElement('div', 'lobby-panel', overlay);
-    panel.style.cssText = `
-      width: 400px;
-      max-width: 90vw;
-      padding: 32px;
-      animation: slideInUp 300ms;
-    `;
-
-    const title = createElement('h2', '', panel);
-    title.textContent = '暂停';
-    title.style.cssText = 'margin: 0 0 24px 0; color: white; font-size: 24px; text-align: center;';
-
-    const buttons = [
-      { icon: '▶', text: '继续', action: 'resume' },
-      { icon: '👗', text: '快速换装', action: 'wardrobe' },
-      { icon: '⚙', text: '设置', action: 'settings' },
-      { icon: '🏠', text: '返回大厅', action: 'lobby' }
-    ];
-
-    buttons.forEach(btn => {
-      const button = createElement('button', 'lobby-btn secondary', panel);
-      button.textContent = `${btn.icon} ${btn.text}`;
-      button.style.cssText = 'width: 100%; margin: 12px 0;';
-      
-      button.onclick = () => {
+    if (nextStage) {
+      const nextBtn = createElement('button', 'lobby-btn gold', actions);
+      nextBtn.textContent = '下一关';
+      nextBtn.style.flex = '1';
+      nextBtn.style.minWidth = '100px';
+      nextBtn.onclick = () => {
         Audio.tap();
         vibrate();
-
-        switch(btn.action) {
-          case 'resume':
-            try {
-              if (window.FX) FX.paused = false;
-            } catch(e) {}
-            overlay.remove();
-            break;
-
-          case 'wardrobe':
-            const wardrobePanel = openPanel('wardrobe');
-            wardrobePanel.querySelector('.lobby-close').onclick = () => {
-              Audio.tap();
-              wardrobePanel.remove();
-              
-              if (config.onSkinChange) {
-                config.onSkinChange(getSelection());
-              }
-            };
-            break;
-
-          case 'settings':
-            openPanel('settings');
-            break;
-
-          case 'lobby':
-            if (config.onQuit) {
-              config.onQuit();
-            }
-            overlay.remove();
-            Lobby.show();
-            break;
+        state.selectedStage = nextStage.id;
+        saveState();
+        overlay.remove();
+        
+        const selection = getSelection();
+        if (config.onStart) {
+          (newRoundKey(), config.onStart(selection));
         }
       };
-    });
-
-    return overlay;
+    }
   }
+
+  const lobbyBtn = createElement('button', 'lobby-btn gold', actions);
+  lobbyBtn.textContent = '大厅';
+  lobbyBtn.style.flex = '1';
+  lobbyBtn.style.minWidth = '100px';
+  lobbyBtn.onclick = () => {
+    Audio.tap();
+    vibrate();
+    overlay.remove();
+    Lobby.show();
+  };
+
+  setTimeout(() => {
+    Audio.claim();
+  }, 800);
+}
+
+  // ==================== Pause Menu ====================
+function showPauseMenu() {
+  document.querySelectorAll('.fx-banner').forEach(e => e.style.opacity = 0);
+  if (root) { root.style.display = 'block'; root.dataset.pauseBg = root.style.background; root.style.background = 'transparent'; }
+  const __hideRoot = () => { if (root) { root.style.background = root.dataset.pauseBg || '#0a0a0f'; if (!document.documentElement.classList.contains('fx-in-lobby')) root.style.display = 'none'; } };
+  setScreen('pause');
+  
+  try {
+    if (window.FX) FX.paused = true;
+  } catch(e) {}
+
+  const overlay = createElement('div', 'lobby-overlay', root);
+  
+  const panel = createElement('div', 'lobby-panel', overlay);
+  panel.style.cssText = `
+    width: 400px; max-width: 90vw; padding: 32px;
+    animation: slideInUp 300ms;
+  `;
+
+  const title = createElement('h2', '', panel);
+  title.textContent = '暂停';
+  title.style.cssText = 'margin: 0 0 24px 0; color: white; font-size: 24px; text-align: center; font-weight: 700;';
+
+  const buttons = [
+    { icon: '▶', text: '继续', action: 'resume' },
+    { icon: '👗', text: '快速换装', action: 'wardrobe' },
+    { icon: '⚙', text: '设置', action: 'settings' },
+    { icon: '🏠', text: '返回大厅', action: 'lobby' }
+  ];
+
+  buttons.forEach(btn => {
+    const button = createElement('button', 'lobby-btn secondary', panel);
+    button.textContent = `${btn.icon} ${btn.text}`;
+    button.style.cssText = 'width: 100%; margin: 12px 0;';
+    
+    button.onclick = () => {
+      Audio.tap();
+      vibrate();
+
+      switch(btn.action) {
+        case 'resume':
+          try {
+            if (window.FX) FX.paused = false;
+          } catch(e) {}
+          overlay.remove(); __hideRoot();
+          break;
+
+        case 'wardrobe':
+          const wardrobePanel = openPanel('wardrobe');
+          wardrobePanel.querySelector('.lobby-close').onclick = () => {
+            Audio.tap();
+            wardrobePanel.remove();
+            
+            if (config.onSkinChange) {
+              config.onSkinChange(getSelection());
+            }
+          };
+          break;
+
+        case 'settings':
+          openPanel('settings');
+          break;
+
+        case 'lobby':
+          if (config.onQuit) {
+            config.onQuit();
+          }
+          overlay.remove();
+          Lobby.show();
+          break;
+      }
+    };
+  });
+
+  return overlay;
+}
 
   // ==================== Helper Functions ====================
 
@@ -2206,6 +2852,385 @@
       .catch(() => { if (n < 2) setTimeout(() => attempt(n + 1), 3000 * (n + 1)); });
     attempt(0);
   }
+
+function renderShopPanel(parent, header) {
+  const tabs = createElement('div', 'lobby-panel-tabs', header);
+  ['道具', '兑换'].forEach((t, i) => {
+    const tab = createElement('div', 'lobby-tab', tabs);
+    tab.textContent = t;
+    if (i === 0) tab.classList.add('active');
+    tab.onclick = () => {
+      Audio.tap();
+      tabs.querySelectorAll('.lobby-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      clearChildren(parent);
+      if (i === 0) renderShopItems(parent);
+      else renderShopExchange(parent);
+    };
+  });
+
+  renderShopItems(parent);
+}
+
+function renderShopItems(parent) {
+  const container = createElement('div', '', parent);
+  container.style.cssText = 'display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px;';
+
+  const shopItems = (config.shop || [
+    { id: 'hp_pot', name: '生命药水', icon: 'item-chest', price: 50, currency: 'coin', consumable: true },
+    { id: 'speed_boost', name: '加速道具', icon: 'item-ice', price: 100, currency: 'coin', consumable: true }
+  ]);
+
+  shopItems.forEach(item => {
+    const card = createElement('div', 'lobby-card', container);
+    card.style.cssText = 'display: flex; flex-direction: column; align-items: center; padding: 16px; cursor: pointer;';
+
+    const icon = createElement('img', '', card);
+    icon.src = `../assets/${item.icon}.webp`;
+    icon.style.cssText = 'width: 64px; height: 64px; margin-bottom: 8px;';
+
+    const name = createElement('div', '', card);
+    name.textContent = item.name;
+    name.style.cssText = 'font-size: 14px; font-weight: 600; color: white; text-align: center; margin-bottom: 8px;';
+
+    const price = createElement('div', '', card);
+    const curr = (config.currency || []).find(c => c.id === item.currency);
+    price.textContent = `${item.price} ${({coin:"金币",coins:"金币",gem:"钻石",gems:"钻石"})[item.currency] || ((config.currency||[]).find(c => c.id === item.currency)||{}).name || item.currency}`;
+    price.style.cssText = 'font-size: 12px; color: #fbbf24;';
+
+    card.onclick = () => {
+      Audio.tap();
+      if ((state.currency[item.currency] || 0) >= item.price) {
+        Audio.claim();
+        vibrate(15);
+        state.currency[item.currency] -= item.price;
+        if (item.consumable) {
+          state.inventory.push({
+            uid: Math.max(0, ...state.inventory.map(i => i.uid)) + 1,
+            id: item.id,
+            icon: item.icon,
+            name: item.name,
+            consumable: true,
+            new: true
+          });
+        }
+        saveState();
+        const lobbyScreen = root.querySelector('[data-lobby-screen="lobby"]');
+        if (lobbyScreen && lobbyScreen._currencyHUD) lobbyScreen._currencyHUD.update();
+      }
+    };
+  });
+}
+
+function renderShopExchange(parent) {
+  const container = createElement('div', '', parent);
+  container.style.cssText = 'display: flex; flex-direction: column; gap: 16px;';
+
+  const exchanges = [
+    { from: 'gem', fromAmount: 10, to: 'coin', toAmount: 500 },
+    { from: 'gem', fromAmount: 50, to: 'coin', toAmount: 3000 }
+  ];
+
+  exchanges.forEach(ex => {
+    const card = createElement('div', 'lobby-card', container);
+    card.style.cssText = 'display: flex; align-items: center; justify-content: space-between; padding: 16px; cursor: pointer;';
+
+    const fromDiv = createElement('div', '', card);
+    fromDiv.style.cssText = 'display: flex; align-items: center; gap: 8px;';
+    const fromCurr = (config.currency || []).find(c => c.id === ex.from);
+    if (fromCurr) {
+      const fromIcon = createElement('img', '', fromDiv);
+      fromIcon.src = `../assets/${fromCurr.icon}.webp`;
+      fromIcon.style.cssText = 'width: 32px; height: 32px;';
+      const fromAmount = createElement('span', '', fromDiv);
+      fromAmount.textContent = ex.fromAmount;
+      fromAmount.style.cssText = 'color: white; font-weight: 600;';
+    }
+
+    const arrow = createElement('div', '', card);
+    arrow.textContent = '→';
+    arrow.style.cssText = 'font-size: 24px; color: rgba(255,255,255,0.5);';
+
+    const toDiv = createElement('div', '', card);
+    toDiv.style.cssText = 'display: flex; align-items: center; gap: 8px;';
+    const toCurr = (config.currency || []).find(c => c.id === ex.to);
+    if (toCurr) {
+      const toIcon = createElement('img', '', toDiv);
+      toIcon.src = `../assets/${toCurr.icon}.webp`;
+      toIcon.style.cssText = 'width: 32px; height: 32px;';
+      const toAmount = createElement('span', '', toDiv);
+      toAmount.textContent = ex.toAmount;
+      toAmount.style.cssText = 'color: #fbbf24; font-weight: 600;';
+    }
+
+    card.onclick = () => {
+      Audio.tap();
+      if ((state.currency[ex.from] || 0) >= ex.fromAmount) {
+        Audio.claim();
+        vibrate(15);
+        state.currency[ex.from] -= ex.fromAmount;
+        state.currency[ex.to] = (state.currency[ex.to] || 0) + ex.toAmount;
+        saveState();
+        const lobbyScreen = root.querySelector('[data-lobby-screen="lobby"]');
+        if (lobbyScreen && lobbyScreen._currencyHUD) lobbyScreen._currencyHUD.update();
+      }
+    };
+  });
+}
+function renderVipPanel(content, header) {
+  const container = createElement('div', '', content);
+  container.style.cssText = 'display: flex; flex-direction: column; gap: 24px; align-items: center;';
+
+  const tier = vipTier();
+  
+  const badge = createElement('div', '', container);
+  badge.style.cssText = `
+    width: 120px; height: 120px; border-radius: 50%;
+    background: ${tier ? 'linear-gradient(135deg, #fbbf24, #f59e0b)' : 'rgba(255,255,255,0.1)'};
+    display: flex; align-items: center; justify-content: center;
+    font-size: 48px; font-weight: 700; color: white;
+    box-shadow: ${tier ? '0 0 40px rgba(251,191,36,0.6)' : 'none'};
+  `;
+  badge.textContent = tier ? `VIP${tier}` : '🔒';
+
+  if (!tier) {
+    const lockText = createElement('div', '', container);
+    lockText.textContent = '开通VIP解锁专属特权';
+    lockText.style.cssText = 'font-size: 16px; color: rgba(255,255,255,0.7);';
+
+    const openBtn = createElement('button', 'lobby-btn gold', container);
+    openBtn.textContent = '开通VIP';
+    openBtn.onclick = () => {
+      Audio.tap();
+      if (window.VIP && VIP.open) VIP.open();
+      else {
+        const t = document.querySelector('.account-trigger');
+        if (t) t.click();
+      }
+    };
+  } else {
+    const perks = createElement('div', '', container);
+    perks.style.cssText = 'width: 100%; display: flex; flex-direction: column; gap: 12px;';
+
+    const perkList = [
+      { icon: '💰', text: `收益加成 +${Math.min(tier * 5, 25)}%` },
+      { icon: '🎁', text: `每日礼包 ${200 * tier}金币 + ${5 * tier}钻石` },
+      { icon: '👗', text: 'VIP专属外观' }
+    ];
+
+    perkList.forEach(perk => {
+      const row = createElement('div', 'lobby-card', perks);
+      row.style.cssText = 'display: flex; align-items: center; gap: 12px; padding: 12px;';
+      
+      const icon = createElement('span', '', row);
+      icon.textContent = perk.icon;
+      icon.style.fontSize = '24px';
+      
+      const text = createElement('span', '', row);
+      text.textContent = perk.text;
+      text.style.cssText = 'color: white; font-weight: 600;';
+    });
+
+    if (!state._vipPerkClaimedKeys) {
+      state._vipPerkClaimedKeys = [];
+    }
+
+    const claimBtn = createElement('button', 'lobby-btn gold', container);
+    claimBtn.textContent = '🎁 领取今日礼包';
+    claimBtn.disabled = false;
+
+    const statusDiv = createElement('div', '', container);
+    statusDiv.style.cssText = 'font-size: 11px; color: rgba(255,255,255,0.5); text-align: center; min-height: 14px;';
+
+    claimBtn.onclick = async () => {
+      claimBtn.disabled = true;
+      claimBtn.textContent = '领取中...';
+      statusDiv.textContent = '服务端校验';
+
+      let resultOk = false;
+      let resultAlreadyClaimed = false;
+      let resultReward = { coin: 0, gem: 0, coin_bonus_pct: 0, exclusive_skin_ids: [] };
+      let claimKeyId = null;
+      let errorMsg = null;
+
+      if (window.StarEconomy && typeof StarEconomy.claimVipPerk === 'function') {
+        try {
+          const resp = await StarEconomy.claimVipPerk(config.id);
+          
+          if (resp) {
+            resultOk = resp.ok === true;
+            resultAlreadyClaimed = resp.already_claimed === true;
+            
+            if (resp.reward && typeof resp.reward === 'object') {
+              resultReward.coin = Math.max(0, resp.reward.coin || 0);
+              resultReward.gem = Math.max(0, resp.reward.gem || 0);
+              resultReward.coin_bonus_pct = Math.max(0, Math.min(25, resp.reward.coin_bonus_pct || 0));
+              if (Array.isArray(resp.reward.exclusive_skin_ids)) {
+                resultReward.exclusive_skin_ids = resp.reward.exclusive_skin_ids;
+              }
+            }
+            
+            if (resp.result_id) {
+              claimKeyId = resp.result_id;
+            }
+          }
+        } catch (e) {
+          console.warn('VIP perk claim error:', e);
+          errorMsg = e.code || 'unknown_error';
+        }
+      } else {
+        errorMsg = 'rpc_unavailable';
+      }
+
+      if (errorMsg) {
+        claimBtn.disabled = false;
+        claimBtn.textContent = '🎁 领取今日礼包';
+        statusDiv.textContent = 'VIP 福利服务暂不可用，稍后再试';
+        return;
+      }
+
+      if (!resultOk) {
+        claimBtn.disabled = false;
+        claimBtn.textContent = '🎁 领取今日礼包';
+        if (resultAlreadyClaimed) {
+          statusDiv.textContent = '今日已领取';
+        } else {
+          statusDiv.textContent = 'VIP 福利服务暂不可用，稍后再试';
+        }
+        return;
+      }
+
+      const keyToStore = claimKeyId || (new Date().toISOString().split('T')[0] + '-' + config.id);
+      if (state._vipPerkClaimedKeys.includes(keyToStore)) {
+        claimBtn.disabled = false;
+        claimBtn.textContent = '🎁 领取今日礼包';
+        statusDiv.textContent = '今日已领取';
+        return;
+      }
+
+      state._vipPerkClaimedKeys.push(keyToStore);
+
+      Audio.claim();
+      vibrate(20);
+
+      state.currency.coin = (state.currency.coin || 0) + resultReward.coin;
+      state.currency.gem = (state.currency.gem || 0) + resultReward.gem;
+      
+      if (resultReward.coin_bonus_pct > 0) {
+        state._vipCoinBonus = resultReward.coin_bonus_pct;
+      }
+
+      if (Array.isArray(resultReward.exclusive_skin_ids) && resultReward.exclusive_skin_ids.length > 0) {
+        state.ownedSkins = [...new Set([...(state.ownedSkins || []), ...resultReward.exclusive_skin_ids])];
+      }
+
+      saveState();
+
+      claimBtn.textContent = '今日已领取';
+      claimBtn.disabled = true;
+      statusDiv.textContent = '服务端校验';
+
+      const lobbyScreen = root.querySelector('[data-lobby-screen="lobby"]');
+      if (lobbyScreen && lobbyScreen._currencyHUD) {
+        lobbyScreen._currencyHUD.update();
+      }
+    };
+  }
+}
+
+function vipTier() {
+  try {
+    if (window.VIP && VIP.active && VIP.active()) {
+      return (VIP.tier && VIP.tier()) || 1;
+    }
+  } catch (e) {}
+  return 0;
+}
+
+function runTutorial() {
+  if (localStorage.getItem('lobby-' + config.id + '-tutorial')) return;
+
+  const steps = [
+    { target: '#lobby-start', text: '点击开始游戏！', pos: 'left' },
+    { target: '[data-open="wardrobe"]', text: '在这里可以更换外观', pos: 'right' },
+    { target: '[data-open="missions"]', text: '完成任务获得奖励', pos: 'right' },
+    { target: '.lobby-character-showcase', text: '触摸任意位置移动角色', pos: 'top' }
+  ];
+
+  let currentStep = 0;
+
+  function showStep() {
+    if (currentStep >= steps.length) {
+      localStorage.setItem('lobby-' + config.id + '-tutorial', '1');
+      return;
+    }
+
+    const step = steps[currentStep];
+    const target = document.querySelector(step.target);
+    if (!target) {
+      currentStep++;
+      showStep();
+      return;
+    }
+
+    const overlay = createElement('div', '', root);
+    overlay.style.cssText = `
+      position: fixed; inset: 0; z-index: 200;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(4px);
+    `;
+
+    const rect = target.getBoundingClientRect();
+    const highlight = createElement('div', '', overlay);
+    highlight.style.cssText = `
+      position: absolute;
+      left: ${rect.left - 8}px;
+      top: ${rect.top - 8}px;
+      width: ${rect.width + 16}px;
+      height: ${rect.height + 16}px;
+      border: 3px solid #fbbf24;
+      border-radius: 16px;
+      box-shadow: 0 0 40px rgba(251,191,36,0.6);
+      pointer-events: none;
+    `;
+
+    const tooltip = createElement('div', '', overlay);
+    tooltip.style.cssText = `
+      position: absolute;
+      background: white;
+      color: #0a0a0f;
+      padding: 16px 20px;
+      border-radius: 16px;
+      font-size: 16px;
+      font-weight: 600;
+      max-width: 250px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+      z-index: 201;
+    `;
+    tooltip.textContent = step.text;
+
+    const positions = {
+      top: { left: rect.left + rect.width / 2, top: rect.top - 80, transform: 'translateX(-50%)' },
+      bottom: { left: rect.left + rect.width / 2, top: rect.bottom + 20, transform: 'translateX(-50%)' },
+      left: { left: rect.left - 270, top: rect.top + rect.height / 2, transform: 'translateY(-50%)' },
+      right: { left: rect.right + 20, top: rect.top + rect.height / 2, transform: 'translateY(-50%)' }
+    };
+
+    const pos = positions[step.pos] || positions.bottom;
+    Object.assign(tooltip.style, pos);
+
+    overlay.onclick = () => {
+      Audio.tap();
+      overlay.remove();
+      currentStep++;
+      setTimeout(showStep, 300);
+    };
+  }
+
+  setTimeout(() => showStep(), 1000);
+}
+
+
 
   function getSelection() {
     const char = config.chars.find(c => c.id === state.selectedChar) || config.chars[0];
@@ -2282,12 +3307,12 @@
     init(cfg) {
       config = cfg;
       const RR = ['N','R','SR','SSR','UR'];
-      const ART = {'space-shooter':'bg-space','moe-runner':'bg-rail','monster-loot':'bg-forest','fighter':'bg-arena'};
+      const ART = {'space-shooter':'bg-space','moe-runner':'bg-rail','monster-loot':'bg-forest','fighter':'bg-arena','story':'lobbybg-story','snake':'lobbybg-snake','td':'lobbybg-td','survivor':'lobbybg-survivor','lili-merge':'lobbybg-lili-merge','lili-match':'lobbybg-lili-match','lili-2048':'lobbybg-lili-2048','lili-fortune':'lobbybg-lili-fortune'};
       const fromPath = location.pathname.split('/').filter(Boolean).slice(-1)[0];
       let bgs = (Array.isArray(config.bg) ? config.bg : [config.bg]).map(b => typeof b === 'string' ? b : (b && (b.img || b.bg))).filter(Boolean);
       const art = ART[config.id] || ART[fromPath] || 'bg-space';
       bgs = bgs.filter(b => !b.startsWith('bg-'));
-      config.bg = [art, ...bgs.slice(0, 1)];
+      config.bg = art.startsWith('lobbybg-') ? [art] : [art, ...bgs.slice(0, 1)];
       const MI = ['item-star','item-ice','item-weapon','item-shield'];
       config.modes = (config.modes && config.modes.length ? config.modes : [{id:'story'},{id:'endless'}]).map((m, i) => Object.assign({}, m, { icon: (typeof m.icon === 'string' && !m.icon.includes(' ')) ? m.icon : MI[i % 4] }));
       const STY = [['cute','甜心','R'],['glam','华彩','SSR'],['elegant','典雅','SR'],['cool','酷飒','SR']];
@@ -2337,13 +3362,13 @@
 
     show() {
       if (!root) return;
-      root.style.display = 'block';
+      root.style.display = 'block'; document.documentElement.classList.add('fx-in-lobby');
       showLobby();
     },
 
     hide() {
       if (!root) return;
-      root.style.display = 'none';
+      root.style.display = 'none'; document.documentElement.classList.remove('fx-in-lobby');
     },
 
     addCurrency(id, amount) {
@@ -2381,6 +3406,7 @@
       }
 
       if (result.coins) {
+        const __vb = Math.max(0, Math.min(25, state._vipCoinBonus || 0)); if (__vb > 0) { result.vipBonusCoins = Math.floor(result.coins * __vb / 100); result.coins += result.vipBonusCoins; }
         state.currency.coin = (state.currency.coin || 0) + result.coins;
       }
       if (result.gems) {
@@ -2416,5 +3442,48 @@
     }
   };
 
+  document.addEventListener('click', e => { const c = e.target.closest && e.target.closest('.lobby-close'); if (c && !c.onclick) { const o = c.closest('.lobby-overlay'); if (o) o.remove(); } }, true);
+
+  (function(){ const st=document.createElement('style'); st.textContent=`
+    .lobby-root .lobby-panel-header{position:relative!important;z-index:3;margin-bottom:12px!important;flex:0 0 auto}
+    .lobby-root .lobby-panel-tabs,.lobby-root .lobby-tabs{position:relative;z-index:3;flex:0 0 auto}
+    .lobby-root .lobby-side-column{gap:8px!important;max-height:calc(100dvh - 60px - 84px - env(safe-area-inset-bottom,0px));overflow:visible}
+    @media (orientation: portrait){ .lobby-root .lobby-side-column{flex-direction:column!important;top:calc(env(safe-area-inset-top,0px) + 60px)!important;bottom:auto!important;transform:none!important;max-width:none!important;overflow:visible!important}
+      .lobby-root .lobby-side-column.left{left:max(10px,env(safe-area-inset-left,0px))!important;right:auto!important}
+      .lobby-root .lobby-side-column.right{right:max(10px,env(safe-area-inset-right,0px))!important;left:auto!important} }
+    @media (orientation: portrait){ .lobby-root .lobby-start-btn{left:15%!important;right:15%!important;transform:none;min-width:0!important} .lobby-root .lobby-mode-toggle{left:0!important;right:0!important;margin:0 auto;width:max-content;transform:none!important} }
+    @media (max-height: 480px){ .lobby-root .lobby-side-column{top:calc(env(safe-area-inset-top,0px) + 50px)!important;gap:4px!important}
+      .lobby-root .lobby-side-icon{width:40px!important;height:40px!important;font-size:18px!important} .lobby-root .lobby-side-label{font-size:9px!important} }
+
+    .lobby-root .lobby-immersive .lobby-amb{position:absolute;inset:0;pointer-events:none;z-index:2;overflow:hidden}
+    .lobby-root .lobby-grade{position:absolute;inset:0;mix-blend-mode:soft-light}
+    .lobby-root .lobby-shaft{position:absolute;top:-10%;width:14%;height:85%;transform:skewX(-18deg);filter:blur(10px);mix-blend-mode:screen;animation:lobbyShaft 7s ease-in-out infinite;opacity:.0}
+    @keyframes lobbyShaft{0%,100%{opacity:.15}50%{opacity:.65}}
+    .lobby-root .lobby-wave{position:absolute;left:-10%;right:-10%;height:7%;bottom:30%;background:repeating-linear-gradient(90deg,transparent 0 40px,rgba(255,240,220,.35) 40px 70px,transparent 70px 120px);filter:blur(2px);mix-blend-mode:screen;animation:lobbyWave 6s linear infinite;-webkit-mask:linear-gradient(transparent,#000 50%,transparent);mask:linear-gradient(transparent,#000 50%,transparent)}
+    .lobby-root .lobby-wave.w2{bottom:35%;opacity:.6;animation-duration:9s;animation-direction:reverse}
+    @keyframes lobbyWave{from{transform:translateX(0)}to{transform:translateX(120px)}}
+    .lobby-root .lobby-immersive .lobby-character-showcase{z-index:6!important;top:auto!important;bottom:calc(env(safe-area-inset-bottom,0px) + 40px)!important;transform:translateX(-50%)!important;height:min(76dvh,620px)!important;width:min(42vw,420px)!important;justify-content:flex-end!important}
+    .lobby-root .lobby-immersive .lobby-character-showcase::before{display:none}
+    .lobby-root .lobby-immersive .lobby-hero-img{transform-origin:50% 100%}
+    .lobby-root .lobby-hero-tint{position:absolute;left:0;right:0;bottom:0;top:0;z-index:2;pointer-events:none;-webkit-mask-size:contain;mask-size:contain;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:50% 100%;mask-position:50% 100%;mix-blend-mode:overlay;opacity:.85;transform-origin:50% 100%}
+    .lobby-root .lobby-immersive .lobby-hero-img{max-height:100%!important;height:100%!important;width:100%!important;object-fit:contain!important;-webkit-mask-image:linear-gradient(180deg,#000 92%,rgba(0,0,0,.88));opacity:.98;object-position:50% 100%}
+    .lobby-root .lobby-contact{position:absolute;left:50%;bottom:-2px;width:62%;height:22px;bottom:-8px;transform:translateX(-50%);border-radius:50%;background:radial-gradient(ellipse at 50% 45%,rgba(25,10,20,.85),rgba(40,15,30,.4) 40%,transparent 72%);filter:blur(2px);z-index:0;pointer-events:none}
+    .lobby-root .lobby-immersive .lobby-char-nameplate{display:none}
+    .lobby-root .lobby-fg{position:absolute;inset:0;pointer-events:none;z-index:7}
+    .lobby-root .lobby-fg img{position:absolute;bottom:-4%;height:34%;filter:brightness(.7) saturate(1.1) blur(1.2px);opacity:.92}
+    .lobby-root .lobby-fg img.l{left:-4%}
+    .lobby-root .lobby-fg img.r{right:-4%;transform:scaleX(-1)}
+    @media (orientation: portrait){
+      .lobby-root .lobby-immersive .lobby-character-showcase{bottom:calc(env(safe-area-inset-bottom,0px) + 205px)!important;height:min(54dvh,520px)!important;width:min(70vw,360px)!important}
+      .lobby-root .lobby-fg img{height:15%!important;bottom:-2%!important}
+      .lobby-root .lobby-fg img.l{left:-14%!important} .lobby-root .lobby-fg img.r{right:-14%!important}
+    }
+    .lobby-root .lobby-fgp{position:absolute;inset:0;pointer-events:none;z-index:8}
+    .lobby-root .lobby-immersive .lobby-top-bar{background:linear-gradient(180deg,rgba(20,10,40,.35),transparent)!important;border:0!important}
+    .lobby-root .lobby-immersive .lobby-bottom-bar{background:linear-gradient(180deg,transparent,rgba(20,10,40,.38))!important;border-top:0!important;backdrop-filter:blur(4px)!important;-webkit-mask:linear-gradient(transparent,#000 35%);mask:linear-gradient(transparent,#000 35%)}
+    .lobby-root .lobby-immersive .lobby-side-icon{background:rgba(255,255,255,.14)!important;border:1px solid rgba(255,255,255,.28)!important;backdrop-filter:blur(6px)}
+    .lobby-root .lobby-immersive .lobby-currency-item{background:rgba(20,10,40,.28)!important;border:1px solid rgba(255,255,255,.18)!important}
+    .lobby-root .lobby-immersive .lobby-side-column,.lobby-root .lobby-immersive .lobby-top-bar,.lobby-root .lobby-immersive .lobby-bottom-bar,.lobby-root .lobby-immersive .lobby-start-btn,.lobby-root .lobby-immersive .lobby-mode-toggle{z-index:20}
+  `; (document.head||document.documentElement).appendChild(st); })();
   window.Lobby = Lobby;
 })();

@@ -1,0 +1,44 @@
+/* Fixed-pad MOBA controls. Only this game's UI is affected. */
+#twin-ui #twin-controls.moba-controls{--joy-size:128px;--knob-size:54px;--jump-size:86px;--interact-size:62px;--swap-size:54px;--cluster-w:170px;--cluster-h:174px;position:absolute;inset:0;display:block;width:100%;height:100%;gap:0;pointer-events:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.moba-controls .moba-player-zone{position:absolute;inset:0;pointer-events:none}
+.moba-controls .moba-joystick{position:absolute;left:max(14px,env(safe-area-inset-left,0px));bottom:max(14px,env(safe-area-inset-bottom,0px));width:var(--joy-size);height:var(--joy-size);border-radius:50%;border:2px solid #a0deedaa;background:radial-gradient(circle at 40% 35%,#45617b94,#13243bd9 65%,#2b435add);box-shadow:inset 0 0 0 6px #0a1d3938,inset 0 0 0 8px #97d7ed33,inset 0 0 24px #85d8ff35,0 4px 24px #061127bb;pointer-events:auto;touch-action:none;isolation:isolate}
+.moba-controls .moba-joystick::before{content:"";position:absolute;inset:20%;border:1px solid #b5e3f250;border-radius:50%;background:radial-gradient(circle,#bdedff 0 2px,transparent 3px)}
+.moba-controls .moba-joystick.is-dragging{border-color:#e4fcff;box-shadow:inset 0 0 0 6px #152d4b50,inset 0 0 0 8px #c6f7ff55,0 0 22px #7adfff77,0 4px 24px #061127bb}
+.moba-controls .moba-axis{position:absolute;inset:12%;border-radius:50%;background:linear-gradient(90deg,transparent calc(50% - .5px),#9dd5ef33 50%,transparent calc(50% + .5px)),linear-gradient(0deg,transparent calc(50% - .5px),#9dd5ef33 50%,transparent calc(50% + .5px));pointer-events:none}
+.moba-controls .moba-knob{position:absolute;left:50%;top:50%;width:var(--knob-size);height:var(--knob-size);border-radius:50%;background:radial-gradient(circle at 32% 25%,#c6f1f7,#6ea5bd 38%,#315c83 75%);border:2px solid #dcfaffcf;box-shadow:inset 0 0 0 4px #d1f8ff29,0 0 13px #8bdfff66,0 4px 12px #06142599;transform:translate(calc(-50% + var(--jx,0px)),calc(-50% + var(--jy,0px)));transition:transform .12s ease-out;pointer-events:none;z-index:2}
+.moba-controls .is-dragging .moba-knob{transition:none;box-shadow:inset 0 0 0 4px #e2fcff4d,0 0 18px #a1f1ffaa}
+.moba-controls .moba-direction{position:absolute;left:50%;top:50%;width:calc(var(--joy-size)*.43);height:2px;background:linear-gradient(90deg,transparent 45%,#f0fdff 100%);transform-origin:0 50%;transform:translateY(-50%) rotate(var(--angle,0rad));opacity:0;pointer-events:none;z-index:3;filter:drop-shadow(0 0 4px #73ebff)}
+.moba-controls .moba-direction::after{content:"";position:absolute;right:-1px;top:-4px;border-top:5px solid transparent;border-bottom:5px solid transparent;border-left:8px solid #efffff}
+.moba-controls .is-dragging .moba-direction{opacity:1}
+.moba-controls .moba-skills{position:absolute;right:max(14px,env(safe-area-inset-right,0px));bottom:max(14px,env(safe-area-inset-bottom,0px));width:var(--cluster-w);height:var(--cluster-h);pointer-events:none}
+#twin-ui #twin-controls .moba-btn{position:absolute;display:grid;place-items:center;min-width:0;border-radius:50%;padding:0;line-height:1;touch-action:none;pointer-events:auto;overflow:hidden;color:#d6f7ff;transition:transform .09s ease,box-shadow .09s ease;background:radial-gradient(circle at 32% 25%,#476580bf,#172d4ef2 75%);border:2px solid #a2e9ffcc;box-shadow:inset 0 0 0 5px #101f3988,inset 0 0 0 6px #b1ecff4d,0 0 18px #90dbff44,0 4px 16px #061127aa;cursor:pointer;isolation:isolate}
+#twin-ui #twin-controls .moba-btn svg{width:54%;height:54%;display:block;pointer-events:none;filter:drop-shadow(0 0 5px currentColor)}
+#twin-ui #twin-controls .moba-btn-jump{right:0;bottom:0;width:var(--jump-size);height:var(--jump-size)}
+#twin-ui #twin-controls .moba-btn-swap{left:0;bottom:12px;width:var(--swap-size);height:var(--swap-size);color:#e3baff;border-color:#d6b1f0cc;background:radial-gradient(circle at 32% 25%,#77528bbf,#312447f2 75%);box-shadow:inset 0 0 0 4px #301a4c88,inset 0 0 0 5px #dfc9ff55,0 0 16px #bd85ff44,0 4px 16px #061127aa}
+#twin-ui #twin-controls .moba-btn-interact{left:48px;top:6px;width:var(--interact-size);height:var(--interact-size);color:#ffe7b3;border-color:#f5d59fdd;background:radial-gradient(circle at 32% 25%,#95764bbf,#493924f2 75%);box-shadow:inset 0 0 0 4px #34221088,inset 0 0 0 5px #ffe1a955,0 0 16px #ffcc7e44,0 4px 16px #061127aa}
+#twin-ui #twin-controls .moba-btn.is-pressed{transform:scale(.90);box-shadow:inset 0 0 0 4px #e6faff33,0 0 30px currentColor,0 0 12px #fff8;filter:brightness(1.2)}
+#twin-ui #twin-controls .moba-btn:focus-visible{outline:2px solid #fff;outline-offset:4px}
+.moba-controls .moba-ripple{position:absolute;inset:0;border-radius:50%;pointer-events:none;background:radial-gradient(circle,transparent 38%,currentColor 45%,transparent 60%);animation:twin-moba-ripple .5s ease-out forwards;z-index:3}
+@keyframes twin-moba-ripple{from{transform:scale(.15);opacity:.95}to{transform:scale(2.4);opacity:0}}
+#twin-top{z-index:5}#twin-info{min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}#twin-actions{flex:none}
+#twin-tip{left:max(18px,env(safe-area-inset-left,0px));right:max(18px,env(safe-area-inset-right,0px));top:64px;bottom:auto;max-width:940px;margin:0 auto;font-size:10px;line-height:1.6;padding:5px 10px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;pointer-events:none}
+#rotate-note{display:none!important}#twin-modal{z-index:10}#twin-toast{z-index:11}
+@media(orientation:landscape) and (max-height:500px){#twin-ui #twin-controls.moba-controls{--joy-size:116px;--knob-size:48px;--jump-size:76px;--interact-size:56px;--swap-size:48px;--cluster-w:156px;--cluster-h:156px}}
+@media(orientation:portrait){#twin-top{display:grid;grid-template-columns:32px minmax(0,1fr);gap:4px 8px;padding:6px 8px}#twin-info{font-size:11px;letter-spacing:0;line-height:1.5;white-space:normal}#twin-actions{grid-column:1/-1;justify-content:flex-end;gap:9px}#twin-actions button{width:36px;height:32px}#twin-tip{top:108px;font-size:11px;-webkit-line-clamp:3}#game-container{padding-top:90px;padding-bottom:180px}#twin-toast{top:190px}}
+/* Two independent controllers stay available in same-screen co-op. */
+#twin-ui #twin-controls.moba-duo{--joy-size:76px;--knob-size:32px;--jump-size:54px;--interact-size:44px;--cluster-w:104px;--cluster-h:104px}
+.moba-controls.moba-duo .moba-player-zone{left:0;right:auto;width:50%}.moba-controls.moba-duo .moba-player-zone[data-player="1"]{left:50%}
+.moba-controls.moba-duo .moba-joystick{left:max(8px,env(safe-area-inset-left,0px))}.moba-controls.moba-duo .moba-skills{right:max(6px,env(safe-area-inset-right,0px))}
+#twin-ui #twin-controls.moba-duo .moba-btn-interact{left:0;top:2px}
+@media(prefers-reduced-motion:reduce){.moba-controls .moba-knob{transition:none}.moba-controls .moba-ripple{animation-duration:.01s}}
+/* Fourth pass: unobtrusive controls; interaction restores stronger visibility. */
+.moba-controls .moba-joystick{opacity:.42;transition:opacity .10s ease,box-shadow .10s ease;box-shadow:inset 0 0 0 6px #0a1d3938,inset 0 0 0 8px #97d7ed26,inset 0 0 12px #85d8ff18,0 2px 10px #06112766}
+.moba-controls .moba-joystick.is-dragging{opacity:.8;box-shadow:inset 0 0 0 6px #152d4b38,inset 0 0 0 8px #c6f7ff33,0 0 8px #7adfff35,0 2px 10px #06112766}
+.moba-controls .moba-knob{box-shadow:inset 0 0 0 4px #d1f8ff20,0 0 5px #8bdfff26,0 2px 6px #06142566}
+.moba-controls .is-dragging .moba-knob{box-shadow:inset 0 0 0 4px #e2fcff33,0 0 7px #a1f1ff44}
+.moba-controls .moba-direction{filter:drop-shadow(0 1px 1px #061127)}
+#twin-ui #twin-controls .moba-btn{opacity:.42;transition:opacity .10s ease,transform .09s ease,box-shadow .09s ease;box-shadow:inset 0 0 0 4px #101f3966,inset 0 0 0 5px #b1ecff33,0 0 7px #90dbff20,0 2px 8px #06112766}
+#twin-ui #twin-controls .moba-btn-swap{box-shadow:inset 0 0 0 4px #301a4c66,inset 0 0 0 5px #dfc9ff33,0 0 6px #bd85ff20,0 2px 8px #06112766}
+#twin-ui #twin-controls .moba-btn-interact{box-shadow:inset 0 0 0 4px #34221066,inset 0 0 0 5px #ffe1a933,0 0 6px #ffcc7e20,0 2px 8px #06112766}
+#twin-ui #twin-controls .moba-btn.is-pressed{opacity:.8;box-shadow:inset 0 0 0 4px #e6faff26,0 0 7px currentColor,0 0 3px #fff4;filter:none}
+#twin-ui #twin-controls .moba-btn svg{opacity:1;filter:brightness(1.25) drop-shadow(-.6px 0 .4px #071321) drop-shadow(.6px 0 .4px #071321) drop-shadow(0 1px .4px #071321)}

@@ -1265,7 +1265,7 @@
     const actions = document.createElement('div'); actions.className = 'st-actions';
     const resetBtn = document.createElement('button'); resetBtn.className = 'sa-btn sa-btn-blue'; resetBtn.textContent = '重置数据';
     resetBtn.addEventListener('click', () => {
-      if (confirm('确定重置全部数据？此操作不可恢复！')) { X.reset(); location.reload(); }
+      if (confirm('确定重置全部数据？此操作不可恢复！')) { X._resetting = true; X.reset(); try { window.XianEconomy && XianEconomy.reset(); } catch (e) {} try { localStorage.removeItem('xiuxian-v1'); } catch (e) {} location.reload(); }
     });
     const closeBtn = document.createElement('button'); closeBtn.className = 'sa-btn sa-btn-gold'; closeBtn.textContent = '关闭';
     closeBtn.addEventListener('click', () => { X.sfx('click'); modal.close(); });

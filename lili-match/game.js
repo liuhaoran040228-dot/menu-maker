@@ -6,7 +6,15 @@ const {cv, ctx, W, H} = FX.init({landscape: false});
 
 // === CONSTANTS ===
 const BOARD_SIZE = 8;
-const TILE_TYPES = ['🌰', '🍄', '🍁', '🐿️', '🌲', '🍎'];
+const TILE_TYPES = {
+  '🌰': 'm3-acorn',
+  '🍄': 'm3-mushroom',
+  '🍁': 'm3-leaf',
+  '🐿️': 'm3-squirrel',
+  '🌲': 'm3-pine',
+  '🍎': 'm3-apple'
+};
+const TILE_TYPE_IDS = Object.keys(TILE_TYPES);
 const SPECIAL_TYPES = {
   ROW: 'row',
   COL: 'col',
@@ -28,6 +36,7 @@ let levelGoal = {};
 let currentLevel = 0;
 let idleTimer = 0;
 let hintTile = null;
+let gameStartTime = 0;
 
 let boosters = {
   hammer: {count: 3, icon: 'item-weapon'},
@@ -54,57 +63,89 @@ const levels = [
 let currentSel = null;
 const store = FX.store('lili-match', {bestLevel: 0, bestScore: 0});
 
-// === TILE SPRITE CACHE ===
-let tileCache = {};
-let cacheCanvas = null;
-let cacheCtx = null;
+// === SPRITE CACHE ===
+let spriteCache = {};
 
-function initTileCache() {
-  cacheCanvas = document.createElement('canvas');
-  cacheCanvas.width = 200;
-  cacheCanvas.height = 200;
-  cacheCtx = cacheCanvas.getContext('2d');
+function getSpriteCache(assetName, size) {
+  const key = `${assetName}_${size}`;
+  if (spriteCache[key]) return spriteCache[key];
+  
+  const offscreen = new OffscreenCanvas(size, size);
+  const octx = offscreen.getContext('2d');
+  
+  const img = FX.img(assetName);
+  octx.drawImage(img, 0, 0, size, size);
+  
+  spriteCache[key] = offscreen;
+  return offscreen;
 }
 
-function getTileCacheKey(type, hasJelly, hasCrate) {
-  return `${type}_${hasJelly}_${hasCrate}`;
-}
-
-function drawTileToCache(type, hasJelly, hasCrate) {
-  const key = getTileCacheKey(type, hasJelly, hasCrate);
-  if (tileCache[key]) return tileCache[key];
+function drawTileSprite(ctx, typeId, size, x, y, hasJelly, hasCrate, special) {
+  // Draw base tile
+  ctx.fillStyle = '#fffdf5';
+  ctx.strokeStyle = '#c9b48a';
+  ctx.lineWidth = Math.max(2, size * 0.06);
+  ctx.beginPath();
+  ctx.roundRect(x - size / 2, y - size / 2, size, size, size * 0.15);
+  ctx.fill();
+  ctx.stroke();
   
-  cacheCtx.clearRect(0, 0, 200, 200);
-  
-  if (hasCrate) {
-    cacheCtx.fillStyle = '#8b4513';
-    cacheCtx.fillRect(20, 20, 160, 160);
-    cacheCtx.strokeStyle = '#654321';
-    cacheCtx.lineWidth = 4;
-    cacheCtx.strokeRect(20, 20, 160, 160);
-  } else if (hasJelly) {
-    cacheCtx.fillStyle = 'rgba(255, 182, 193, 0.6)';
-    cacheCtx.fillRect(20, 20, 160, 160);
+  // Draw jelly overlay
+  if (hasJelly) {
+    ctx.fillStyle = 'rgba(255, 182, 193, 0.4)';
+    ctx.beginPath();
+    ctx.roundRect(x - size / 2, y - size / 2, size, size, size * 0.15);
+    ctx.fill();
   }
   
-  cacheCtx.fillStyle = '#fffdf5';
-  cacheCtx.strokeStyle = '#c9b48a';
-  cacheCtx.lineWidth = 6;
-  cacheCtx.beginPath();
-  cacheCtx.roundRect(20, 20, 160, 160, 20);
-  cacheCtx.fill();
-  cacheCtx.stroke();
+  // Draw crate pattern
+  if (hasCrate) {
+    ctx.strokeStyle = 'rgba(139, 69, 19, 0.5)';
+    ctx.lineWidth = Math.max(1, size * 0.04);
+    const step = size * 0.3;
+    for (let sx = x - size / 2 + step; sx < x + size / 2; sx += step) {
+      ctx.beginPath();
+      ctx.moveTo(sx, y - size / 2);
+      ctx.lineTo(sx, y + size / 2);
+      ctx.stroke();
+    }
+    for (let sy = y - size / 2 + step; sy < y + size / 2; sy += step) {
+      ctx.beginPath();
+      ctx.moveTo(x - size / 2, sy);
+      ctx.lineTo(x + size / 2, sy);
+      ctx.stroke();
+    }
+  }
   
-  cacheCtx.font = 'bold 100px Arial';
-  cacheCtx.textAlign = 'center';
-  cacheCtx.textBaseline = 'middle';
-  cacheCtx.fillText(type, 100, 100);
+  // Draw piece image
+  const assetName = TILE_TYPES[typeId];
+  const sprite = getSpriteCache(assetName, Math.ceil(size * 0.7));
+  const spriteSize = size * 0.7;
+  ctx.drawImage(sprite, x - spriteSize / 2, y - spriteSize / 2, spriteSize, spriteSize);
   
-  const imgData = cacheCanvas.toDataURL();
-  const img = new Image();
-  img.src = imgData;
-  tileCache[key] = img;
-  return img;
+  // Draw special overlay
+  if (special) {
+    const glowSize = size * 0.3;
+    ctx.fillStyle = 'rgba(255, 215, 0, 0.9)';
+    ctx.shadowColor = 'rgba(255, 215, 0, 0.8)';
+    ctx.shadowBlur = size * 0.2;
+    
+    if (special === SPECIAL_TYPES.ROW) {
+      ctx.fillRect(x - size / 2, y - glowSize / 2, size, glowSize);
+    } else if (special === SPECIAL_TYPES.COL) {
+      ctx.fillRect(x - glowSize / 2, y - size / 2, glowSize, size);
+    } else if (special === SPECIAL_TYPES.BOMB) {
+      ctx.beginPath();
+      ctx.arc(x, y, glowSize, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (special === SPECIAL_TYPES.COLOR) {
+      ctx.beginPath();
+      ctx.arc(x, y, glowSize * 1.2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    
+    ctx.shadowBlur = 0;
+  }
 }
 
 // === TILE SYSTEM ===
@@ -127,22 +168,25 @@ function createTile(row, col, type, special = null) {
 function initBoard() {
   board = [];
   const level = levels[currentLevel];
-  const numTypes = Math.min(level.types, TILE_TYPES.length);
+  const numTypes = Math.min(level.types, TILE_TYPE_IDS.length);
   
   for (let row = 0; row < BOARD_SIZE; row++) {
     board[row] = [];
     for (let col = 0; col < BOARD_SIZE; col++) {
       let type;
+      let attempts = 0;
       do {
-        type = TILE_TYPES[Math.floor(Math.random() * numTypes)];
-      } while (wouldMatch(row, col, type));
+        type = TILE_TYPE_IDS[Math.floor(Math.random() * numTypes)];
+        attempts++;
+      } while (wouldMatch(row, col, type) && attempts < 10);
       
       board[row][col] = createTile(row, col, type);
       
-      if (level.goal.type === 'jelly' && Math.random() < 0.4) {
+      // Add jelly or crate
+      if (level.goal.type === 'jelly' && Math.random() < 0.35) {
         board[row][col].jelly = true;
       }
-      if (level.goal.type === 'crates' && Math.random() < 0.25) {
+      if (level.goal.type === 'crates' && Math.random() < 0.2) {
         board[row][col].crate = true;
       }
     }
@@ -151,8 +195,8 @@ function initBoard() {
 
 function wouldMatch(row, col, type) {
   let hCount = 1;
-  for (let c = col - 1; c >= 0 && board[row][c] && board[row][c].type === type; c--) hCount++;
-  for (let c = col + 1; c < BOARD_SIZE && board[row][c] && board[row][c].type === type; c++) hCount++;
+  for (let c = col - 1; c >= 0 && board[row] && board[row][c] && board[row][c].type === type; c--) hCount++;
+  for (let c = col + 1; c < BOARD_SIZE && board[row] && board[row][c] && board[row][c].type === type; c++) hCount++;
   
   let vCount = 1;
   for (let r = row - 1; r >= 0 && board[r] && board[r][col] && board[r][col].type === type; r--) vCount++;
@@ -196,11 +240,13 @@ function findMatches() {
       const tile = board[row][col];
       if (!tile || tile.matched) continue;
       
+      // Horizontal match
       const hMatch = [];
       for (let c = col; c < BOARD_SIZE && board[row][c] && board[row][c].type === tile.type && !board[row][c].matched; c++) {
         hMatch.push(board[row][c]);
       }
       
+      // Vertical match
       const vMatch = [];
       for (let r = row; r < BOARD_SIZE && board[r] && board[r][col] && board[r][col].type === tile.type && !board[r][col].matched; r++) {
         vMatch.push(board[r][col]);
@@ -212,6 +258,7 @@ function findMatches() {
           if (!checked.has(key)) {
             matches.push(t);
             checked.add(key);
+            if (hMatch.length >= 4) t.special = SPECIAL_TYPES.ROW;
           }
         });
       }
@@ -222,8 +269,15 @@ function findMatches() {
           if (!checked.has(key)) {
             matches.push(t);
             checked.add(key);
+            if (vMatch.length >= 4) t.special = SPECIAL_TYPES.COL;
           }
         });
+      }
+      
+      if (hMatch.length >= 5 && vMatch.length >= 5) {
+        tile.special = SPECIAL_TYPES.COLOR;
+      } else if (hMatch.length >= 4 && vMatch.length >= 4) {
+        tile.special = SPECIAL_TYPES.BOMB;
       }
     }
   }
@@ -240,9 +294,10 @@ function processMatches(matches) {
   
   FX.shake(Math.min(combo * 2, 10));
   
+  const comboTexts = ['不错！', '真棒！', '太强了！', '无敌！', '神级连击！', '逆天！'];
   if (combo >= 3) {
-    const comboText = ['不错！', '真棒！', '太强了！', '无敌！', '神级连击！'][Math.min(combo - 3, 4)];
-    FX.banner(`${comboText} ×${combo}`);
+    const text = comboTexts[Math.min(combo - 3, comboTexts.length - 1)];
+    FX.banner(`${text} ×${combo}`);
   }
   
   matches.forEach(tile => {
@@ -250,11 +305,13 @@ function processMatches(matches) {
     const pos = getTileScreenPos(tile.row, tile.col);
     
     FX.burst(pos.x, pos.y, {n: 15, color: '#90ee90', speed: 150, life: 0.6, size: 6, glow: true});
-    FX.text(pos.x, pos.y - 20, `+${10 * combo}`, {color: combo >= 3 ? '#ff0' : '#90ee90', size: combo >= 3 ? 24 : 18, crit: combo >= 3});
+    const damageText = `+${10 * combo}`;
+    FX.text(pos.x, pos.y - 20, damageText, {color: combo >= 3 ? '#ffff00' : '#90ee90', size: combo >= 3 ? 24 : 18, crit: combo >= 3});
     
     if (tile.jelly) {
       tile.jelly = false;
       if (levelGoal.type === 'jelly') levelGoal.progress++;
+      FX.burst(pos.x, pos.y, {n: 10, color: '#ff69b4', speed: 100, life: 0.5, size: 5});
     }
     if (tile.crate) {
       tile.crate = false;
@@ -286,7 +343,7 @@ function activateSpecial(tile) {
     FX.banner('横排爆炸！');
     FX.shake(8);
     for (let c = 0; c < BOARD_SIZE; c++) {
-      if (board[tile.row][c]) {
+      if (board[tile.row][c] && !board[tile.row][c].matched) {
         const p = getTileScreenPos(tile.row, c);
         FX.burst(p.x, p.y, {n: 10, color: '#ff6666', speed: 120, life: 0.5, size: 5});
         board[tile.row][c].matched = true;
@@ -296,7 +353,7 @@ function activateSpecial(tile) {
     FX.banner('竖排爆炸！');
     FX.shake(8);
     for (let r = 0; r < BOARD_SIZE; r++) {
-      if (board[r][tile.col]) {
+      if (board[r] && board[r][tile.col] && !board[r][tile.col].matched) {
         const p = getTileScreenPos(r, tile.col);
         FX.burst(p.x, p.y, {n: 10, color: '#ff6666', speed: 120, life: 0.5, size: 5});
         board[r][tile.col].matched = true;
@@ -310,7 +367,7 @@ function activateSpecial(tile) {
       for (let dc = -1; dc <= 1; dc++) {
         const nr = tile.row + dr;
         const nc = tile.col + dc;
-        if (nr >= 0 && nr < BOARD_SIZE && nc >= 0 && nc < BOARD_SIZE && board[nr][nc]) {
+        if (nr >= 0 && nr < BOARD_SIZE && nc >= 0 && nc < BOARD_SIZE && board[nr][nc] && !board[nr][nc].matched) {
           const p = getTileScreenPos(nr, nc);
           FX.burst(p.x, p.y, {n: 15, color: '#ff8800', speed: 150, life: 0.6, size: 6});
           board[nr][nc].matched = true;
@@ -324,7 +381,7 @@ function activateSpecial(tile) {
     const targetType = tile.type;
     for (let r = 0; r < BOARD_SIZE; r++) {
       for (let c = 0; c < BOARD_SIZE; c++) {
-        if (board[r][c] && board[r][c].type === targetType) {
+        if (board[r][c] && board[r][c].type === targetType && !board[r][c].matched) {
           const p = getTileScreenPos(r, c);
           FX.burst(p.x, p.y, {n: 12, color: '#ffd700', speed: 140, life: 0.7, size: 7, glow: true});
           board[r][c].matched = true;
@@ -346,6 +403,7 @@ function applyGravity() {
         if (row !== emptyRow) {
           board[emptyRow][col] = board[row][col];
           board[emptyRow][col].targetY = emptyRow;
+          board[emptyRow][col].row = emptyRow;
           board[emptyRow][col].falling = true;
           board[row][col] = null;
           moved = true;
@@ -354,10 +412,11 @@ function applyGravity() {
       }
     }
     
+    // Spawn new tiles
     const level = levels[currentLevel];
-    const numTypes = Math.min(level.types, TILE_TYPES.length);
+    const numTypes = Math.min(level.types, TILE_TYPE_IDS.length);
     for (let row = emptyRow; row >= 0; row--) {
-      const type = TILE_TYPES[Math.floor(Math.random() * numTypes)];
+      const type = TILE_TYPE_IDS[Math.floor(Math.random() * numTypes)];
       board[row][col] = createTile(row, col, type);
       board[row][col].y = -5;
       board[row][col].targetY = row;
@@ -397,10 +456,20 @@ function swapTiles(tile1, tile2) {
   idleTimer = 0;
   hintTile = null;
   
+  // Swap in board
   [board[tile1.row][tile1.col], board[tile2.row][tile2.col]] = [board[tile2.row][tile2.col], board[tile1.row][tile1.col]];
-  [tile1.row, tile1.col, tile2.row, tile2.col] = [tile2.row, tile2.col, tile1.row, tile1.col];
   
-  animatingTiles = [{tile: tile1, startY: tile1.y, endY: tile1.row, t: 0}, {tile: tile2, startY: tile2.y, endY: tile2.row, t: 0}];
+  // Swap positions
+  const t1row = tile1.row, t1col = tile1.col;
+  tile1.row = tile2.row;
+  tile1.col = tile2.col;
+  tile2.row = t1row;
+  tile2.col = t1col;
+  
+  animatingTiles = [
+    {tile: tile1, startRow: t1row, startCol: t1col, endRow: tile1.row, endCol: tile1.col, t: 0},
+    {tile: tile2, startRow: tile2.row, startCol: tile2.col, endRow: t1row, endCol: t1col, t: 0}
+  ];
   
   setTimeout(() => {
     animatingTiles = [];
@@ -410,10 +479,19 @@ function swapTiles(tile1, tile2) {
       moves--;
       processMatches(matches);
     } else {
+      // Revert swap
       [board[tile1.row][tile1.col], board[tile2.row][tile2.col]] = [board[tile2.row][tile2.col], board[tile1.row][tile1.col]];
-      [tile1.row, tile1.col, tile2.row, tile2.col] = [tile2.row, tile2.col, tile1.row, tile1.col];
       
-      animatingTiles = [{tile: tile1, startY: tile1.y, endY: tile1.row, t: 0}, {tile: tile2, startY: tile2.y, endY: tile2.row, t: 0}];
+      const t1r = tile1.row, t1c = tile1.col;
+      tile1.row = t1row;
+      tile1.col = t1col;
+      tile2.row = t1r;
+      tile2.col = t1c;
+      
+      animatingTiles = [
+        {tile: tile1, startRow: t1r, startCol: t1c, endRow: tile1.row, endCol: tile1.col, t: 0},
+        {tile: tile2, startRow: tile2.row, startCol: tile2.col, endRow: t1r, endCol: t1c, t: 0}
+      ];
       
       setTimeout(() => {
         animatingTiles = [];
@@ -576,15 +654,17 @@ let touchStart = null;
 let dragTile = null;
 
 cv.addEventListener('pointerdown', e => {
+  if (swapping || cascading) return;
+  
   const rect = cv.getBoundingClientRect();
-  const px = (e.clientX - rect.left) * W / rect.width;
-  const py = (e.clientY - rect.top) * H / rect.height;
+  const px = (e.clientX - rect.left) * FX.W / rect.width;
+  const py = (e.clientY - rect.top) * FX.H / rect.height;
   
   const pos = screenToBoard(px, py);
   if (!pos) return;
   
   const tile = board[pos.row][pos.col];
-  if (!tile || swapping || cascading) return;
+  if (!tile) return;
   
   if (activeBoosters.hammer) {
     boosters.hammer.count--;
@@ -595,7 +675,7 @@ cv.addEventListener('pointerdown', e => {
     FX.shake(8);
     
     tile.matched = true;
-    score += 10;
+    score += 50;
     
     setTimeout(() => {
       board[tile.row][tile.col] = null;
@@ -614,8 +694,8 @@ cv.addEventListener('pointermove', e => {
   if (!touchStart || !dragTile) return;
   
   const rect = cv.getBoundingClientRect();
-  const px = (e.clientX - rect.left) * W / rect.width;
-  const py = (e.clientY - rect.top) * H / rect.height;
+  const px = (e.clientX - rect.left) * FX.W / rect.width;
+  const py = (e.clientY - rect.top) * FX.H / rect.height;
   
   const dx = px - touchStart.px;
   const dy = py - touchStart.py;
@@ -661,6 +741,7 @@ function update(dt) {
     idleTimer = 0;
   }
   
+  // Update falling tiles
   for (let row = 0; row < BOARD_SIZE; row++) {
     for (let col = 0; col < BOARD_SIZE; col++) {
       const tile = board[row][col];
@@ -676,30 +757,34 @@ function update(dt) {
     }
   }
   
+  // Update animating swaps
   animatingTiles.forEach(anim => {
     anim.t += dt * 4;
-    anim.tile.y = FX.lerp(anim.startY, anim.endY, FX.ease.outCubic(Math.min(anim.t, 1)));
+    const progress = FX.ease.outCubic(Math.min(anim.t, 1));
+    const startPos = getTileScreenPos(anim.startRow, anim.startCol);
+    const endPos = getTileScreenPos(anim.endRow, anim.endCol);
+    anim.tile.animX = FX.lerp(startPos.x, endPos.x, progress);
+    anim.tile.animY = FX.lerp(startPos.y, endPos.y, progress);
   });
   
   checkWinLose();
   
   let goalText = '';
   if (levelGoal.type === 'score') {
-    goalText = `目标分数: ${score}/${levelGoal.target}`;
+    goalText = `分数: ${score}/${levelGoal.target}`;
   } else if (levelGoal.type === 'collect') {
-    goalText = `收集 ${levelGoal.target.type}: ${levelGoal.progress}/${levelGoal.target.count}`;
+    goalText = `${levelGoal.target.type}: ${levelGoal.progress}/${levelGoal.target.count}`;
   } else if (levelGoal.type === 'jelly') {
-    goalText = `清除果冻: ${levelGoal.progress}/${levelGoal.target}`;
+    goalText = `果冻: ${levelGoal.progress}/${levelGoal.target}`;
   } else if (levelGoal.type === 'crates') {
-    goalText = `打破箱子: ${levelGoal.progress}/${levelGoal.target}`;
+    goalText = `箱子: ${levelGoal.progress}/${levelGoal.target}`;
   }
   
   FX.hud(`
     <a class="fx-icon" href="../tools.html">‹</a>
     <span class="chip">💎 ${score}</span>
-    <span class="chip">📍 第${currentLevel + 1}关</span>
     <span class="chip">🎯 ${goalText}</span>
-    <span class="chip">👣 ${moves}步</span>
+    <span class="chip">👣 ${moves}</span>
     <span class="grow"></span>
   `);
 }
@@ -710,6 +795,7 @@ function draw(ctx) {
   
   const level = levels[currentLevel];
   
+  // Draw background
   const scale = Math.max(W / 640, H / 360);
   const bgImg = FX.img(level.bg);
   const bgW = 640 * scale;
@@ -718,6 +804,7 @@ function draw(ctx) {
   
   FX.motes(ctx, '#90ee90');
   
+  // Draw props
   for (let i = 0; i < 3; i++) {
     const propX = (i * 200 + FX.time * 20) % W;
     const propY = H - 100 + Math.sin(i + FX.time) * 20;
@@ -725,11 +812,13 @@ function draw(ctx) {
     FX.drawSprite(ctx, propImg, propX, propY, 80, {alpha: 0.6});
   }
   
+  // Draw board background
   ctx.fillStyle = 'rgba(232, 240, 220, 0.95)';
   const boardW = W - BOARD_MARGIN * 2;
   const boardH = BOARD_SIZE * TILE_SIZE;
   ctx.fillRect(BOARD_MARGIN, BOARD_TOP, boardW, boardH);
   
+  // Draw grid
   ctx.strokeStyle = 'rgba(200,180,138,0.3)';
   ctx.lineWidth = 1;
   for (let i = 0; i <= BOARD_SIZE; i++) {
@@ -745,12 +834,18 @@ function draw(ctx) {
     ctx.stroke();
   }
   
+  // Draw tiles
   for (let row = 0; row < BOARD_SIZE; row++) {
     for (let col = 0; col < BOARD_SIZE; col++) {
       const tile = board[row][col];
       if (!tile) continue;
       
-      const pos = getTileScreenPos(tile.y, col);
+      let drawY = tile.y;
+      if (tile.animY !== undefined) {
+        drawY = tile.animY;
+      }
+      
+      const pos = getTileScreenPos(drawY, col);
       const size = TILE_SIZE * 0.85;
       
       const isHint = hintTile === tile;
@@ -765,25 +860,13 @@ function draw(ctx) {
         ctx.shadowBlur = 15;
       }
       
-      const cacheImg = drawTileToCache(tile.type, tile.jelly, tile.crate);
-      const scale = size / 200;
-      ctx.drawImage(cacheImg, pos.x - size / 2, pos.y - size / 2, size, size);
+      drawTileSprite(ctx, tile.type, size, pos.x, pos.y, tile.jelly, tile.crate, tile.special);
       
       ctx.shadowBlur = 0;
-      
-      if (tile.special) {
-        ctx.fillStyle = 'rgba(255, 0, 0, 0.3)';
-        ctx.fillRect(pos.x - size / 2, pos.y - size / 2, size, size);
-        
-        ctx.font = `${size * 0.3}px Arial`;
-        ctx.fillStyle = '#fff';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('✨', pos.x, pos.y - size * 0.3);
-      }
     }
   }
   
+  // Draw character
   if (currentSel && currentSel.char) {
     const chibiImg = FX.img(`${currentSel.char}-chibi`);
     if (currentSel.skin && currentSel.skin.filter) {
@@ -826,7 +909,10 @@ function checkWinLose() {
       stars: stars,
       coins: Math.floor(score / 10),
       gems: stars * 5,
-      win: true
+      win: true,
+      score: score,
+      combo: combo,
+      level: currentLevel + 1
     });
   }
   
@@ -838,7 +924,9 @@ function checkWinLose() {
       stars: 0,
       coins: Math.floor(score / 20),
       gems: 0,
-      win: false
+      win: false,
+      score: score,
+      level: currentLevel + 1
     });
   }
 }
@@ -855,6 +943,7 @@ function startRun(sel) {
   combo = 0;
   idleTimer = 0;
   hintTile = null;
+  gameStartTime = FX.time;
   
   if (level.goal.type === 'score') {
     levelGoal = {type: 'score', target: level.goal.target, progress: 0};
@@ -876,7 +965,7 @@ function startRun(sel) {
   activeBoosters.hammer = false;
   activeBoosters.shuffle = false;
   
-  initTileCache();
+  spriteCache = {};
   
   FX.running = true;
   FX.loop(update, draw);
@@ -884,9 +973,10 @@ function startRun(sel) {
 
 const assets = [
   'bg-forest', 'bg-garden', 'bg-sakura', 'bg-snow', 'bg-neon',
-  'prop-flowers', 'prop-sakura', 'prop-pine',
+  'prop-flowers', 'prop-sakura', 'prop-pine', 'prop-crystal', 'prop-coral',
   'lan-chibi', 'mo-chibi', 'li-chibi', 'xing-chibi', 'hu-chibi',
-  'item-weapon', 'item-chest', 'item-star', 'item-shield'
+  'item-weapon', 'item-chest', 'item-star', 'item-shield', 'item-heart',
+  'm3-acorn', 'm3-mushroom', 'm3-leaf', 'm3-squirrel', 'm3-pine', 'm3-apple'
 ];
 
 FX.load(assets).then(() => {
@@ -927,7 +1017,7 @@ window.__game = {
     moves: moves,
     combo: combo,
     goal: levelGoal,
-    board: board.map(row => row.map(t => t ? t.type : null)),
+    board: board.map(row => row.map(t => t ? {type: t.type, jelly: t.jelly, crate: t.crate} : null)),
     boosters: {
       hammer: boosters.hammer.count,
       shuffle: boosters.shuffle.count,

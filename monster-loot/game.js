@@ -1,4 +1,4 @@
-// 萌娘星糖远征 (Monster Loot Expedition)
+// 萌娘星糖远征 (Monster Loot Expedition) - Polish Pass
 (function() {
   'use strict';
 
@@ -23,7 +23,11 @@
     comboTimer: 0,
     sel: null,
     mode: 'story',
-    bullets: []
+    bullets: [],
+    bossPhase: 1,
+    bossPhaseTimer: 0,
+    kills: 0,
+    startTime: 0
   };
 
   const RARITIES = ['N', 'R', 'SR', 'SSR'];
@@ -42,14 +46,33 @@
   ];
 
   const CHARS = [
-    {id: 'lan', name: '蓝蓝', img: 'whale', stats: {atk: 12, def: 8, hp: 120, spd: 1.0}},
-    {id: 'mo', name: '墨墨', img: 'mo-chibi', stats: {atk: 15, def: 5, hp: 100, spd: 1.2}},
-    {id: 'li', name: '丽丽', img: 'li-chibi', stats: {atk: 10, def: 10, hp: 140, spd: 0.9}},
-    {id: 'xing', name: '星星', img: 'xing-chibi', stats: {atk: 18, def: 4, hp: 90, spd: 1.3}},
-    {id: 'hu', name: '虎虎', img: 'hu-chibi', stats: {atk: 14, def: 6, hp: 110, spd: 1.1}}
+    {id: 'lan', name: '蓝蓝', sideImg: 'whale', stats: {atk: 12, def: 8, hp: 120, spd: 1.0}},
+    {id: 'mo', name: '墨墨', sideImg: 'mo', stats: {atk: 15, def: 5, hp: 100, spd: 1.2}},
+    {id: 'li', name: '丽丽', sideImg: 'li', stats: {atk: 10, def: 10, hp: 140, spd: 0.9}},
+    {id: 'xing', name: '星星', sideImg: 'xing', stats: {atk: 18, def: 4, hp: 90, spd: 1.3}},
+    {id: 'hu', name: '虎虎', sideImg: 'hu', stats: {atk: 14, def: 6, hp: 110, spd: 1.1}}
   ];
 
-  // Hero class
+  // Create hero light outline cache
+  let heroOutlineCache = null;
+  function createHeroOutline(height) {
+    const w = Math.ceil(height * 0.6);
+    const h = Math.ceil(height * 1.2);
+    const outline = document.createElement('canvas');
+    outline.width = w;
+    outline.height = h;
+    const outlineCtx = outline.getContext('2d');
+    outlineCtx.fillStyle = 'rgba(255,255,255,0.25)';
+    outlineCtx.beginPath();
+    outlineCtx.ellipse(w/2, h/2, w/2.1, h/2.1, 0, 0, Math.PI * 2);
+    outlineCtx.fill();
+    outlineCtx.strokeStyle = 'rgba(255,255,255,0.35)';
+    outlineCtx.lineWidth = 2;
+    outlineCtx.stroke();
+    return outline;
+  }
+
+  // Hero class with proper side-view sprites
   class Hero {
     constructor(sel) {
       this.char = CHARS.find(c => c.id === sel.char);
@@ -61,17 +84,20 @@
       this.z = 0;
       this.vz = 0;
       this.anim = 'idle';
-      this.frame = 0;
+      this.animFrame = 0;
       this.flip = false;
       this.sx = 1;
       this.sy = 1;
       this.targetSx = 1;
       this.targetSy = 1;
+      this.bobOffset = 0;
+      this.leanAngle = 0;
       this.attacking = false;
       this.attackTimer = 0;
       this.hitFlash = 0;
       this.invulnerable = 0;
       this.afterimages = [];
+      this.outlineCanvas = createHeroOutline(170);
     }
 
     update(dt) {
@@ -91,13 +117,18 @@
         this.vy = joy.y * speed * 0.6;
         this.anim = 'run';
         this.flip = joy.x < 0;
+        this.leanAngle = (joy.x * -0.15);
+        this.bobOffset = Math.sin(FX.time * 12) * 8;
       } else if (!this.attacking) {
         this.vx *= 0.85;
         this.vy *= 0.85;
+        this.leanAngle *= 0.9;
+        this.bobOffset *= 0.85;
         if (Math.abs(this.vx) < 5 && Math.abs(this.vy) < 5) {
           this.vx = 0;
           this.vy = 0;
           this.anim = 'idle';
+          this.bobOffset = Math.sin(FX.time * 2) * 3;
         }
       }
 
@@ -112,13 +143,15 @@
 
       const roomLeft = game.cameraX;
       const roomRight = game.cameraX + 960;
-      this.x = Math.max(roomLeft + 80, Math.min(roomRight - 80, this.x));
-      this.y = Math.max(350, Math.min(500, this.y));
+      this.x = Math.max(roomLeft + 100, Math.min(roomRight - 100, this.x));
+      this.y = Math.max(360, Math.min(500, this.y));
 
       this.sx = FX.lerp(this.sx, this.targetSx, dt * 10);
       this.sy = FX.lerp(this.sy, this.targetSy, dt * 10);
 
-      this.frame += dt * 8;
+      this.animFrame += dt * 10;
+      if (this.anim === 'idle') this.animFrame %= 4;
+      else if (this.anim === 'run') this.animFrame %= 6;
 
       if (this.attacking && this.attackTimer <= 0) {
         this.attacking = false;
@@ -129,13 +162,13 @@
       if (Math.abs(this.vx) > 100 || Math.abs(this.vy) > 100) {
         this.afterimages.push({
           x: this.x, y: this.y, z: this.z, flip: this.flip,
-          anim: this.anim, frame: this.frame, alpha: 0.3, life: 0.2
+          anim: this.anim, frame: Math.floor(this.animFrame), alpha: 0.3, life: 0.15
         });
       }
 
       this.afterimages = this.afterimages.filter(img => {
         img.life -= dt;
-        img.alpha = img.life / 0.2 * 0.3;
+        img.alpha = (img.life / 0.15) * 0.3;
         return img.life > 0;
       });
     }
@@ -146,33 +179,32 @@
       this.attacking = true;
       this.attackTimer = 0.35;
       this.anim = 'attack';
-      this.frame = 0;
+      this.animFrame = 0;
       game.comboCount = (game.comboCount + 1) % 3;
       game.comboTimer = 0.8;
 
-      const lunge = game.comboCount === 2 ? 120 : 60;
+      const lunge = game.comboCount === 2 ? 150 : 70;
       this.vx = (this.flip ? -1 : 1) * lunge / 0.35;
-      this.vy = 0;
 
-      this.targetSx = 1.3;
-      this.targetSy = 0.8;
+      this.targetSx = 1.35;
+      this.targetSy = 0.75;
 
-      const range = 110;
+      const range = 130;
       const slashX = this.x + (this.flip ? -range/2 : range/2);
-      const slashY = this.y - 60;
+      const slashY = this.y - 80;
 
-      for (let i = 0; i < 3; i++) {
-        const angle = (this.flip ? Math.PI : 0) + FX.rand(-0.4, 0.4);
-        const dist = FX.rand(30, 60);
+      for (let i = 0; i < 5; i++) {
+        const angle = (this.flip ? Math.PI : 0) + FX.rand(-0.5, 0.5);
+        const dist = FX.rand(20, 80);
         const sx = slashX + Math.cos(angle) * dist;
         const sy = slashY + Math.sin(angle) * dist;
         const screenX = sx - game.cameraX;
         const screenY = sy;
-        FX.trail(screenX, screenY, '#60a5fa', 3);
+        FX.trail(screenX, screenY, '#60a5fa', 4);
       }
 
       const crit = Math.random() < 0.15;
-      const damage = Math.floor(game.stats.atk * (1 + game.comboCount * 0.2) * (crit ? 2 : 1));
+      const damage = Math.floor(game.stats.atk * (1 + game.comboCount * 0.25) * (crit ? 2 : 1));
 
       game.enemies.forEach(e => {
         if (e.dead) return;
@@ -181,56 +213,56 @@
         const dist = Math.sqrt(dx*dx + dy*dy);
         if (dist < range + e.radius) {
           e.hit(damage, crit);
-          e.vx = (this.flip ? -1 : 1) * 150;
-          e.vy = -50;
+          e.vx = (this.flip ? -1 : 1) * 180;
+          e.vy = -80;
+          FX.hitstop(0.06);
         }
       });
     }
 
     skill1() {
       this.anim = 'cast';
-      this.frame = 0;
+      this.animFrame = 0;
       this.vx = 0;
       this.vy = 0;
 
-      FX.shake(0.3);
+      FX.shake(0.4);
       const screenX = this.x - game.cameraX;
       const screenY = this.y;
-      FX.ring(screenX, screenY, {color: '#fbbf24', r: 180, life: 0.5});
-      FX.burst(screenX, screenY, {n: 30, color: '#fbbf24', speed: 250, life: 0.8, size: 4, glow: true});
+      FX.ring(screenX, screenY, {color: '#fbbf24', r: 200, life: 0.6});
+      FX.burst(screenX, screenY, {n: 40, color: '#fbbf24', speed: 280, life: 1, size: 5, glow: true});
 
-      const damage = Math.floor(game.stats.atk * 1.8);
+      const damage = Math.floor(game.stats.atk * 2);
       game.enemies.forEach(e => {
         if (e.dead) return;
         const dx = e.x - this.x;
         const dy = e.y - this.y;
         const dist = Math.sqrt(dx*dx + dy*dy);
-        if (dist < 180) {
+        if (dist < 200) {
           e.hit(damage, false);
           const angle = Math.atan2(dy, dx);
-          e.vx = Math.cos(angle) * 200;
-          e.vy = Math.sin(angle) * 200;
+          e.vx = Math.cos(angle) * 220;
+          e.vy = Math.sin(angle) * 220;
         }
       });
     }
 
     skill2() {
       this.anim = 'jump';
-      this.frame = 0;
+      this.animFrame = 0;
       this.invulnerable = 0.4;
       
-      const dashDist = 200;
+      const dashDist = 220;
       const dir = this.flip ? -1 : 1;
       this.vx = dir * dashDist / 0.4;
-      this.vy = 0;
 
-      const damage = Math.floor(game.stats.atk * 1.5);
+      const damage = Math.floor(game.stats.atk * 1.6);
       
       const dashCheck = () => {
-        for (let i = 0; i < 5; i++) {
-          const trailX = this.x + FX.rand(-20, 20) - game.cameraX;
-          const trailY = this.y + FX.rand(-30, 0);
-          FX.trail(trailX, trailY, '#60a5fa', 2);
+        for (let i = 0; i < 6; i++) {
+          const trailX = this.x + FX.rand(-25, 25) - game.cameraX;
+          const trailY = this.y + FX.rand(-40, 10);
+          FX.trail(trailX, trailY, '#60a5fa', 3);
         }
 
         game.enemies.forEach(e => {
@@ -238,13 +270,14 @@
           const dx = e.x - this.x;
           const dy = e.y - this.y;
           const dist = Math.sqrt(dx*dx + dy*dy);
-          if (dist < 60 + e.radius) {
+          if (dist < 70 + e.radius) {
             e.hit(damage, false);
-            e.vx = dir * 180;
+            e.vx = dir * 200;
             e.hitByDash = true;
             const burstX = e.x - game.cameraX;
             const burstY = e.y;
-            FX.burst(burstX, burstY, {n: 10, color: '#60a5fa', speed: 120, life: 0.6, size: 3});
+            FX.burst(burstX, burstY, {n: 15, color: '#60a5fa', speed: 150, life: 0.7, size: 4});
+            FX.hitstop(0.05);
           }
         });
       };
@@ -256,22 +289,22 @@
         } else {
           dashCheck();
         }
-      }, 50);
+      }, 40);
     }
 
     skill3() {
       this.anim = 'cast';
-      this.frame = 0;
+      this.animFrame = 0;
       
-      const heal = Math.floor(game.stats.maxHp * 0.3);
+      const heal = Math.floor(game.stats.maxHp * 0.35);
       game.stats.hp = Math.min(game.stats.maxHp, game.stats.hp + heal);
       FX.bar('hp', game.stats.hp / game.stats.maxHp);
 
       const screenX = this.x - game.cameraX;
       const screenY = this.y;
-      FX.ring(screenX, screenY, {color: '#4ade80', r: 100, life: 0.6});
-      FX.burst(screenX, screenY, {n: 20, color: '#4ade80', speed: 80, life: 1, size: 3, glow: true});
-      FX.text(screenX, screenY - 50, `+${heal}`, {color: '#4ade80', size: 24});
+      FX.ring(screenX, screenY, {color: '#4ade80', r: 120, life: 0.7});
+      FX.burst(screenX, screenY, {n: 25, color: '#4ade80', speed: 100, life: 1.2, size: 4, glow: true});
+      FX.text(screenX, screenY - 60, `+${heal}`, {color: '#4ade80', size: 26});
     }
 
     takeDamage(amount) {
@@ -281,13 +314,13 @@
       game.stats.hp -= reduced;
       FX.bar('hp', Math.max(0, game.stats.hp / game.stats.maxHp));
       
-      this.hitFlash = 0.08;
-      this.invulnerable = 0.5;
-      FX.shake(0.2);
+      this.hitFlash = 0.1;
+      this.invulnerable = 0.6;
+      FX.shake(0.25);
       const screenX = this.x - game.cameraX;
       const screenY = this.y;
-      FX.text(screenX, screenY - 40, `-${reduced}`, {color: '#ef4444', size: 20});
-      FX.burst(screenX, screenY - 30, {n: 8, color: '#ef4444', speed: 100, life: 0.5, size: 2});
+      FX.text(screenX, screenY - 50, `-${reduced}`, {color: '#ef4444', size: 22});
+      FX.burst(screenX, screenY - 40, {n: 10, color: '#ef4444', speed: 120, life: 0.6, size: 3});
 
       if (game.stats.hp <= 0) {
         gameOver(false);
@@ -295,42 +328,49 @@
     }
 
     draw(ctx) {
-      const shadow = 0.3 + Math.sin(FX.time * 3) * 0.05;
+      const shadow = 0.35 + Math.sin(FX.time * 3.5) * 0.08;
       ctx.globalAlpha = shadow;
-      ctx.fillStyle = '#000';
+      ctx.fillStyle = '#00000050';
       ctx.beginPath();
-      ctx.ellipse(this.x, this.y, 50 * this.sx, 25 * this.sy, 0, 0, Math.PI * 2);
+      ctx.ellipse(this.x, this.y + 5, 55 * this.sx, 28 * this.sy, 0, 0, Math.PI * 2);
       ctx.fill();
       ctx.globalAlpha = 1;
 
       this.afterimages.forEach(img => {
-        const imgName = this.char.img === 'whale' ? `whale-${img.anim}` : this.char.img;
+        const spriteName = (this.char.sideImg==='whale'?'':'side-')+`${this.char.sideImg}-${(img.anim==='cast'&&this.char.sideImg!=='whale')?'attack':img.anim}`;
         ctx.globalAlpha = img.alpha;
         ctx.save();
         if (this.skinFilter) ctx.filter = this.skinFilter;
-        FX.drawSprite(ctx, FX.img(imgName), img.x, img.y - img.z, 165, {
-          flip: img.flip, sx: this.sx, sy: this.sy
+        FX.drawSprite(ctx, FX.img(spriteName), img.x, img.y - img.z, 170, {
+          flip: img.flip, sx: this.sx, sy: this.sy, rot: this.leanAngle
         });
         ctx.restore();
       });
       ctx.globalAlpha = 1;
 
-      const imgName = this.char.img === 'whale' ? `whale-${this.anim}` : this.char.img;
+      const spriteName = (this.char.sideImg==='whale'?'':'side-')+`${this.char.sideImg}-${(this.anim==='cast'&&this.char.sideImg!=='whale')?'attack':this.anim}`;
+      const yOffset = this.anim === 'run' ? this.bobOffset : (this.anim === 'idle' ? this.bobOffset : 0);
 
       if (this.hitFlash > 0) {
         ctx.save();
-        ctx.filter = (this.skinFilter || '') + ' brightness(3)';
+        ctx.filter = (this.skinFilter || '') + ' brightness(3.2)';
       } else if (this.skinFilter) {
         ctx.save();
         ctx.filter = this.skinFilter;
       }
 
       if (this.invulnerable > 0 && Math.floor(FX.time * 20) % 2 === 0) {
-        ctx.globalAlpha = 0.5;
+        ctx.globalAlpha = 0.4;
       }
 
-      FX.drawSprite(ctx, FX.img(imgName), this.x, this.y - this.z, 165, {
-        flip: this.flip, sx: this.sx, sy: this.sy
+      // Draw soft light outline
+      ctx.save();
+      ctx.globalAlpha = 0.5;
+      ctx.drawImage(this.outlineCanvas, this.x - 51, this.y - 170 - this.z + yOffset);
+      ctx.restore();
+
+      FX.drawSprite(ctx, FX.img(spriteName), this.x, this.y - this.z + yOffset, 170, {
+        flip: this.flip, sx: this.sx, sy: this.sy, rot: this.leanAngle
       });
 
       if (this.hitFlash > 0 || this.skinFilter) {
@@ -340,7 +380,7 @@
     }
   }
 
-  // Enemy class
+  // Enemy class with multiple behaviors
   class Enemy {
     constructor(type, x, y, variant = 0) {
       this.type = type;
@@ -352,51 +392,59 @@
       this.dead = false;
       this.hitFlash = 0;
       this.dissolve = 0;
-      this.frame = 0;
+      this.animFrame = 0;
       this.flip = false;
+      this.bobTime = 0;
+      this.behavior = 0;
 
       const configs = {
-        slime: {hp: 30, atk: 8, radius: 40, speed: 80, jumpInterval: 2, h: 100},
-        bat: {hp: 20, atk: 6, radius: 35, speed: 150, swoopInterval: 3, h: 110},
-        alien: {hp: 40, atk: 10, radius: 38, speed: 60, shootInterval: 2.5, h: 120},
-        boss: {hp: 300, atk: 15, radius: 80, speed: 40, slamInterval: 4, h: 240}
+        slime: {hp: 35, atk: 8, radius: 45, speed: 90, h: 100},
+        bat: {hp: 24, atk: 7, radius: 38, speed: 160, h: 110},
+        alien: {hp: 45, atk: 11, radius: 40, speed: 65, h: 120},
+        boss: {hp: 350, atk: 16, radius: 90, speed: 45, h: 260}
       };
 
       const cfg = configs[type];
-      this.maxHp = cfg.hp * (1 + variant * 0.8);
+      this.maxHp = cfg.hp * (1 + variant * 0.9);
       this.hp = this.maxHp;
-      this.atk = cfg.atk * (1 + variant * 0.5);
-      this.radius = cfg.radius * (1 + variant * 0.2);
+      this.atk = cfg.atk * (1 + variant * 0.6);
+      this.radius = cfg.radius * (1 + variant * 0.25);
       this.speed = cfg.speed;
       this.height = cfg.h;
-      this.actionTimer = FX.rand(0.5, 1.5);
-      this.actionInterval = cfg[Object.keys(cfg).find(k => k.includes('Interval'))] || 2;
+      this.actionTimer = FX.rand(0.3, 1.2);
+      this.actionInterval = type === 'boss' ? 3.5 : (type === 'slime' ? 2.2 : 2.8);
 
       this.sx = 1;
       this.sy = 1;
       this.targetSx = 1;
       this.targetSy = 1;
+      
+      if (type === 'boss') {
+        this.bossState = 'normal';
+        this.bossStateTimer = 0;
+      }
     }
 
     update(dt) {
       if (this.dead) {
-        this.dissolve += dt * 2;
+        this.dissolve += dt * 2.2;
         return;
       }
 
       if (this.hitFlash > 0) this.hitFlash -= dt;
       this.actionTimer -= dt;
+      this.bobTime += dt;
 
-      this.vx *= 0.9;
-      this.vy *= 0.9;
+      this.vx *= 0.88;
+      this.vy *= 0.88;
       this.x += this.vx * dt;
       this.y += this.vy * dt;
 
       this.y = Math.max(340, Math.min(510, this.y));
 
-      this.sx = FX.lerp(this.sx, this.targetSx, dt * 8);
-      this.sy = FX.lerp(this.sy, this.targetSy, dt * 8);
-      this.frame += dt * 6;
+      this.sx = FX.lerp(this.sx, this.targetSx, dt * 9);
+      this.sy = FX.lerp(this.sy, this.targetSy, dt * 9);
+      this.animFrame += dt * 8;
 
       const hero = game.hero;
       if (!hero) return;
@@ -406,90 +454,125 @@
       const dist = Math.sqrt(dx*dx + dy*dy);
       this.flip = dx < 0;
 
-      if (dist > 120) {
+      if (this.type === 'boss') {
+        this.bossStateTimer += dt;
+        const transitionDist = 500;
+        if (dist < transitionDist && this.bossStateTimer > 8 && this.hp < this.maxHp * 0.5) {
+          this.bossState = 'enraged';
+        }
+      }
+
+      if (dist > 130) {
         const angle = Math.atan2(dy, dx);
-        this.vx += Math.cos(angle) * this.speed * dt * 2;
-        this.vy += Math.sin(angle) * this.speed * dt * 2;
+        const accel = this.type === 'boss' ? 35 : (this.type === 'bat' ? 50 : 40);
+        this.vx += Math.cos(angle) * this.speed * accel * dt;
+        this.vy += Math.sin(angle) * this.speed * accel * dt;
       }
 
       if (this.actionTimer <= 0) {
-        this.actionTimer = this.actionInterval + FX.rand(-0.5, 0.5);
+        this.actionTimer = this.actionInterval + FX.rand(-0.4, 0.6);
+        this.behavior = Math.floor(Math.random() * 2);
 
-        if (this.type === 'slime' && dist > 0) {
-          this.targetSy = 0.6;
+        if (this.type === 'slime') {
+          this.targetSy = 0.65;
           setTimeout(() => {
-            this.vy = (dy / dist) * 150;
-            this.vx = (dx / dist) * 100;
-            this.targetSy = 1.3;
-            setTimeout(() => this.targetSy = 1, 200);
-          }, 300);
-        } else if (this.type === 'bat' && dist > 0) {
-          const angle = Math.atan2(dy, dx);
-          this.vx = Math.cos(angle) * this.speed * 2;
-          this.vy = Math.sin(angle) * this.speed * 2;
-        } else if (this.type === 'alien' && dist > 0) {
-          const bullet = {
-            x: this.x, y: this.y,
-            vx: (dx / dist) * 200,
-            vy: (dy / dist) * 200,
-            life: 3,
-            damage: this.atk
-          };
-          game.bullets.push(bullet);
-          const screenX = this.x - game.cameraX;
-          const screenY = this.y;
-          FX.trail(screenX, screenY, '#f97316', 3);
+            if (dist > 0 && !this.dead) {
+              this.vy = (dy / dist) * 170 + FX.rand(-30, 30);
+              this.vx = (dx / dist) * 120 + FX.rand(-50, 50);
+              this.targetSy = 1.25;
+              setTimeout(() => { if (!this.dead) this.targetSy = 1; }, 180);
+            }
+          }, 250);
+        } else if (this.type === 'bat') {
+          const swoopAngle = Math.atan2(dy, dx) + FX.rand(-0.3, 0.3);
+          this.vx = Math.cos(swoopAngle) * this.speed * 2.2;
+          this.vy = Math.sin(swoopAngle) * this.speed * 2.2;
+        } else if (this.type === 'alien') {
+          if (this.behavior === 0 && dist > 0) {
+            const bullet = {
+              x: this.x, y: this.y - 20,
+              vx: (dx / dist) * 220 + FX.rand(-40, 40),
+              vy: (dy / dist) * 220 + FX.rand(-40, 40),
+              life: 3.5,
+              damage: this.atk
+            };
+            game.bullets.push(bullet);
+            const screenX = this.x - game.cameraX;
+            const screenY = this.y - 20;
+            FX.trail(screenX, screenY, '#f97316', 4);
+          } else {
+            const moveAngle = Math.atan2(dy, dx) + FX.rand(-Math.PI/3, Math.PI/3);
+            this.vx = Math.cos(moveAngle) * this.speed * 1.5;
+            this.vy = Math.sin(moveAngle) * this.speed * 1.5;
+          }
         } else if (this.type === 'boss') {
-          if (Math.random() < 0.5) {
-            const slamX = hero.x;
+          if (this.bossState === 'enraged') {
+            this.actionInterval = 2;
+          }
+          
+          if (this.behavior === 0) {
+            const slamX = hero.x + FX.rand(-60, 60);
             const slamY = hero.y;
             const screenX = slamX - game.cameraX;
             const screenY = slamY;
-            FX.ring(screenX, screenY, {color: '#ef4444', r: 80, life: 1.2});
+            FX.ring(screenX, screenY, {color: '#ef4444', r: 100, life: 1.4});
+            FX.text(screenX, screenY - 80, 'ボス攻撃！', {color: '#ef4444', size: 24});
+            
             setTimeout(() => {
-              const hitDist = Math.sqrt((hero.x - slamX)**2 + (hero.y - slamY)**2);
-              if (hitDist < 80) {
-                hero.takeDamage(this.atk * 2);
+              if (!this.dead) {
+                const hitDist = Math.sqrt((hero.x - slamX)**2 + (hero.y - slamY)**2);
+                if (hitDist < 100) {
+                  hero.takeDamage(this.atk * 2.2);
+                }
+                FX.shake(0.6);
+                const finalScreenX = slamX - game.cameraX;
+                const finalScreenY = slamY;
+                FX.burst(finalScreenX, finalScreenY, {n: 25, color: '#ef4444', speed: 220, life: 0.9, size: 5});
               }
-              FX.shake(0.5);
-              const finalScreenX = slamX - game.cameraX;
-              const finalScreenY = slamY;
-              FX.burst(finalScreenX, finalScreenY, {n: 20, color: '#ef4444', speed: 200, life: 0.8, size: 4});
-            }, 1200);
+            }, 1300);
           } else {
-            const summonX = this.x + FX.rand(-100, 100);
-            const summonY = this.y + FX.rand(-50, 50);
-            game.enemies.push(new Enemy('slime', summonX, summonY, 0));
-            const screenX = summonX - game.cameraX;
-            const screenY = summonY;
-            FX.ring(screenX, screenY, {color: '#a855f7', r: 50, life: 0.5});
+            const summonCount = this.bossState === 'enraged' ? 2 : 1;
+            for (let i = 0; i < summonCount; i++) {
+              setTimeout(() => {
+                if (!this.dead) {
+                  const summonX = this.x + FX.rand(-120, 120);
+                  const summonY = this.y + FX.rand(-80, 80);
+                  game.enemies.push(new Enemy('slime', summonX, summonY, 0));
+                  const screenX = summonX - game.cameraX;
+                  const screenY = summonY;
+                  FX.ring(screenX, screenY, {color: '#a855f7', r: 60, life: 0.6});
+                }
+              }, i * 400);
+            }
           }
         }
       }
 
-      if (dist < this.radius + 50 && this.type !== 'alien') {
+      if (dist < this.radius + 55 && this.type !== 'alien') {
         hero.takeDamage(this.atk);
       }
     }
 
     hit(damage, crit) {
       this.hp -= damage;
-      this.hitFlash = 0.08;
-      this.targetSx = 1.2;
-      this.targetSy = 0.8;
+      this.hitFlash = 0.1;
+      this.targetSx = 1.25;
+      this.targetSy = 0.75;
       setTimeout(() => {
-        this.targetSx = 1;
-        this.targetSy = 1;
-      }, 100);
+        if (!this.dead) {
+          this.targetSx = 1;
+          this.targetSy = 1;
+        }
+      }, 120);
 
       const screenX = this.x - game.cameraX;
-      const screenY = this.y;
-      FX.text(screenX, screenY - 50, `-${damage}`, {color: crit ? '#fbbf24' : '#ffffff', size: crit ? 28 : 20, crit});
-      FX.burst(screenX, screenY - 30, {n: crit ? 12 : 6, color: crit ? '#fbbf24' : '#ef4444', speed: 100, life: 0.5, size: 2});
+      const screenY = this.y - 50;
+      FX.text(screenX, screenY, `-${damage}`, {color: crit ? '#fbbf24' : '#ffff99', size: crit ? 30 : 22, crit});
+      FX.burst(screenX, screenY - 30, {n: crit ? 14 : 8, color: crit ? '#fbbf24' : '#ff6b35', speed: 120, life: 0.6, size: 3});
 
       if (crit) {
-        FX.hitstop(0.08);
-        FX.shake(0.15);
+        FX.hitstop(0.1);
+        FX.shake(0.2);
       }
 
       if (this.hp <= 0) {
@@ -499,28 +582,33 @@
 
     die() {
       this.dead = true;
+      game.kills++;
       const screenX = this.x - game.cameraX;
       const screenY = this.y;
-      FX.burst(screenX, screenY, {n: 20, color: this.variant > 0 ? '#a855f7' : '#94a3b8', speed: 150, life: 1, size: 3});
+      const color = this.variant > 0 ? (this.variant === 1 ? '#a855f7' : '#f97316') : '#94a3b8';
+      FX.burst(screenX, screenY, {n: 25, color: color, speed: 180, life: 1.1, size: 4});
       
-      const xpGain = this.type === 'boss' ? 100 : (15 + this.variant * 10);
+      const xpGain = this.type === 'boss' ? 150 : (20 + this.variant * 15);
       game.xp += xpGain;
       updateXPBar();
 
-      const coinCount = Math.floor(FX.rand(3, 8) * (1 + this.variant * 0.5));
+      const coinCount = Math.floor(FX.rand(4, 10) * (1 + this.variant * 0.6));
       for (let i = 0; i < coinCount; i++) {
         setTimeout(() => {
           game.coins += 1;
           updateHUD();
-        }, i * 50);
+        }, i * 60);
       }
 
-      if (this.type === 'boss' || Math.random() < 0.08) {
+      if (this.type === 'boss') {
+        game.gems += 3;
+        FX.banner('BOSS 击败！');
+      } else if (Math.random() < 0.1 + this.variant * 0.12) {
         game.gems += 1;
-        updateHUD();
       }
+      updateHUD();
 
-      if (Math.random() < 0.25 + this.variant * 0.1) {
+      if (Math.random() < 0.3 + this.variant * 0.15) {
         const slots = ['weapon', 'armor', 'accessory'];
         const slot = slots[Math.floor(Math.random() * slots.length)];
         const icons = {'weapon': 'item-weapon', 'armor': 'item-armor', 'accessory': 'item-accessory'};
@@ -528,16 +616,20 @@
         
         const rarityRoll = Math.random();
         let rarity = 'N';
-        if (rarityRoll < 0.5) rarity = 'N';
-        else if (rarityRoll < 0.75) rarity = 'R';
-        else if (rarityRoll < 0.9) rarity = 'SR';
-        else rarity = 'SSR';
+        if (this.type === 'boss') {
+          rarity = rarityRoll < 0.4 ? 'SR' : (rarityRoll < 0.8 ? 'SSR' : 'SR');
+        } else {
+          if (rarityRoll < 0.55) rarity = 'N';
+          else if (rarityRoll < 0.78) rarity = 'R';
+          else if (rarityRoll < 0.93) rarity = 'SR';
+          else rarity = 'SSR';
+        }
 
         const loot = {
           x: this.x,
           y: this.y,
           z: 0,
-          vz: 250,
+          vz: 280,
           slot: slot,
           icon: icon,
           rarity: rarity,
@@ -547,13 +639,13 @@
         game.loot.push(loot);
         const lootScreenX = this.x - game.cameraX;
         const lootScreenY = this.y;
-        FX.ring(lootScreenX, lootScreenY, {color: RARITY_COLORS[rarity], r: 40, life: 0.6});
+        FX.ring(lootScreenX, lootScreenY, {color: RARITY_COLORS[rarity], r: 50, life: 0.8});
       }
 
       setTimeout(() => {
         game.enemies = game.enemies.filter(e => e !== this);
         checkRoomCleared();
-      }, 500);
+      }, 600);
     }
 
     draw(ctx) {
@@ -561,9 +653,9 @@
 
       const shadow = 0.3;
       ctx.globalAlpha = shadow * (1 - this.dissolve);
-      ctx.fillStyle = '#000';
+      ctx.fillStyle = '#00000060';
       ctx.beginPath();
-      ctx.ellipse(this.x, this.y, this.radius * 0.8 * this.sx, this.radius * 0.4 * this.sy, 0, 0, Math.PI * 2);
+      ctx.ellipse(this.x, this.y + 3, this.radius * 0.75 * this.sx, this.radius * 0.35 * this.sy, 0, 0, Math.PI * 2);
       ctx.fill();
       ctx.globalAlpha = 1;
 
@@ -573,15 +665,20 @@
       ctx.globalAlpha = 1 - this.dissolve;
       
       if (this.variant > 0) {
-        const hue = this.variant === 1 ? 60 : 240;
-        ctx.filter = `hue-rotate(${hue}deg) brightness(1.2)`;
+        if (this.variant === 1) {
+          ctx.filter = 'hue-rotate(280deg) brightness(1.3)';
+        } else {
+          ctx.filter = 'hue-rotate(30deg) brightness(1.25)';
+        }
       }
       if (this.hitFlash > 0) {
-        ctx.filter = (ctx.filter || '') + ' brightness(3)';
+        const currentFilter = ctx.filter;
+        ctx.filter = currentFilter + ' brightness(3.5)';
       }
 
-      const scaleBonus = 1 + this.variant * 0.15;
-      FX.drawSprite(ctx, FX.img(imgName), this.x, this.y, this.height, {
+      const scaleBonus = 1 + this.variant * 0.2;
+      const idleBobbale = Math.sin(this.bobTime * 4) * 4;
+      FX.drawSprite(ctx, FX.img(imgName), this.x, this.y + idleBobbale, this.height, {
         flip: this.flip, sx: this.sx * scaleBonus, sy: this.sy * scaleBonus
       });
 
@@ -589,25 +686,33 @@
 
       if (this.variant > 0 && !this.dead) {
         ctx.save();
-        ctx.globalAlpha = 0.3 + Math.sin(FX.time * 4) * 0.2;
+        ctx.globalAlpha = 0.35 + Math.sin(FX.time * 5) * 0.25;
         ctx.strokeStyle = this.variant === 1 ? '#a855f7' : '#f97316';
-        ctx.lineWidth = 2;
+        ctx.lineWidth = 2.5;
         ctx.beginPath();
-        ctx.arc(this.x, this.y - this.height/2, this.radius + 5, 0, Math.PI * 2);
+        ctx.arc(this.x, this.y - this.height/2 + 10, this.radius + 8, 0, Math.PI * 2);
         ctx.stroke();
         ctx.restore();
       }
 
       if (this.hp < this.maxHp && !this.dead) {
-        const barW = 50;
-        const barH = 5;
+        const barW = 60;
+        const barH = 6;
         const barX = this.x - barW/2;
-        const barY = this.y - this.height - 10;
+        const barY = this.y - this.height - 15;
         
         ctx.fillStyle = '#1e293b';
         ctx.fillRect(barX, barY, barW, barH);
-        ctx.fillStyle = '#ef4444';
-        ctx.fillRect(barX, barY, barW * (this.hp / this.maxHp), barH);
+        ctx.fillStyle = this.type === 'boss' ? '#ef4444' : '#ef4444';
+        const hpRatio = Math.max(0, this.hp / this.maxHp);
+        ctx.fillRect(barX, barY, barW * hpRatio, barH);
+        
+        if (this.type === 'boss') {
+          ctx.fillStyle = '#fbbf24';
+          ctx.font = 'bold 10px Arial';
+          ctx.textAlign = 'center';
+          ctx.fillText(Math.ceil(this.hp) + '/' + Math.ceil(this.maxHp), this.x, barY - 5);
+        }
       }
     }
   }
@@ -619,16 +724,18 @@
     if (isBoss) {
       const boss = new Enemy('boss', roomX, 420, 0);
       game.enemies.push(boss);
-      FX.banner('BOSS出现！');
+      FX.banner('ボス出現！');
+      FX.shake(0.5);
       return;
     }
 
-    const count = Math.min(3 + Math.floor(game.room / 2), 8);
-    const variant = game.room > 2 ? (Math.random() < 0.2 + game.room * 0.02 ? 1 : 0) : 0;
+    const diffMult = 1 + (game.room - 1) * 0.35;
+    const count = Math.ceil((3 + Math.floor(game.room / 1.5)) * diffMult);
+    const variant = game.room > 2 ? (Math.random() < 0.15 + game.room * 0.03 ? 1 : 0) : 0;
 
-    for (let i = 0; i < count; i++) {
+    for (let i = 0; i < Math.min(count, 12); i++) {
       const types = ['slime', 'bat', 'alien'];
-      const weights = [0.5, 0.3, 0.2];
+      const weights = game.room <= 2 ? [0.6, 0.3, 0.1] : (game.room <= 4 ? [0.4, 0.4, 0.2] : [0.3, 0.3, 0.4]);
       let roll = Math.random();
       let type = 'slime';
       for (let j = 0; j < types.length; j++) {
@@ -639,9 +746,9 @@
         roll -= weights[j];
       }
 
-      const x = roomX + FX.rand(100, 860);
+      const x = roomX + FX.rand(80, 880);
       const y = FX.rand(360, 480);
-      const enemyVariant = Math.random() < 0.2 ? variant : 0;
+      const enemyVariant = Math.random() < (0.08 + game.room * 0.02) ? variant : 0;
       game.enemies.push(new Enemy(type, x, y, enemyVariant));
     }
   }
@@ -656,7 +763,7 @@
         FX.banner('区域清理完成 →');
         setTimeout(() => {
           nextRoom();
-        }, 1500);
+        }, 1800);
       }
     }
   }
@@ -665,7 +772,7 @@
     game.transitioning = true;
     const targetX = game.cameraX + 960;
 
-    const duration = 1.5;
+    const duration = 1.8;
     const start = FX.time;
     const startX = game.cameraX;
 
@@ -689,26 +796,26 @@
   }
 
   function updateXPBar() {
-    const xpForLevel = 50 + game.level * 25;
+    const xpForLevel = 60 + game.level * 30;
     if (game.xp >= xpForLevel) {
       game.xp -= xpForLevel;
       game.level++;
       
-      game.stats.maxHp += 20;
+      game.stats.maxHp += 25;
       game.stats.hp = game.stats.maxHp;
-      game.stats.atk += 3;
+      game.stats.atk += 4;
       game.stats.def += 2;
 
-      FX.banner(`等级提升！Lv.${game.level}`);
+      FX.banner(`レベルアップ Lv.${game.level}`);
       const screenX = game.hero.x - game.cameraX;
-      const screenY = game.hero.y;
-      FX.ring(screenX, screenY, {color: '#fbbf24', r: 150, life: 1});
-      FX.burst(screenX, screenY, {n: 30, color: '#fbbf24', speed: 200, life: 1.2, size: 5, glow: true});
+      const screenY = game.hero.y - 80;
+      FX.ring(screenX, screenY, {color: '#fbbf24', r: 180, life: 1.2});
+      FX.burst(screenX, screenY, {n: 35, color: '#fbbf24', speed: 240, life: 1.4, size: 6, glow: true});
       FX.bar('hp', 1);
       updateHUD();
       updateXPBar();
     }
-    const ratio = game.xp / (50 + game.level * 25);
+    const ratio = game.xp / (60 + game.level * 30);
     FX.bar('xp', ratio);
   }
 
@@ -719,16 +826,16 @@
     const roomText = `<span class="chip">${game.room}/${game.maxRoom}</span>`;
     
     FX.hud(`
-      <div style="display:flex;gap:10px;align-items:center;width:100%;">
-        <div style="flex:1;">
+      <div style="display:flex;gap:10px;align-items:center;width:100%;padding-right:150px;">
+        <div style="flex:0.8;">
           <div style="font-size:11px;color:#94a3b8;margin-bottom:2px;">HP</div>
           <div class="fx-bar" id="hp"><i></i></div>
         </div>
-        <div style="flex:1;">
+        <div style="flex:0.8;">
           <div style="font-size:11px;color:#94a3b8;margin-bottom:2px;">XP</div>
           <div class="fx-bar" id="xp"><i></i></div>
         </div>
-        <div style="display:flex;gap:8px;align-items:center;">
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:nowrap;white-space:nowrap;">
           ${levelText}
           ${coinText}
           ${gemText}
@@ -738,16 +845,16 @@
     `);
     
     FX.bar('hp', game.stats.hp / game.stats.maxHp);
-    FX.bar('xp', game.xp / (50 + game.level * 25));
+    FX.bar('xp', game.xp / (60 + game.level * 30));
   }
 
   function collectLoot(loot) {
     loot.collected = true;
     
     const statRolls = {
-      weapon: {atk: Math.floor((5 + RARITIES.indexOf(loot.rarity) * 8) * (0.8 + Math.random() * 0.4))},
-      armor: {def: Math.floor((3 + RARITIES.indexOf(loot.rarity) * 5) * (0.8 + Math.random() * 0.4))},
-      accessory: {hp: Math.floor((10 + RARITIES.indexOf(loot.rarity) * 20) * (0.8 + Math.random() * 0.4)), spd: 0.05 * (RARITIES.indexOf(loot.rarity) + 1)}
+      weapon: {atk: Math.floor((6 + RARITIES.indexOf(loot.rarity) * 10) * (0.75 + Math.random() * 0.5))},
+      armor: {def: Math.floor((4 + RARITIES.indexOf(loot.rarity) * 6) * (0.75 + Math.random() * 0.5))},
+      accessory: {hp: Math.floor((15 + RARITIES.indexOf(loot.rarity) * 25) * (0.75 + Math.random() * 0.5)), spd: 0.06 * (RARITIES.indexOf(loot.rarity) + 1)}
     };
 
     const item = {
@@ -756,25 +863,26 @@
       icon: loot.icon,
       rarity: loot.rarity,
       stats: statRolls[loot.slot] || {},
-      name: `${RARITY_NAMES[loot.rarity]}${loot.slot === 'weapon' ? '武器' : loot.slot === 'armor' ? '护甲' : '饰品'}`
+      name: `${RARITY_NAMES[loot.rarity]}${loot.slot === 'weapon' ? '武器' : loot.slot === 'armor' ? '防具' : 'アクセ'}`
     };
 
     window.Lobby.addItem(item);
 
     const screenX = loot.x - game.cameraX;
     const screenY = loot.y;
-    FX.burst(screenX, screenY, {n: 15, color: RARITY_COLORS[loot.rarity], speed: 120, life: 0.8, size: 3, glow: true});
-    FX.text(game.hero.x - game.cameraX, game.hero.y - 60, `获得 ${item.name}`, {color: RARITY_COLORS[loot.rarity], size: 18});
+    FX.burst(screenX, screenY, {n: 18, color: RARITY_COLORS[loot.rarity], speed: 150, life: 1, size: 4, glow: true});
+    FX.text(game.hero.x - game.cameraX, game.hero.y - 80, `獲得 ${item.name}`, {color: RARITY_COLORS[loot.rarity], size: 20});
   }
 
   function gameOver(win) {
     FX.running = false;
+    const elapsedTime = Math.floor(FX.time - game.startTime);
     
     let stars = 0;
     if (win) {
       stars = 3;
-      if (game.stats.hp < game.stats.maxHp * 0.3) stars = 2;
-      if (game.stats.hp < game.stats.maxHp * 0.1) stars = 1;
+      if (game.stats.hp < game.stats.maxHp * 0.4) stars = 2;
+      if (game.stats.hp < game.stats.maxHp * 0.15) stars = 1;
     }
 
     setTimeout(() => {
@@ -783,15 +891,21 @@
         stars: stars,
         coins: game.coins,
         gems: game.gems,
+        score: game.kills * 100 + game.coins + game.gems * 50,
+        kills: game.kills,
+        time: elapsedTime,
+        level: game.level,
         missionsProgress: {}
       });
-    }, 500);
+    }, 600);
   }
 
   function startRun(sel) {
     game.sel = sel;
     game.mode = sel.mode;
     game.maxRoom = sel.mode === 'story' ? 5 : 999;
+    game.startTime = FX.time;
+    game.kills = 0;
     
     const charData = CHARS.find(c => c.id === sel.char);
     game.stats = {
@@ -822,53 +936,53 @@
     const attackBtn = FX.button({
       icon: 'item-weapon',
       color: '#ef4444',
-      size: 100,
+      size: 110,
       right: 20,
       bottom: 20,
       key: 'KeyJ',
       cd: 0,
       hold: true,
       onPress: () => {
-        if (attackBtn.down && FX.running && !FX.paused) game.hero.attack();
+        if (attackBtn.down && FX.running && !FX.paused && game.hero) game.hero.attack();
       }
     });
 
     const skill1Btn = FX.button({
       icon: 'item-star',
       color: '#fbbf24',
-      size: 70,
-      right: 140,
-      bottom: 18,
+      size: 76,
+      right: 160,
+      bottom: 10,
       key: 'KeyK',
-      cd: 6,
+      cd: 7,
       onPress: () => {
-        if (FX.running && !FX.paused) game.hero.skill1();
+        if (FX.running && !FX.paused && game.hero) game.hero.skill1();
       }
     });
 
     const skill2Btn = FX.button({
       icon: 'item-ice',
       color: '#60a5fa',
-      size: 70,
-      right: 128,
-      bottom: 104,
+      size: 76,
+      right: 140,
+      bottom: 110,
       key: 'KeyL',
-      cd: 5,
+      cd: 6,
       onPress: () => {
-        if (FX.running && !FX.paused) game.hero.skill2();
+        if (FX.running && !FX.paused && game.hero) game.hero.skill2();
       }
     });
 
     const skill3Btn = FX.button({
       icon: 'item-heart',
       color: '#4ade80',
-      size: 70,
-      right: 52,
-      bottom: 140,
+      size: 76,
+      right: 60,
+      bottom: 160,
       key: 'KeyI',
-      cd: 15,
+      cd: 18,
       onPress: () => {
-        if (FX.running && !FX.paused) game.hero.skill3();
+        if (FX.running && !FX.paused && game.hero) game.hero.skill3();
       }
     });
 
@@ -892,7 +1006,6 @@
     if (!FX.running || FX.paused || !game.hero) return;
 
     game.hero.update(dt);
-
     game.enemies.forEach(e => e.update(dt));
 
     game.bullets = game.bullets.filter(b => {
@@ -905,7 +1018,7 @@
         const dy = b.y - game.hero.y;
         const dist = Math.sqrt(dx*dx + dy*dy);
 
-        if (dist < 50) {
+        if (dist < 55) {
           game.hero.takeDamage(b.damage);
           return false;
         }
@@ -918,7 +1031,7 @@
       if (loot.collected) return false;
 
       loot.z += loot.vz * dt;
-      loot.vz -= 800 * dt;
+      loot.vz -= 850 * dt;
       if (loot.z < 0) {
         loot.z = 0;
         loot.vz = 0;
@@ -930,7 +1043,7 @@
         const dy = loot.y - game.hero.y;
         const dist = Math.sqrt(dx*dx + dy*dy);
 
-        if (dist < 70) {
+        if (dist < 80) {
           collectLoot(loot);
           return false;
         }
@@ -947,7 +1060,7 @@
       {img: a.bg, speed: 0.2, y: 0, h: 540, alpha: 1}
     ];
     if (a.prop) {
-      layers.push({img: a.prop, speed: 0.6, y: 360, h: 180, gap: 420, alpha: 0.9});
+      layers.push({img: a.prop, speed: 0.6, y: 340, h: 200, gap: 480, alpha: 0.95});
     }
     FX.parallax(ctx, layers, game.cameraX * 0.3);
     FX.motes(ctx, a.moteColor);
@@ -978,26 +1091,26 @@
       } else if (e.type === 'loot') {
         const loot = e.obj;
         
-        ctx.globalAlpha = 0.4;
-        ctx.fillStyle = '#000';
+        ctx.globalAlpha = 0.35;
+        ctx.fillStyle = '#00000080';
         ctx.beginPath();
-        ctx.ellipse(loot.x, loot.y, 20, 10, 0, 0, Math.PI * 2);
+        ctx.ellipse(loot.x, loot.y, 22, 12, 0, 0, Math.PI * 2);
         ctx.fill();
         ctx.globalAlpha = 1;
 
-        const bob = Math.sin(loot.bobTime * 3) * 8;
-        const h = 50;
+        const bob = Math.sin(loot.bobTime * 3.5) * 10;
+        const h = 56;
         
         ctx.save();
         ctx.shadowColor = RARITY_COLORS[loot.rarity];
-        ctx.shadowBlur = 15;
+        ctx.shadowBlur = 18;
         FX.drawSprite(ctx, FX.img(loot.icon), loot.x, loot.y - loot.z - bob, h, {glow: true});
         ctx.restore();
 
-        if (loot.z === 0 && Math.floor(FX.time * 8) % 8 === 0) {
-          const trailX = loot.x + FX.rand(-10, 10) - game.cameraX;
-          const trailY = loot.y - 20 + FX.rand(-10, 10);
-          FX.trail(trailX, trailY, RARITY_COLORS[loot.rarity], 2);
+        if (loot.z === 0 && Math.floor(FX.time * 10) % 10 < 2) {
+          const trailX = loot.x + FX.rand(-12, 12) - game.cameraX;
+          const trailY = loot.y - 25 + FX.rand(-8, 8);
+          FX.trail(trailX, trailY, RARITY_COLORS[loot.rarity], 2.5);
         }
       }
     });
@@ -1006,9 +1119,9 @@
       game.bullets.forEach(b => {
         ctx.fillStyle = '#f97316';
         ctx.shadowColor = '#f97316';
-        ctx.shadowBlur = 10;
+        ctx.shadowBlur = 12;
         ctx.beginPath();
-        ctx.arc(b.x, b.y, 6, 0, Math.PI * 2);
+        ctx.arc(b.x, b.y, 7, 0, Math.PI * 2);
         ctx.fill();
         ctx.shadowBlur = 0;
       });
@@ -1029,17 +1142,21 @@
     'item-shield', 'item-star', 'item-weapon',
     'prop-arch', 'prop-coral', 'prop-crystal', 'prop-flowers', 'prop-lantern',
     'prop-pine', 'prop-rail', 'prop-sakura',
-    'whale-attack', 'whale-cast', 'whale-idle', 'whale-jump', 'whale-ride', 'whale-run'
+    'whale-idle', 'whale-run', 'whale-attack', 'whale-cast', 'whale-jump',
+    'side-mo-idle', 'side-mo-run', 'side-mo-attack', 'side-mo-jump',
+    'side-li-idle', 'side-li-run', 'side-li-attack', 'side-li-jump',
+    'side-xing-idle', 'side-xing-run', 'side-xing-attack', 'side-xing-jump',
+    'side-hu-idle', 'side-hu-run', 'side-hu-attack', 'side-hu-jump'
   ];
 
   FX.load(assets).then(() => {
     const skins = [];
     CHARS.forEach(char => {
       skins.push(
-        {char: char.id, id: 'default', name: '默认', filter: '', rarity: 'N', vip: false},
-        {char: char.id, id: 'flame', name: '烈焰', filter: 'hue-rotate(20deg) saturate(1.3)', rarity: 'R', vip: false},
-        {char: char.id, id: 'frost', name: '冰霜', filter: 'hue-rotate(180deg) saturate(1.2)', rarity: 'SR', vip: false},
-        {char: char.id, id: 'galaxy', name: '星河', filter: 'hue-rotate(270deg) saturate(1.5) brightness(1.1)', rarity: 'SSR', vip: true}
+        {char: char.id, id: 'default', name: 'デフォルト', filter: '', rarity: 'N', vip: false},
+        {char: char.id, id: 'flame', name: '烈焰', filter: 'hue-rotate(25deg) saturate(1.4)', rarity: 'R', vip: false},
+        {char: char.id, id: 'frost', name: '冰霜', filter: 'hue-rotate(185deg) saturate(1.3)', rarity: 'SR', vip: false},
+        {char: char.id, id: 'galaxy', name: '星河', filter: 'hue-rotate(270deg) saturate(1.6) brightness(1.15)', rarity: 'SSR', vip: true}
       );
     });
 
@@ -1053,8 +1170,8 @@
       chars: CHARS.map(c => ({
         id: c.id,
         name: c.name,
-        img: c.img === 'whale' ? 'whale-idle' : c.img,
-        chibi: c.img === 'whale' ? 'lan-chibi' : c.img,
+        img: (c.sideImg==='whale'?'':'side-')+`${c.sideImg}-idle`,
+        chibi: `${c.sideImg === 'whale' ? 'lan' : c.sideImg}-chibi`,
         stats: c.stats
       })),
       skins: skins,
@@ -1076,4 +1193,3 @@
   });
 
 })();
-;FX.useSideSprites('idle');

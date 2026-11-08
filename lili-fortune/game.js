@@ -169,6 +169,7 @@ function openAlbumPanel() {
     overflow-y: auto;
     z-index: 10000;
     padding: 20px;
+    box-sizing: border-box;
   `;
   
   const header = document.createElement('div');
@@ -228,9 +229,10 @@ function openAlbumPanel() {
   const grid = document.createElement('div');
   grid.style.cssText = `
     display: grid;
-    grid-template-columns: repeat(4, minmax(0,1fr)); box-sizing:border-box; width:100%;
+    grid-template-columns: repeat(4, 1fr);
     gap: 12px;
     padding-bottom: 40px;
+    box-sizing: border-box;
   `;
   
   const collectedSeeds = new Set(album.map(c => c.seed));
@@ -254,6 +256,7 @@ function openAlbumPanel() {
       align-items: center;
       justify-content: center;
       position: relative;
+      box-sizing: border-box;
     `;
     
     if (isCollected) {
@@ -351,6 +354,7 @@ function showCardDetail(card) {
     box-shadow: 0 8px 32px rgba(0,0,0,0.3);
     z-index: 11000;
     animation: cardFlip 0.5s ease;
+    box-sizing: border-box;
   `;
   
   const style = document.createElement('style');
@@ -437,8 +441,7 @@ let catchBtn = null;
 function updateDrawHUD() {
   FX.hud(`
     <a class="fx-icon" href="../tools.html">‹</a>
-    <span class="chip">✨ 栗栗</span>
-    <span class="chip">📊 ${store.totalDraws} 次</span>
+    <span class="chip">✨ ${store.totalDraws} 次</span>
     <span class="chip">🔥 ${store.streak} 天</span>
     <span class="grow"></span>
   `);

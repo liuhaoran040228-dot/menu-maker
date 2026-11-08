@@ -254,7 +254,8 @@ window.StarShowLines=window.StarShowLines||{"wave": ["早上好呀，新的一�
     stage.className = 'ss-stage';
     
     // 检查套装插画
-    const illus = checkSetIllustration(outfit, data, dataBase);
+    const faceOn = !!(window.StarFace && outfit.face && !window.StarFace.isDefault(outfit.face));
+    const illus = faceOn ? null : checkSetIllustration(outfit, data, dataBase);
     
     if (illus) {
       // 渲染完整插画
@@ -289,6 +290,7 @@ window.StarShowLines=window.StarShowLines||{"wave": ["早上好呀，新的一�
       body.appendChild(canvas);
       
       await drawBase(canvas, data, dataBase, outfit);
+      if (faceOn && window.StarFace.recolorBase) { data._base = dataBase; await window.StarFace.recolorBase(canvas, data, outfit.face); }
       
       // 收集所有图层
       const allLayers = [];
@@ -314,9 +316,19 @@ window.StarShowLines=window.StarShowLines||{"wave": ["早上好呀，新的一�
       allLayers.sort((a, b) => a.z - b.z);
       
       // 创建图层元素
+      const hairF = faceOn ? window.StarFace.hairFilter(data, outfit.face) : 'none';
       allLayers.forEach((layer, i) => {
-        body.appendChild(createLayer(layer, i));
+        const el = createLayer(layer, i);
+        if (faceOn && (layer.role === 'hairBack' || layer.role === 'hairFront')) { const im = el.tagName === 'IMG' ? el : el.querySelector('img'); if (im) window.StarFace.applyHair(im, data, outfit.face); else if (hairF !== 'none') el.style.filter = hairF; }
+        body.appendChild(el);
       });
+      // 捏脸图层（StarFace）
+      if (faceOn) {
+        try {
+          const specs = await window.StarFace.build(data, outfit.face, { resolve: s => new URL(s, dataBase).toString(), coverLayers: allLayers });
+          window.StarFace.mount(body, specs, data.W, data.H);
+        } catch (e) { /* 捏脸失败不影响主体 */ }
+      }
       
       // 眨眼图层
       if (data.blink) {

@@ -3,7 +3,7 @@
     v: 1,
     name: '云瑶',
     root: 'shuang',
-    realm: 1,
+    realm: 0, // 0-based index into G.realms (0 = 练气)
     stage: 1,
     qi: 0,
     lastTick: Date.now(),
@@ -111,7 +111,7 @@
     S,
     G,
 
-    save() {
+    save() { if (this._resetting) return;
       localStorage.setItem('xiuxian-v1', JSON.stringify(S));
     },
 
@@ -128,7 +128,7 @@
         v: 1,
         name: '云瑶',
         root: 'shuang',
-        realm: 1,
+        realm: 0,
         stage: 1,
         qi: 0,
         lastTick: Date.now(),
@@ -151,6 +151,7 @@
     screens: {},
 
     show(name, params = {}) {
+      try { const mr = document.getElementById('modalRoot'); if (mr) [...mr.children].forEach(m => { if (!m.dataset.keep) m.remove(); }); } catch (e) {}
       const current = document.querySelector('.screen.active');
       let next = document.getElementById(`scr-${name}`);
       const def = X.screens[name];
@@ -230,10 +231,17 @@
         overflow-y: auto;
         box-shadow: 0 8px 32px rgba(0,0,0,0.2);
       `;
-      modal.appendChild(content);
+      const box = document.createElement('div'); box.style.cssText = 'position:relative;max-width:90%;max-height:80%;display:flex'; content.style.maxWidth = '100%'; content.style.maxHeight = '80dvh';
+      box.appendChild(content); modal.appendChild(box);
       document.getElementById('modalRoot').appendChild(modal);
 
-      const close = () => modal.remove();
+      const close = () => { modal.remove(); if (opts.onClose) try { opts.onClose(); } catch (e) {} };
+      // one modal at a time; backdrop tap / ✕ closes
+      [...document.getElementById('modalRoot').children].forEach(m => { if (m !== modal && !m.dataset.keep) m.remove(); });
+      modal.style.pointerEvents = 'auto';
+      content.style.position = 'relative'; content.style.color = '#24372c';
+      if (!opts.noClose) { const x = document.createElement('button'); x.className = 'xx-modal-x'; x.textContent = '✕'; x.setAttribute('aria-label', '关闭'); x.style.cssText = 'position:absolute;top:6px;right:6px;width:36px;height:36px;border-radius:50%;border:1px solid #daa52080;background:#fffbe9;color:#7a5a10;font-size:16px;line-height:1;cursor:pointer'; x.onclick = close; x.style.zIndex = '5'; box.appendChild(x); }
+      modal.addEventListener('click', e => { if (e.target === modal && !opts.noClose) close(); });
       return { el: content, close };
     },
 
@@ -919,7 +927,7 @@
       }
     });
 
-    window.addEventListener('beforeunload', () => X.save());
+    window.addEventListener('beforeunload', () => { if (!X._resetting) X.save(); });
 
     window.Xian = {
       state: () => X.S,

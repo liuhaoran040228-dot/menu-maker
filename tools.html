@@ -1,17 +1,13 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><link rel="icon" href="data:,"><link rel="stylesheet" href="./style.css"><link rel="stylesheet" href="./hub-v2.css"><title>星糖宇宙 · 萌娘小游戏与创作工具</title><meta name="description" content="星糖宇宙：原创萌娘小游戏、换肤装扮与菜单海报、小红书封面、九宫格切图等创作小工具，打开即玩。"></head>
-<body class="hub hub-v2">
-<section class="v2-hero" style="--hero:url(./assets/keyvisual.webp)"><div class="v2-hero-copy"><span class="v2-eyebrow">STAR CANDY UNIVERSE</span><h1>星糖宇宙<small>和萌娘伙伴，玩一局闪闪发光的小冒险</small></h1><p>13 款原创萌娘小游戏，打开即玩；VIP 专属皮肤一键换上整个宇宙。</p><div class="v2-cta"><a class="v2-btn primary" href="#games">▶ 立即开玩</a><button class="v2-btn glass" type="button" id="heroSkin">✧ 皮肤中心</button><a class="v2-btn glass" href="./shop.html">✦ 星糖商城</a></div><div class="v2-stats"><span><b>13</b>款游戏</span><span><b>8</b>套VIP皮肤</span><span><b>6</b>个创作工具</span></div></div></section>
-<section class="v2-sec" id="games"><div class="v2-head"><h2>热门游戏</h2><span>免注册 · 手机也能玩</span></div><div class="v2-games" id="gameCards"></div></section>
-<section class="v2-sec" id="skins"><div class="v2-head"><h2>VIP 皮肤中心</h2><span>换上就能看见的专属背景</span></div><div class="v2-skins" id="skinRail"></div><div class="v2-vip"><div><b>✨ 装扮你的星糖宇宙</b><ul><li>8 套 VIP 专属全站皮肤</li><li>华丽徽章与头像挂件</li><li>导出图片无水印</li><li>游戏皮肤与道具加成</li></ul></div><button id="hubVip" type="button">兑换 VIP / 激活码</button></div></section>
-<section class="v2-sec cast-section"><div class="v2-head"><h2>星糖伙伴</h2><span>五位原创角色</span></div><div class="cast-row" id="rasterCast"></div><div class="lineup" id="lineup" hidden></div></section>
-<section class="v2-sec" id="tools"><div class="v2-head"><h2>创作小工具</h2><span>本地处理 · 不上传图片</span></div><div class="v2-tools">
-<a class="tcard" href="./index.html"><div class="ic">📋</div><div><h3>菜单海报生成</h3><p>为小店排一张好看的菜单</p></div></a>
-<a class="tcard" href="./price-poster/"><div class="ic">🏷️</div><div><h3>价目表 / 营业海报</h3><p>奶茶、美甲、圣诞模板一键出图</p></div></a>
-<a class="tcard" href="./xhs-title/"><div class="ic">💡</div><div><h3>标题 / 标签灵感</h3><p>输入关键词，组合分享灵感</p></div></a>
-<a class="tcard" href="./cover-maker/"><div class="ic">🖼️</div><div><h3>3:4 封面卡片</h3><p>写下标题，保存清爽封面</p></div></a>
-<a class="tcard" href="./text-clean/"><div class="ic">🧹</div><div><h3>文本排版清洗</h3><p>空行、空格、标点轻松整理</p></div></a>
-<a class="tcard" href="./grid-cut/"><div class="ic">🔲</div><div><h3>九宫格切图</h3><p>本地切图，按编号保存</p></div></a>
-</div></section>
-<footer class="v2-foot">星糖宇宙 · 原创角色与美术 · 仅供娱乐</footer>
-<script src="./data/content.js"></script><script src="./data/flavor.js"></script><script src="./content.js"></script><script src="./data/scenes.js"></script><script src="./game-art.js"></script><script src="./chars.js"></script><script src="./ui.js"></script><script src="./vip.js"></script><script src="./hub-v2.js"></script>
-</body></html>
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><link rel="icon" href="data:,"><link rel="stylesheet" href="app-shell.css"><link rel="stylesheet" href="hub-v2.css"><title>星糖宇宙 · 发现你的下一场冒险</title><meta name="description" content="原创小游戏、换装与星糖好物。轻松发现，打开即玩。"><link rel="stylesheet" href="platform.css"></head>
+<body class="app-page hub-v3" data-tab="home">
+<header class="app-topbar"><button class="app-profile" type="button" data-account aria-label="打开我的账号"><img src="assets/avatar-whale.webp" alt=""><span><b>星糖宇宙</b><small id="homeGreeting">今天，也来玩一会儿</small></span></button><a class="vip-mini" href="vip-center.html">✦ 贵族中心 <span>›</span></a></header>
+<main class="app-main"><nav class="platform-shortcuts" aria-label="常用功能"><a href="search.html">⌕ 搜索</a><a href="notifications.html">公告</a><a href="me.html">个人中心</a><a href="settings.html">设置</a></nav>
+<section class="home-hero" aria-label="今日精选"><div class="hero-copy"><span class="hero-kicker">与你的热爱相遇</span><h1>下一站，<br>星光冒险。</h1><a href="xiuxian/" class="hero-action">探索云阙问仙 <span>↗</span></a></div><span class="hero-page">01 / 精选</span></section>
+<nav class="quick-grid" aria-label="快捷入口"><a href="shop.html"><span class="quick-icon peach">♧</span><b>星糖商城</b></a><a href="tasks.html"><span class="quick-icon mint">✓</span><b>每日任务</b></a><a href="gacha.html"><span class="quick-icon lilac">✧</span><b>星愿祈光</b></a><a href="lili-dressup/"><span class="quick-icon blue">♢</span><b>我的衣橱</b></a></nav>
+<section class="home-section" id="games"><div class="section-title"><h2>发现好游戏 <span id="gameCount"></span></h2><button id="showAllGames" class="text-link" type="button">全部游戏 ›</button></div><div class="game-filters" role="group" aria-label="游戏类型"><button type="button" data-filter="all" aria-pressed="true">推荐</button><button type="button" data-filter="action" aria-pressed="false">动作冒险</button><button type="button" data-filter="casual" aria-pressed="false">轻松休闲</button><button type="button" data-filter="dress" aria-pressed="false">换装剧情</button></div><div class="home-games" id="gameCards"></div><button class="more-games" id="moreGames" type="button">探索全部游戏 <span>↓</span></button></section>
+<a class="skin-entry" href="vip-center.html#skins"><img src="assets/skin-3.webp" alt="银河主题皮肤预览" loading="lazy"><span><small>给日常一点新颜色</small><b>你的宇宙，你来装扮</b></span><i>↗</i></a>
+<section class="home-section tools-section" id="tools"><div class="section-title"><h2>创作工具</h2><span class="section-note">本地处理 · 不上传</span></div><div class="tool-grid"><a href="index.html">▤ <span>菜单海报</span> ›</a><a href="cover-maker/">▧ <span>封面卡片</span> ›</a><a href="price-poster/">▥ <span>价目海报</span> ›</a><a href="grid-cut/">⊞ <span>九宫格切图</span> ›</a><a href="xhs-title/">✎ <span>标题灵感</span> ›</a><a href="text-clean/">≡ <span>文本整理</span> ›</a></div></section>
+<footer class="app-footer">星糖宇宙 · 原创与你同在</footer></main>
+<nav class="app-tabs" aria-label="主导航"></nav>
+<script src="data/content.js"></script><script src="hub-v2.js"></script><script src="platform.js"></script><script src="app-shell.js"></script><script src="vip.js"></script></body></html>

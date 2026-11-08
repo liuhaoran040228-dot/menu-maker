@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>星糖宇宙 · 公会</title>
+  <link rel="stylesheet" href="app-shell.css">
+  <link rel="stylesheet" href="platform.css">
+  <link rel="stylesheet" href="community.css">
+<link rel="stylesheet" href="community-discovery.css"><link rel="icon" href="data:,"></head>
+<body class="app-page" data-tab="me">
+  <div class="demo-banner">本地演示 · 不是真实好友/公会 · 不会发送消息</div>
+  
+  <div class="app-container">
+    <header class="app-header">
+      <h1>公会</h1>
+      <nav class="header-nav">
+        <a href="friends.html" class="nav-link">好友</a>
+        <a href="#" class="nav-link" data-section="guilds">公会</a>
+      </nav>
+    </header>
+
+    <main class="app-main">
+      <section class="guilds-section">
+        <div class="section-tabs">
+          <button class="tab-btn active" data-tab="my-guilds">我的公会</button>
+          <button class="tab-btn" data-tab="directory">发现</button>
+        </div>
+
+        <button id="create-guild-btn" class="btn btn-primary" style="margin-bottom:1rem;">创建公会</button>
+
+        <div class="tab-content" id="my-guilds-tab">
+          <div id="my-guilds-list" class="guild-list"></div>
+          <div class="empty-state" id="my-guilds-empty" style="display:none;">
+            <p>还没有加入任何公会</p>
+            <p class="text-muted">创建或发现公会加入</p>
+          </div>
+        </div>
+
+        <div class="tab-content" id="directory-tab" style="display:none;">
+          <div class="search-box">
+            <input type="text" id="guild-search" placeholder="搜索公会..." class="search-input">
+          </div>
+          <div id="directory-list" class="guild-list"></div>
+          <div class="empty-state" id="directory-empty" style="display:none;">
+            <p>没有公会</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="guild-detail" id="guild-detail" style="display:none;">
+        <button class="btn-back" id="back-guild">← 返回</button>
+        <div class="guild-header">
+          <h2 id="detail-guild-name"></h2>
+          <p id="detail-guild-desc" class="text-muted"></p>
+          <div class="guild-meta">
+            <span id="detail-member-count"></span>
+            <span id="detail-guild-role"></span>
+          </div>
+        </div>
+
+        <div class="guild-actions" id="guild-actions"></div>
+
+        <div class="guild-chat-section">
+          <a href="social/" class="btn btn-secondary">打开现有公共聊天（非公会频道）</a><button id="guild-chat-adapter" class="btn btn-secondary">进入公会频道（待接入）</button><p id="guild-adapter-status" role="status"></p><button id="open-chat-btn" class="btn btn-secondary">打开本地机器人聊天演示</button>
+          <div class="chat-demo" id="chat-demo" style="display:none;">
+            <div class="chat-messages" id="chat-messages"></div>
+            <button id="generate-reply-btn" class="btn btn-small">生成本地模拟回复</button>
+          </div>
+        </div>
+
+        <div class="guild-members-section">
+          <h3>成员（<span id="member-list-count">0</span>）</h3>
+          <div id="guild-members-list" class="members-list"></div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="app-footer">
+      <a href="me.html" class="footer-link">← 返回大厅</a>
+    </footer>
+  </div>
+
+  <dialog id="create-guild-dialog" class="modal">
+    <div class="modal-content">
+      <h2>创建公会</h2>
+      <form id="create-guild-form">
+        <div class="form-group">
+          <label for="guild-name">公会名称</label>
+          <input type="text" id="guild-name" required maxlength="32" class="form-input">
+        </div>
+        <div class="form-group">
+          <label for="guild-desc">描述（可选）</label>
+          <textarea id="guild-desc" maxlength="200" class="form-input"></textarea>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn" onclick="document.getElementById('create-guild-dialog').close();">取消</button>
+          <button type="submit" class="btn btn-primary">创建</button>
+        </div>
+      </form>
+    </div>
+  </dialog>
+
+  <dialog id="invite-members-dialog" class="modal">
+    <div class="modal-content">
+      <h2>邀请成员</h2>
+      <div id="invite-friends-list" class="friend-list"></div>
+      <div class="form-actions">
+        <button type="button" class="btn" onclick="document.getElementById('invite-members-dialog').close();">完成</button>
+      </div>
+    </div>
+  </dialog>
+
+  
+  <script src="platform.js"></script>
+  <script src="vip.js"></script>
+  <script src="community.js"></script>
+<script src="community-discovery.js"></script><nav class="app-tabs" aria-label="主导航"></nav><script src="app-shell.js"></script><script>document.getElementById("guild-chat-adapter").onclick=()=>{const selected=document.querySelector("#guild-detail").dataset.guildId;if(selected)window.dispatchEvent(new CustomEvent("star:guild-chat-request",{detail:{guildId:selected}}));document.getElementById("guild-adapter-status").textContent="公会频道尚未开放；未发送消息。";};</script></body>
+</html>
