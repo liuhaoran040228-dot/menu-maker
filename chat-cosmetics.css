@@ -1,0 +1,39 @@
+/* Scope only explicit renderer classes, never arbitrary message HTML/URLs.
+   Bubble: >=44px line area, max 75vw, white-space:pre-wrap. Frames: avatar wrapper only.
+   Effects: one <=450ms entrance, never an infinite flash or layout-affecting animation. */
+.cc-bubble{border:1px solid #6d7491;border-radius:16px;padding:10px 14px;color:#20243c;background:#f3f5ff;line-height:1.5;overflow-wrap:anywhere;white-space:pre-wrap;max-width:min(75vw,520px);box-sizing:border-box;min-height:44px}
+.cc-bubble-default{background:#f3f5ff;border-color:#a3abc6}
+.cc-bubble-paid-bubble-peach{background:linear-gradient(130deg,#fff3f3,#ffe1e8);border-color:#c8748e;border-radius:18px 18px 18px 5px}
+.cc-bubble-paid-bubble-mint{background:linear-gradient(130deg,#eafff8,#ccefe6);border-color:#4c8d80;border-radius:18px 18px 5px 18px}
+.cc-bubble-paid-bubble-lavender{background:linear-gradient(130deg,#f4efff,#e0d5ff);border-color:#8e70bd;box-shadow:inset 0 0 0 2px #ffffff70}
+.cc-bubble-paid-bubble-amber{background:linear-gradient(130deg,#fff7dd,#f8dfab);border:2px solid #b0873e}
+.cc-bubble-bubble-vip-starlight{background:linear-gradient(130deg,#eaefff,#e4ddff);border:2px solid #8173bd;box-shadow:0 2px 7px #8173bd30}
+.cc-bubble-bubble-gacha-comet{background:linear-gradient(130deg,#e0f6ff,#eadfff);border:2px dashed #6e74b2}
+.cc-bubble-bubble-task-cloud{background:#fff;border:2px dotted #91a1bd;border-radius:24px}
+.cc-chat-effect-default{--cc-glow:transparent}
+.cc-chat-effect-effect-peach{--cc-glow:#d881a0}
+.cc-chat-effect-effect-lunar{--cc-glow:#69a894}
+.cc-chat-effect-effect-vip-crown{--cc-glow:#9f8dd4}
+.cc-chat-effect-effect-gacha-orbit{--cc-glow:#7babc8}
+.cc-chat-effect-effect-task-dawn{--cc-glow:#c6a268}
+.cc-enter.cc-chat-effect-effect-peach{animation:cc-rise 280ms ease-out both}
+.cc-enter.cc-chat-effect-effect-lunar{animation:cc-ripple 350ms ease-out both}
+.cc-enter.cc-chat-effect-effect-vip-crown{animation:cc-shimmer 450ms ease-out both}
+.cc-enter.cc-chat-effect-effect-gacha-orbit{animation:cc-comet 400ms ease-out both}
+.cc-enter.cc-chat-effect-effect-task-dawn{animation:cc-dawn 300ms ease-out both}
+.cc-avatar-frame{border-radius:50%;box-sizing:border-box;outline-offset:2px;isolation:isolate}
+.cc-avatar-frame-default{outline:none}
+.cc-avatar-frame-frame-peach{outline:2px solid #cb8195;box-shadow:0 0 0 4px #ffe2eb}
+.cc-avatar-frame-frame-lunar{outline:2px double #839caa;box-shadow:0 0 0 4px #e4f2f4}
+.cc-avatar-frame-frame-vip-crown{outline:3px double #b1934f;box-shadow:0 0 0 5px #fff0c8}
+.cc-avatar-frame-frame-gacha-orbit{outline:2px dashed #8e7ab4;box-shadow:0 0 0 5px #e9dfff}
+.cc-avatar-frame-frame-task-dawn{outline:2px dotted #719b7a;box-shadow:0 0 0 4px #e4f2d8}
+.cc-badge{display:inline-block;font-size:11px;line-height:18px;padding:0 5px;margin-inline-end:4px;border-radius:6px;color:#4d3815;background:#ffe9ae;border:1px solid #ac914d;white-space:nowrap}
+.cc-badge-level5,.cc-badge-level10,.cc-badge-level20,.cc-badge-level40{color:#314569;background:#e1ecff;border-color:#8298bf}
+@keyframes cc-rise{from{transform:translateY(5px)}to{transform:none}}
+@keyframes cc-ripple{from{box-shadow:0 0 0 4px transparent}to{box-shadow:0 0 0 1px var(--cc-glow)}}
+@keyframes cc-shimmer{from{filter:brightness(1.08)}to{filter:brightness(1)}}
+@keyframes cc-comet{from{transform:translateX(-6px)}to{transform:none}}
+@keyframes cc-dawn{from{opacity:.85}to{opacity:1}}
+@media(prefers-reduced-motion:reduce){.cc-enter{animation:none!important;transform:none!important;filter:none!important}}
+@media(forced-colors:active){.cc-bubble,.cc-avatar-frame,.cc-badge{border:1px solid CanvasText;outline-color:CanvasText}}

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<link rel="icon" href="data:,"><link rel="stylesheet" href="../qqshow.css"><title>栗栗换装 · 星糖衣橱</title>
+<link rel="icon" href="data:,"><link rel="stylesheet" href="../qqshow.css"><title>萌宠装扮 · 星糖萌宠</title>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{width:100%;height:100dvh;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,'Noto Sans',sans-serif,'Apple Color Emoji','Segoe UI Emoji';-webkit-font-smoothing:antialiased;background:#1a0a1e;color:#fff;position:relative;user-select:none;-webkit-user-select:none}
@@ -133,7 +133,7 @@ body{display:flex;flex-direction:column}
 #screen-lobby .doll-stage{top:calc(env(safe-area-inset-top,0px) + 150px);bottom:200px}
 #screen-wardrobe .doll-stage{top:calc(env(safe-area-inset-top,0px) + 58px);bottom:calc(47vh - 10px)}
 #screen-photo .doll-stage{top:calc(env(safe-area-inset-top,0px) + 40px);bottom:120px}
-.doll-container{height:100%;width:auto;aspect-ratio:2/3;padding-bottom:0;filter:drop-shadow(0 10px 18px rgba(40,0,40,.35))}
+.doll-container{height:100%;width:auto;aspect-ratio:1/1;padding-bottom:0;filter:drop-shadow(0 10px 18px rgba(40,0,40,.35))}
 .set-preview-doll .doll-container{height:100%;width:auto;margin:0 auto}
 .doll-container img{image-rendering:auto}
 .doll-container img.pop-in{animation:popin 480ms cubic-bezier(.2,.9,.3,1.2)}
@@ -266,6 +266,7 @@ state={...state,...loaded};
 }
 loadState();
 if(!state.equipped||!Object.keys(state.equipped).length){state.equipped={};(DATA.defaultOutfit||[]).forEach(id=>{const it=DATA.items.find(x=>x.id===id);if(it)state.equipped[it.slot]=id;});}
+if(!state.set){const match=DATA.sets.find(s=>s.items.every(id=>{const it=DATA.items.find(x=>x.id===id);return it&&state.equipped[it.slot]===id;}));if(match)state.set=match.id;}
 function isVip(){
 return!!(window.VIP&&window.VIP.active&&window.VIP.active());
 }
@@ -915,7 +916,7 @@ app.innerHTML=`
 <div class="scene-bg" style="background-image:url(${DATA.lobbyBg})"></div>
 <div class="lobby-title">
 <h1>栗栗换装</h1>
-<h2>星糖衣橱</h2>
+<h2>萌宠装扮</h2>
 </div>
 <div class="doll-stage">
 <div class="doll-container breathing"></div>
@@ -929,7 +930,7 @@ app.innerHTML=`
 <div class="hud-btn" onclick="LiliDress.toggleSound()">${state.sound?'🔊':'🔇'}</div>
 </div>
 <div class="lobby-buttons">
-<div class="big-btn" onclick="LiliDress.show('wardrobe')">👗 进入衣橱</div>
+<div class="big-btn" onclick="LiliDress.show('wardrobe')">👗 萌宠装扮</div>
 <div style="display:flex;gap:12px">
 <div class="big-btn" style="flex:1" onclick="LiliDress.show('collection')">✨ 套装图鉴</div>
 <div class="big-btn" style="flex:1" onclick="LiliDress.show('photo')">📸 拍照馆</div>
@@ -1315,5 +1316,6 @@ updateProgress();
 preload();
 })();
 </script>
+<script src="../star-pet.js" defer></script>
 </body>
 </html>

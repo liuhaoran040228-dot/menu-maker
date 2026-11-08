@@ -1,0 +1,103 @@
+{
+ "pack": "pack1",
+ "name": "星糖萌萌 第一弹",
+ "size": 512,
+ "stickers": [
+  {
+   "id": "wanan",
+   "caption": "晚安",
+   "character": "xing",
+   "file": "assets/stickers/pack1/wanan.webp"
+  },
+  {
+   "id": "chongya",
+   "caption": "冲鸭",
+   "character": "hu",
+   "file": "assets/stickers/pack1/chongya.webp"
+  },
+  {
+   "id": "tietie",
+   "caption": "贴贴",
+   "character": "lan",
+   "file": "assets/stickers/pack1/tietie.webp"
+  },
+  {
+   "id": "hahaha",
+   "caption": "哈哈哈",
+   "character": "hu",
+   "file": "assets/stickers/pack1/hahaha.webp"
+  },
+  {
+   "id": "weiqu",
+   "caption": "委屈",
+   "character": "lan",
+   "file": "assets/stickers/pack1/weiqu.webp"
+  },
+  {
+   "id": "shoudao",
+   "caption": "收到",
+   "character": "li",
+   "file": "assets/stickers/pack1/shoudao.webp"
+  },
+  {
+   "id": "xiexie",
+   "caption": "谢谢",
+   "character": "li",
+   "file": "assets/stickers/pack1/xiexie.webp"
+  },
+  {
+   "id": "shengqi",
+   "caption": "生气",
+   "character": "hu",
+   "file": "assets/stickers/pack1/shengqi.webp"
+  },
+  {
+   "id": "aini",
+   "caption": "爱你",
+   "character": "xing",
+   "file": "assets/stickers/pack1/aini.webp"
+  },
+  {
+   "id": "jiayou",
+   "caption": "加油",
+   "character": "lan",
+   "file": "assets/stickers/pack1/jiayou.webp"
+  },
+  {
+   "id": "zaima",
+   "caption": "在吗",
+   "character": "mo",
+   "file": "assets/stickers/pack1/zaima.webp"
+  },
+  {
+   "id": "wuyu",
+   "caption": "无语",
+   "character": "mo",
+   "file": "assets/stickers/pack1/wuyu.webp"
+  },
+  {
+   "id": "jingya",
+   "caption": "惊讶",
+   "character": "li",
+   "file": "assets/stickers/pack1/jingya.webp"
+  },
+  {
+   "id": "moyu",
+   "caption": "摸鱼",
+   "character": "mo",
+   "file": "assets/stickers/pack1/moyu.webp"
+  },
+  {
+   "id": "kaixin",
+   "caption": "开心",
+   "character": "xing",
+   "file": "assets/stickers/pack1/kaixin.webp"
+  },
+  {
+   "id": "baibai",
+   "caption": "拜拜",
+   "character": "hu",
+   "file": "assets/stickers/pack1/baibai.webp"
+  }
+ ]
+}

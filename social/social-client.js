@@ -6,7 +6,11 @@
   const URL = 'https://tfuxfdvkbpnaazylgtux.supabase.co';
   const PUBLIC_KEY = 'sb_publishable_se9_UP4SyegIDwvEXF8IkQ_dDAZduep';
   const STORAGE_KEY = 'star-account-session-v1';
+  // 本地演示：自行重算主机名（不信任任何 window 标志）。demo 下只返回内存 mock；mock 不可用则返回 null，绝不回落真实服务。
+  const H = location.hostname, D = new URLSearchParams(location.search).getAll('demo');
+  const DEMO = (H === '127.0.0.1' || H === 'localhost') && D.length === 1 && D[0] === '1';
   function make() {
+    if (DEMO) { const d = window.StarSocialDemo; return d && d.ok === true && d.client && d.client.__demo === true ? d.client : null; }
     if (window.__starSocialClient) return window.__starSocialClient;
     if (!window.supabase?.createClient) return null;
     const memory = new Map();

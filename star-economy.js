@@ -55,7 +55,42 @@ async function claimVipPerk(game) {
   }
 }
 
- window.StarEconomy=Object.freeze({version:1,enabled:()=>!mockMode&&Boolean(window.StarAccount?.shopRequest),transactionsEnabled,createEventKey:()=>crypto.randomUUID(),getWallet:()=>rpc('get_shop_state'),getOwned,getOutfit,saveOutfit,claimVipPerk,
+ // Profile RPCs never synthesize levels, entitlements or a successful local save.
+ async function profileRpc(name,args){
+   const unavailable=reason=>({ok:false,unavailable:true,reason});
+   if(mockMode)return unavailable('mock_mode');
+   if(typeof window.StarAccount?.shopRequest!=='function')return unavailable('bridge_unavailable');
+   try{return await rpc(name,args);}catch(error){
+     const message=String(error?.message||'');
+     // Only a schema-cache missing RPC is safe to degrade. Internal 42883 errors propagate.
+     if(error?.code==='PGRST202' && message.includes(name))return unavailable('rpc_unavailable');
+     throw error;
+   }
+ }
+ async function getPublicProfile(publicId=null){
+   if(publicId!==null&&(typeof publicId!=='string'||!uuid.test(publicId)))throw Error('公开资料ID无效');
+   return profileRpc('get_public_profile',{p_public_id:publicId});
+ }
+ async function setMySignature(signature){
+   if(typeof signature!=='string'||[...signature].length>60)throw Error('签名最多60字');
+   return profileRpc('set_my_signature',{p_signature:signature});
+ }
+ async function equipChatCosmetic(category,id){
+   if(!['bubble','chat_effect','avatar_frame'].includes(category)||typeof id!=='string'||!/^[a-z0-9-]{1,64}$/.test(id))throw Error('聊天装扮参数无效');
+   return profileRpc('equip_chat_cosmetic',{p_category:category,p_id:id});
+ }
+ async function getEquippedChatCosmetics(publicIds,{context='dm',conversationId=null,feedPostIds=null}={}){
+   if(!Array.isArray(publicIds)||publicIds.length>64||publicIds.some(x=>typeof x!=='string'||!uuid.test(x)))throw Error('最多查询64个公开ID');
+   if(!['dm','guild','lobby','public_feed'].includes(context))return [];
+   if(context==='public_feed'){
+     if(publicIds.length||conversationId!==null||!Array.isArray(feedPostIds)||feedPostIds.length>30||feedPostIds.some(x=>typeof x!=='string'||! /^[1-9][0-9]{0,18}$/.test(x)||BigInt(x)>9223372036854775807n))throw Error('广场外观需最多30个有效帖子ID字符串，不接受用户ID或会话ID');
+     return profileRpc('get_equipped_chat_cosmetics',{p_public_ids:[],p_context:context,p_conversation_id:null,p_feed_post_ids:[...new Set(feedPostIds)]});
+   }
+   if(feedPostIds!==null)throw Error('帖子ID仅适用于广场外观');
+   if(conversationId!==null&&!uuid.test(conversationId))throw Error('会话ID无效');
+   return profileRpc('get_equipped_chat_cosmetics',{p_public_ids:[...new Set(publicIds)],p_context:context,p_conversation_id:conversationId});
+ }
+ window.StarEconomy=Object.freeze({version:1,enabled:()=>!mockMode&&Boolean(window.StarAccount?.shopRequest),transactionsEnabled,createEventKey:()=>crypto.randomUUID(),getWallet:()=>rpc('get_shop_state'),getOwned,getOutfit,saveOutfit,claimVipPerk,getPublicProfile,setMySignature,equipChatCosmetic,getEquippedChatCosmetics,
  setPublicAppearance:enabled=>rpc('set_public_appearance',{enabled:Boolean(enabled)}),
  getPublicAppearance:userIds=>{if(userIds===undefined)return rpc('get_public_appearance');if(!Array.isArray(userIds)||userIds.length>64||userIds.some(x=>!uuid.test(x)))return Promise.reject(Error('最多查询64个有效用户ID'));return rpc('get_public_appearance',{target_user_ids:[...new Set(userIds)]});},
  reportTaskEvent:(eventType,idempotencyKey)=>{if(!allowedEvents.has(eventType))return Promise.reject(Error('不支持的任务事件'));return rpc('report_task_event',{event_type:eventType,idempotency_key:key(idempotencyKey)});},

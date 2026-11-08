@@ -5,8 +5,8 @@
  const $=id=>document.getElementById(id), params=new URLSearchParams(location.search);
  const mock=params.get('mock')==='1', live=!mock&&window.STAR_SHOP_LIVE===true;
  const daily=[0,20,30,40,55,70,90,115,150];
- const categories=[['all','','精选'],['outfit','','服饰'],['background','','背景'],['bubble','','气泡'],['pendant','','挂件'],['avatar','','头像']];
- const labels={avatar:'原创头像',bubble:'聊天气泡',pendant:'华丽挂件',background:'整屏皮肤',outfit:'整套服饰'};
+ const categories=[['all','','精选'],['outfit','','服饰'],['background','','背景'],['bubble','','气泡'],['pendant','','挂件'],['avatar','','头像'],['chat_effect','','发言特效'],['avatar_frame','','头像框']];
+ const labels={avatar:'原创头像',bubble:'聊天气泡',pendant:'华丽挂件',background:'整屏皮肤',outfit:'整套服饰',chat_effect:'发言特效',avatar_frame:'头像框'};
  let connected=false,visitKey;
  let catalog=window.StarShopCatalog||[], category='all', busy=false, selected=null, timer, loading=false, requestSerial=0;
  let state={balance:0,tier:0,claimed:false,vip_claimed:false,inventory:[],equipped:{}};
@@ -16,6 +16,7 @@
  function tier(){if(mock||live)return state.tier;return window.StarAccount?.tier?.()||window.VIP?.tier?.()||0;}
  function imageURL(path){return /^(assets\/[a-z0-9-]+\.webp)$/.test(path)?path:'';}
  function preview(item){
+  if(window.StarChatCosmetics?.find(item.category,item.id)&&['chat_effect','avatar_frame'].includes(item.category))return `<div class="preview"><span class="${window.StarChatCosmetics.find(item.category,item.id).css_class} cc-${item.category.replace('_','-')} cc-enter" style="padding:12px">${item.category==='chat_effect'?'星光正好':'✧'}</span></div>`;
   if(item.category==='bubble')return `<div class="preview bubble paid-bubble"><img class="bubble-skin-art" src="${imageURL(item.preview)}" alt="${escape(item.name)}原创气泡边框" loading="lazy"><span class="paid-bubble-text">今天也要闪闪发光呀 ✧</span></div>`;
   const src=imageURL(item.preview);
   return `<div class="preview ${escape(item.category)}">${src?`<img src="${src}" alt="${escape(item.name)}预览" loading="lazy">`:'<span>✧</span>'}</div>`;
@@ -61,7 +62,7 @@
  });};
  $('products').addEventListener('click',e=>{const b=e.target.closest('[data-item]');if(!b||busy)return;const item=catalog.find(x=>x.id===b.dataset.item);if(!item)return;if(!ensureAction())return;
   if(state.inventory.includes(item.id)){transaction(async()=>{
-   if(mock)state.equipped[item.category]=item.id;else accept(await api('equip_item',{item_id:item.id}));
+   if(mock)state.equipped[item.category]=item.id;else accept(await api(['bubble','chat_effect','avatar_frame'].includes(item.category)?'equip_chat_cosmetic':'equip_item',['bubble','chat_effect','avatar_frame'].includes(item.category)?{p_category:item.category,p_id:item.id}:{item_id:item.id}));
    toast(`已选用「${item.name}」${mock?' · 仅演示':' · 已保存至商城装扮'}`);
    window.dispatchEvent(new CustomEvent('starshopchange',{detail:{equipped:{...state.equipped},mock}}));
   });return;}

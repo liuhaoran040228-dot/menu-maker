@@ -1,13 +1,36 @@
 <!doctype html>
-<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><link rel="icon" href="data:,"><link rel="stylesheet" href="app-shell.css"><link rel="stylesheet" href="hub-v2.css"><title>星糖宇宙 · 发现你的下一场冒险</title><meta name="description" content="原创小游戏、换装与星糖好物。轻松发现，打开即玩。"><link rel="stylesheet" href="platform.css"></head>
-<body class="app-page hub-v3" data-tab="home">
-<header class="app-topbar"><button class="app-profile" type="button" data-account aria-label="打开我的账号"><img src="assets/avatar-whale.webp" alt=""><span><b>星糖宇宙</b><small id="homeGreeting">今天，也来玩一会儿</small></span></button><a class="vip-mini" href="vip-center.html">✦ 贵族中心 <span>›</span></a></header>
-<main class="app-main"><nav class="platform-shortcuts" aria-label="常用功能"><a href="search.html">⌕ 搜索</a><a href="notifications.html">公告</a><a href="me.html">个人中心</a><a href="settings.html">设置</a></nav>
-<section class="home-hero" aria-label="今日精选"><div class="hero-copy"><span class="hero-kicker">与你的热爱相遇</span><h1>下一站，<br>星光冒险。</h1><a href="xiuxian/" class="hero-action">探索云阙问仙 <span>↗</span></a></div><span class="hero-page">01 / 精选</span></section>
-<nav class="quick-grid" aria-label="快捷入口"><a href="shop.html"><span class="quick-icon peach">♧</span><b>星糖商城</b></a><a href="tasks.html"><span class="quick-icon mint">✓</span><b>每日任务</b></a><a href="gacha.html"><span class="quick-icon lilac">✧</span><b>星愿祈光</b></a><a href="lili-dressup/"><span class="quick-icon blue">♢</span><b>我的衣橱</b></a></nav>
-<section class="home-section" id="games"><div class="section-title"><h2>发现好游戏 <span id="gameCount"></span></h2><button id="showAllGames" class="text-link" type="button">全部游戏 ›</button></div><div class="game-filters" role="group" aria-label="游戏类型"><button type="button" data-filter="all" aria-pressed="true">推荐</button><button type="button" data-filter="action" aria-pressed="false">动作冒险</button><button type="button" data-filter="casual" aria-pressed="false">轻松休闲</button><button type="button" data-filter="dress" aria-pressed="false">换装剧情</button></div><div class="home-games" id="gameCards"></div><button class="more-games" id="moreGames" type="button">探索全部游戏 <span>↓</span></button></section>
-<a class="skin-entry" href="vip-center.html#skins"><img src="assets/skin-3.webp" alt="银河主题皮肤预览" loading="lazy"><span><small>给日常一点新颜色</small><b>你的宇宙，你来装扮</b></span><i>↗</i></a>
-<section class="home-section tools-section" id="tools"><div class="section-title"><h2>创作工具</h2><span class="section-note">本地处理 · 不上传</span></div><div class="tool-grid"><a href="index.html">▤ <span>菜单海报</span> ›</a><a href="cover-maker/">▧ <span>封面卡片</span> ›</a><a href="price-poster/">▥ <span>价目海报</span> ›</a><a href="grid-cut/">⊞ <span>九宫格切图</span> ›</a><a href="xhs-title/">✎ <span>标题灵感</span> ›</a><a href="text-clean/">≡ <span>文本整理</span> ›</a></div></section>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><link rel="icon" href="data:,"><link rel="stylesheet" href="app-shell.css"><link rel="stylesheet" href="platform.css"><title>星糖星球 · 聊天交友 + 娱乐</title><meta name="description" content="星糖宇宙：聊天交友 + 娱乐。兴趣匹配、星糖大厅、匿名树洞、好友消息，以及原创小游戏与换装。">
+<style>
+.sh-hero{display:flex;align-items:center;gap:14px;margin:4px 0 14px;padding:18px 16px;border-radius:22px;background:radial-gradient(120% 100% at 15% 0,#5b3f8f,#2a2160 55%,#181a3a);color:#fff}
+.sh-hero img{width:84px;height:84px;object-fit:contain;flex:none}
+.sh-hero h1{margin:0 0 4px;font-size:22px}.sh-hero p{margin:0 0 10px;font-size:14px;opacity:.92;line-height:1.5}
+.sh-cta{display:inline-flex;align-items:center;min-height:44px;padding:0 18px;border-radius:999px;background:#ff8fc7;color:#2a1030;font-weight:700;text-decoration:none}
+.sh-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:0 0 16px}
+.sh-card{display:flex;flex-direction:column;gap:4px;min-height:92px;padding:14px;border-radius:18px;background:#fff;box-shadow:0 4px 14px #2a216014;color:#2a2440;text-decoration:none}
+.sh-card b{font-size:16px}.sh-card small{color:#6d6888;font-size:12px;line-height:1.4}.sh-card span{font-size:22px}
+.sh-games{display:flex;align-items:center;gap:12px;margin:0 0 16px;padding:14px 16px;border-radius:18px;background:linear-gradient(120deg,#ffe3c7,#ffd0e6);color:#4a2a3a;text-decoration:none}
+.sh-games img{width:56px;height:56px;object-fit:contain}.sh-games b{display:block;font-size:16px}
+.sh-more{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:0 0 16px}
+.sh-more a{display:flex;align-items:center;justify-content:center;min-height:48px;border-radius:14px;background:#fff;color:#2a2440;text-decoration:none;font-size:13px;box-shadow:0 2px 8px #2a216010}
+.sh-h{margin:6px 2px 8px;font-size:15px}
+</style></head>
+<body class="app-page" data-tab="home">
+<header class="app-topbar"><button class="app-profile" type="button" data-account aria-label="打开我的账号"><img src="assets/avatar-whale.webp" alt=""><span><b>星糖宇宙</b><small>聊天交友 + 娱乐</small></span></button><a class="vip-mini" href="vip-center.html">✦ 贵族中心 <span>›</span></a></header>
+<main class="app-main">
+<section class="sh-hero" aria-label="星糖星球"><img src="assets/xing-chibi.webp" alt=""><div><h1>星糖星球</h1><p>按兴趣遇见同频旅人，在大厅聊天、在树洞说心事、和好友互发消息。</p><a class="sh-cta" href="social/index.html#planet">进入星球 ›</a></div></section>
+<nav class="sh-grid" aria-label="社交入口">
+<a class="sh-card" href="social/index.html#planet"><span aria-hidden="true">✦</span><b>星球</b><small>兴趣匹配 · 破冰话题</small></a>
+<a class="sh-card" href="social/index.html#square"><span aria-hidden="true">☾</span><b>广场</b><small>公开动态 · 匿名树洞另入口</small></a>
+<a class="sh-card" href="social/index.html#messages"><span aria-hidden="true">✉</span><b>消息</b><small>星糖大厅 · 私信 · 好友</small></a>
+<a class="sh-card" href="social/index.html#me"><span aria-hidden="true">✧</span><b>我的</b><small>资料 · 气泡皮肤 · VIP</small></a>
+</nav>
+<a id="games" class="sh-games" href="games.html#games"><img src="assets/hu-chibi.webp" alt=""><span><b>游戏大厅</b><small>原创小游戏、换装与创作工具都在这里 ›</small></span></a>
+<h2 class="sh-h">更多</h2>
+<nav class="sh-more" aria-label="更多功能">
+<a href="shop.html">星糖商城</a><a href="tasks.html">每日任务</a><a href="gacha.html">星愿祈光</a>
+<a href="lili-dressup/">萌宠装扮</a><a href="games.html#tools">创作工具</a><a href="search.html">搜索</a>
+<a href="notifications.html">公告</a><a href="me.html">个人中心</a><a href="settings.html">设置</a>
+</nav>
 <footer class="app-footer">星糖宇宙 · 原创与你同在</footer></main>
 <nav class="app-tabs" aria-label="主导航"></nav>
-<script src="data/content.js"></script><script src="hub-v2.js"></script><script src="platform.js"></script><script src="app-shell.js"></script><script src="vip.js"></script></body></html>
+<script src="platform.js"></script><script src="app-shell.js"></script><script src="vip.js"></script></body></html>

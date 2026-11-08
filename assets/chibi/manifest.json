@@ -1,0 +1,820 @@
+{
+  "layers": [
+    {
+      "source": "lili-dressup/parts/base.webp",
+      "target": "assets/chibi/base.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/sakura_hair_b.webp",
+      "target": "assets/chibi/sakura_hair_b.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/sakura_hair_f.webp",
+      "target": "assets/chibi/sakura_hair_f.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/sakura_top.webp",
+      "target": "assets/chibi/sakura_top.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/erase_sakura_top.webp",
+      "target": "assets/chibi/erase_sakura_top.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/sakura_shoes.webp",
+      "target": "assets/chibi/sakura_shoes.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/sakura_head.webp",
+      "target": "assets/chibi/sakura_head.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/sakura_hand_hb.webp",
+      "target": "assets/chibi/sakura_hand_hb.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/sakura_hand_hf.webp",
+      "target": "assets/chibi/sakura_hand_hf.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/sakura_jewel.webp",
+      "target": "assets/chibi/sakura_jewel.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/xian_hair_b.webp",
+      "target": "assets/chibi/xian_hair_b.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/xian_hair_f.webp",
+      "target": "assets/chibi/xian_hair_f.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/xian_top.webp",
+      "target": "assets/chibi/xian_top.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/erase_xian_top.webp",
+      "target": "assets/chibi/erase_xian_top.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/xian_shoes.webp",
+      "target": "assets/chibi/xian_shoes.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/xian_head.webp",
+      "target": "assets/chibi/xian_head.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/xian_hand_hb.webp",
+      "target": "assets/chibi/xian_hand_hb.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/xian_hand_hf.webp",
+      "target": "assets/chibi/xian_hand_hf.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/xian_jewel.webp",
+      "target": "assets/chibi/xian_jewel.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/magic_hair_b.webp",
+      "target": "assets/chibi/magic_hair_b.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/magic_hair_f.webp",
+      "target": "assets/chibi/magic_hair_f.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/magic_top.webp",
+      "target": "assets/chibi/magic_top.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/erase_magic_top.webp",
+      "target": "assets/chibi/erase_magic_top.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/magic_shoes.webp",
+      "target": "assets/chibi/magic_shoes.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/magic_head.webp",
+      "target": "assets/chibi/magic_head.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/magic_hand_hb.webp",
+      "target": "assets/chibi/magic_hand_hb.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/magic_hand_hf.webp",
+      "target": "assets/chibi/magic_hand_hf.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/magic_jewel.webp",
+      "target": "assets/chibi/magic_jewel.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/galaxy_hair_b.webp",
+      "target": "assets/chibi/galaxy_hair_b.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/galaxy_hair_f.webp",
+      "target": "assets/chibi/galaxy_hair_f.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/galaxy_top.webp",
+      "target": "assets/chibi/galaxy_top.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/erase_galaxy_top.webp",
+      "target": "assets/chibi/erase_galaxy_top.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/galaxy_shoes.webp",
+      "target": "assets/chibi/galaxy_shoes.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/erase_galaxy_shoes.webp",
+      "target": "assets/chibi/erase_galaxy_shoes.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/galaxy_head.webp",
+      "target": "assets/chibi/galaxy_head.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/galaxy_hand_hb.webp",
+      "target": "assets/chibi/galaxy_hand_hb.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/galaxy_hand_hf.webp",
+      "target": "assets/chibi/galaxy_hand_hf.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/galaxy_jewel.webp",
+      "target": "assets/chibi/galaxy_jewel.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/moon_hair_b.webp",
+      "target": "assets/chibi/moon_hair_b.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/moon_hair_f.webp",
+      "target": "assets/chibi/moon_hair_f.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/moon_top.webp",
+      "target": "assets/chibi/moon_top.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/erase_moon_top.webp",
+      "target": "assets/chibi/erase_moon_top.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/moon_shoes.webp",
+      "target": "assets/chibi/moon_shoes.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/moon_head.webp",
+      "target": "assets/chibi/moon_head.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/moon_hand_hb.webp",
+      "target": "assets/chibi/moon_hand_hb.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/moon_hand_hf.webp",
+      "target": "assets/chibi/moon_hand_hf.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/moon_jewel.webp",
+      "target": "assets/chibi/moon_jewel.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/moon_makeup.webp",
+      "target": "assets/chibi/moon_makeup.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/knight_hair_b.webp",
+      "target": "assets/chibi/knight_hair_b.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/knight_hair_f.webp",
+      "target": "assets/chibi/knight_hair_f.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/knight_top.webp",
+      "target": "assets/chibi/knight_top.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/erase_knight_top.webp",
+      "target": "assets/chibi/erase_knight_top.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/knight_bottom.webp",
+      "target": "assets/chibi/knight_bottom.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/erase_knight_bottom.webp",
+      "target": "assets/chibi/erase_knight_bottom.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/knight_shoes.webp",
+      "target": "assets/chibi/knight_shoes.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/erase_knight_shoes.webp",
+      "target": "assets/chibi/erase_knight_shoes.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/knight_hand_hb.webp",
+      "target": "assets/chibi/knight_hand_hb.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/knight_hand_hf.webp",
+      "target": "assets/chibi/knight_hand_hf.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/knight_head.webp",
+      "target": "assets/chibi/knight_head.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/city_hair_b.webp",
+      "target": "assets/chibi/city_hair_b.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/city_hair_f.webp",
+      "target": "assets/chibi/city_hair_f.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/city_top.webp",
+      "target": "assets/chibi/city_top.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/erase_city_top.webp",
+      "target": "assets/chibi/erase_city_top.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/city_bottom.webp",
+      "target": "assets/chibi/city_bottom.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/erase_city_bottom.webp",
+      "target": "assets/chibi/erase_city_bottom.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/city_shoes.webp",
+      "target": "assets/chibi/city_shoes.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/erase_city_shoes.webp",
+      "target": "assets/chibi/erase_city_shoes.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/city_head.webp",
+      "target": "assets/chibi/city_head.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/city_jewel.webp",
+      "target": "assets/chibi/city_jewel.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/city_hand_hb.webp",
+      "target": "assets/chibi/city_hand_hb.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/city_hand_hf.webp",
+      "target": "assets/chibi/city_hand_hf.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/erase_city_hand.webp",
+      "target": "assets/chibi/erase_city_hand.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/summer_hair_b.webp",
+      "target": "assets/chibi/summer_hair_b.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/summer_hair_f.webp",
+      "target": "assets/chibi/summer_hair_f.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/summer_top.webp",
+      "target": "assets/chibi/summer_top.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/erase_summer_top.webp",
+      "target": "assets/chibi/erase_summer_top.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/summer_shoes.webp",
+      "target": "assets/chibi/summer_shoes.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/erase_summer_shoes.webp",
+      "target": "assets/chibi/erase_summer_shoes.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/summer_head.webp",
+      "target": "assets/chibi/summer_head.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/summer_hand_hb.webp",
+      "target": "assets/chibi/summer_hand_hb.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/summer_hand_hf.webp",
+      "target": "assets/chibi/summer_hand_hf.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/erase_summer_hand.webp",
+      "target": "assets/chibi/erase_summer_hand.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/summer_jewel.webp",
+      "target": "assets/chibi/summer_jewel.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/rose_top.webp",
+      "target": "assets/chibi/rose_top.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/erase_rose_top.webp",
+      "target": "assets/chibi/erase_rose_top.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/rose_head.webp",
+      "target": "assets/chibi/rose_head.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/rose_hand_hb.webp",
+      "target": "assets/chibi/rose_hand_hb.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/rose_hand_hf.webp",
+      "target": "assets/chibi/rose_hand_hf.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/rose_makeup.webp",
+      "target": "assets/chibi/rose_makeup.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/sakurakimono_top.webp",
+      "target": "assets/chibi/sakurakimono_top.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/erase_sakurakimono_top.webp",
+      "target": "assets/chibi/erase_sakurakimono_top.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/sakurakimono_head.webp",
+      "target": "assets/chibi/sakurakimono_head.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/sakurakimono_hand_hb.webp",
+      "target": "assets/chibi/sakurakimono_hand_hb.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/sakurakimono_hand_hf.webp",
+      "target": "assets/chibi/sakurakimono_hand_hf.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/erase_sakurakimono_hand.webp",
+      "target": "assets/chibi/erase_sakurakimono_hand.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/sakurakimono_shoes.webp",
+      "target": "assets/chibi/sakurakimono_shoes.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/erase_sakurakimono_shoes.webp",
+      "target": "assets/chibi/erase_sakurakimono_shoes.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/h_gold_b.webp",
+      "target": "assets/chibi/h_gold_b.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/h_gold_f.webp",
+      "target": "assets/chibi/h_gold_f.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/h_mint_f.webp",
+      "target": "assets/chibi/h_mint_f.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/erase_h_mint.webp",
+      "target": "assets/chibi/erase_h_mint.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/h_bun_b.webp",
+      "target": "assets/chibi/h_bun_b.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/h_bun_f.webp",
+      "target": "assets/chibi/h_bun_f.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/t_blouse.webp",
+      "target": "assets/chibi/t_blouse.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/erase_t_blouse.webp",
+      "target": "assets/chibi/erase_t_blouse.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/b_skirt.webp",
+      "target": "assets/chibi/b_skirt.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/erase_b_skirt.webp",
+      "target": "assets/chibi/erase_b_skirt.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/b_tulle.webp",
+      "target": "assets/chibi/b_tulle.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/m_soft.webp",
+      "target": "assets/chibi/m_soft.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/m_cool.webp",
+      "target": "assets/chibi/m_cool.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/m_eyes.webp",
+      "target": "assets/chibi/m_eyes.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/j_pearl.webp",
+      "target": "assets/chibi/j_pearl.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/h_bouquet_hb.webp",
+      "target": "assets/chibi/h_bouquet_hb.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/h_bouquet_hf.webp",
+      "target": "assets/chibi/h_bouquet_hf.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/hd_cat.webp",
+      "target": "assets/chibi/hd_cat.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/m_glam.webp",
+      "target": "assets/chibi/m_glam.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/h_wave_b.webp",
+      "target": "assets/chibi/h_wave_b.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/h_wave_f.webp",
+      "target": "assets/chibi/h_wave_f.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/t_satin.webp",
+      "target": "assets/chibi/t_satin.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/erase_t_satin.webp",
+      "target": "assets/chibi/erase_t_satin.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/s_heels.webp",
+      "target": "assets/chibi/s_heels.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/erase_s_heels.webp",
+      "target": "assets/chibi/erase_s_heels.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/j_diamond.webp",
+      "target": "assets/chibi/j_diamond.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/t_qipao.webp",
+      "target": "assets/chibi/t_qipao.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/erase_t_qipao.webp",
+      "target": "assets/chibi/erase_t_qipao.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/ex_wink.webp",
+      "target": "assets/chibi/ex_wink.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/ex_shy.webp",
+      "target": "assets/chibi/ex_shy.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/ex_cool.webp",
+      "target": "assets/chibi/ex_cool.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/ex_joy.webp",
+      "target": "assets/chibi/ex_joy.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/set_sakura.webp",
+      "target": "assets/chibi/set_sakura.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/set_xian.webp",
+      "target": "assets/chibi/set_xian.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/set_magic.webp",
+      "target": "assets/chibi/set_magic.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/set_galaxy.webp",
+      "target": "assets/chibi/set_galaxy.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/set_moon.webp",
+      "target": "assets/chibi/set_moon.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/set_knight.webp",
+      "target": "assets/chibi/set_knight.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/set_city.webp",
+      "target": "assets/chibi/set_city.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/set_summer.webp",
+      "target": "assets/chibi/set_summer.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/set_rose.webp",
+      "target": "assets/chibi/set_rose.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/set_sakurakimono.webp",
+      "target": "assets/chibi/set_sakurakimono.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/blink.webp",
+      "target": "assets/chibi/blink.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/fe_brows_arched.webp",
+      "target": "assets/chibi/fe_brows_arched.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/fe_brows_bold.webp",
+      "target": "assets/chibi/fe_brows_bold.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/fe_brows_straight.webp",
+      "target": "assets/chibi/fe_brows_straight.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/fe_eyes_almond.webp",
+      "target": "assets/chibi/fe_eyes_almond.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/fe_eyes_almond_iris.webp",
+      "target": "assets/chibi/fe_eyes_almond_iris.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/fe_eyes_cat.webp",
+      "target": "assets/chibi/fe_eyes_cat.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/fe_eyes_cat_iris.webp",
+      "target": "assets/chibi/fe_eyes_cat_iris.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/fe_eyes_doe.webp",
+      "target": "assets/chibi/fe_eyes_doe.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/fe_eyes_doe_iris.webp",
+      "target": "assets/chibi/fe_eyes_doe_iris.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/fe_eyes_droopy.webp",
+      "target": "assets/chibi/fe_eyes_droopy.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/fe_eyes_droopy_iris.webp",
+      "target": "assets/chibi/fe_eyes_droopy_iris.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/fe_mouth_grin.webp",
+      "target": "assets/chibi/fe_mouth_grin.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/fe_mouth_open.webp",
+      "target": "assets/chibi/fe_mouth_open.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/fe_mouth_pout.webp",
+      "target": "assets/chibi/fe_mouth_pout.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/fe_mouth_smile.webp",
+      "target": "assets/chibi/fe_mouth_smile.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/fe_shape_heart.webp",
+      "target": "assets/chibi/fe_shape_heart.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/fe_shape_round.webp",
+      "target": "assets/chibi/fe_shape_round.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/fe_shape_v.webp",
+      "target": "assets/chibi/fe_shape_v.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/iris_base.webp",
+      "target": "assets/chibi/iris_base.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/skin_mask.webp",
+      "target": "assets/chibi/skin_mask.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    },
+    {
+      "source": "lili-dressup/parts/hair_mask.webp",
+      "target": "assets/chibi/hair_mask.webp",
+      "method": "shared inverse chibi mesh; not AI regenerated"
+    }
+  ],
+  "count": 161,
+  "note": "Geometry conversion of existing original layers; model-base.png is separately API-generated concept/base.",
+  "apiRegenerated": [
+    "model-base.png",
+    "model-outfits.png",
+    "base.webp (head integrated)",
+    "set_sakura.webp",
+    "set_xian.webp",
+    "set_knight.webp"
+  ],
+  "pending": "Remaining individual clothing layers and other seven set illustrations are mesh-converted originals, not fully redrawn. Mixed-layer compositions require art cleanup, do not publish."
+}

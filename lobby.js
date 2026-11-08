@@ -38,6 +38,7 @@
   const Audio = {
     ctx: null,
     init() {
+      if (window.GameAudio) return; // Adopted games use the shared Howler engine.
       try {
         this.ctx = new (window.AudioContext || window.webkitAudioContext)();
       } catch(e) {
@@ -45,6 +46,10 @@
       }
     },
     play(freq, duration = 80, type = 'sine') {
+      if (window.GameAudio) {
+        if (state.settings.sound) GameAudio.sfx(freq >= 1100 ? 'levelup' : 'button');
+        return;
+      }
       if (!state.settings.sound || !this.ctx) return;
       try {
         const osc = this.ctx.createOscillator();
@@ -2368,6 +2373,7 @@ function renderSettingsSound(parent) {
 
   [
     { key: 'sound', label: '音效', icon: '🔊' },
+    { key: 'music', label: '音乐', icon: '🎵' },
     { key: 'vibration', label: '震动', icon: '📳' }
   ].forEach(setting => {
     const row = createElement('div', 'lobby-card', container);
@@ -2387,7 +2393,7 @@ function renderSettingsSound(parent) {
     const toggle = createElement('div', '', row);
     toggle.style.cssText = `
       width: 52px; height: 28px; border-radius: 14px;
-      background: ${state.settings[setting.key] ? '#10b981' : 'rgba(255,255,255,0.2)'};
+      background: ${state.settings[setting.key] !== false ? '#10b981' : 'rgba(255,255,255,0.2)'};
       position: relative; cursor: pointer; transition: background 250ms;
     `;
 
@@ -2395,15 +2401,15 @@ function renderSettingsSound(parent) {
     knob.style.cssText = `
       width: 24px; height: 24px; border-radius: 50%; background: white;
       position: absolute; top: 2px;
-      left: ${state.settings[setting.key] ? '26px' : '2px'};
+      left: ${state.settings[setting.key] !== false ? '26px' : '2px'};
       transition: left 250ms;
     `;
 
     toggle.onclick = () => {
       Audio.tap();
-      state.settings[setting.key] = !state.settings[setting.key];
-      toggle.style.background = state.settings[setting.key] ? '#10b981' : 'rgba(255,255,255,0.2)';
-      knob.style.left = state.settings[setting.key] ? '26px' : '2px';
+      state.settings[setting.key] = state.settings[setting.key] === false;
+      toggle.style.background = state.settings[setting.key] !== false ? '#10b981' : 'rgba(255,255,255,0.2)';
+      knob.style.left = state.settings[setting.key] !== false ? '26px' : '2px';
       saveState();
     };
   });

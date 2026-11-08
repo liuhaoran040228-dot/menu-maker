@@ -157,5 +157,52 @@ window.StarAccount = (() => {
   document.addEventListener('visibilitychange',()=>{if(document.hidden){trackingUser=null;lastInput=0;}});
   setInterval(()=>{if(document.querySelector('dialog[open]')){trackingUser=null;return;}if(gameId&&user&&trackingUser===user.id&&!document.hidden&&!document.querySelector('dialog[open]')&&Date.now()-lastInput<70000&&Date.now()-lastHeartbeat>=61000){lastHeartbeat=Date.now();activity('tick',gameId).catch(()=>{});}},5000);
   render();
-  return {shopRequest:async(name,args={})=>{await initialization;if(!client||!user)throw Error('请先登录账号');if(!['get_shop_state','claim_daily','redeem_currency_code','buy_item','equip_item','get_tasks','report_task_event','claim_task','get_gacha_pool','get_gacha_state','draw_gacha','get_public_appearance','set_public_appearance','claim_vip_perk'].includes(name))throw Error('商城操作无效');const requestedUser=user.id;const {data,error}=await client.rpc(name,args);if(user?.id!==requestedUser)throw Error('账号已切换，请刷新商城');if(error)throw Object.assign(Error(friendly(error)),{code:error.code,details:error.details,hint:error.hint});return data;},shopCatalog:async()=>{await initialization;if(!client)throw Error('账号组件未就绪');const {data,error}=await client.from('shop_catalog').select('id,name,category,price,min_tier,preview,asset_key,active').order('price');if(error)throw Error('商城还未开放或加载失败，请稍后重试');return data||[];},active,open,ready:initialization,refresh:sync,tier:()=>active()?Number(accountState?.vip?.tier||1):0,level:()=>Number(accountState?.profile?.level||1),perks:()=>accountState?.entitlements||{},state:()=>accountState};
+  // ACCOUNT INVITE BRIDGE BEGIN — reuse this closure's only account client.
+  const inviteRpcNames = new Set([
+    'chat_invite_capability_v1',
+    'community_chat_get_invite',
+    'community_chat_send_invite_result'
+  ]);
+  const inviteError = (code, message) => ({ data: null, error: { code, message } });
+  window.StarAccountBridge = Object.freeze({
+    async getUser() {
+      await initialization;
+      if (!user || typeof user.id !== 'string') return null;
+      const identity = { id: user.id };
+      const displayName = user.user_metadata?.display_name;
+      if (typeof displayName === 'string' && displayName.trim()) identity.displayName = displayName;
+      return identity;
+    },
+    async rpc(name, args = {}) {
+      // Reject before waiting for initialization: never coerce arbitrary names.
+      if (typeof name !== 'string' || !inviteRpcNames.has(name)) {
+        throw Object.assign(new Error('邀请操作未授权'), { code: 'RPC_NOT_ALLOWED' });
+      }
+      if (!args || typeof args !== 'object' || Array.isArray(args)) {
+        throw Object.assign(new Error('邀请参数必须是对象'), { code: 'INVALID_ARGUMENT' });
+      }
+      await initialization;
+      if (!client) return inviteError('ACCOUNT_UNAVAILABLE', '账号组件未就绪');
+      if (!user) return inviteError('AUTH_REQUIRED', '请先登录账号');
+      const requestedUser = user.id;
+      try {
+        const result = await client.rpc(name, args);
+        if (user?.id !== requestedUser) return inviteError('ACCOUNT_CHANGED', '账号已切换，请重试');
+        if (result.error) {
+          // Do not expose SDK errors or arbitrary properties (headers/session/client).
+          const error = {};
+          for (const key of ['code', 'message', 'details', 'hint']) {
+            if (typeof result.error[key] === 'string') error[key] = result.error[key];
+          }
+          if (!error.message) error.message = '邀请请求失败';
+          return { data: null, error };
+        }
+        return { data: result.data ?? null, error: null };
+      } catch (_) {
+        return inviteError('NETWORK', '邀请请求失败，请稍后重试');
+      }
+    }
+  });
+  // ACCOUNT INVITE BRIDGE END
+  return {shopRequest:async(name,args={})=>{await initialization;if(!client||!user)throw Error('请先登录账号');if(!['get_shop_state','claim_daily','redeem_currency_code','buy_item','equip_item','get_tasks','report_task_event','claim_task','get_gacha_pool','get_gacha_state','draw_gacha','get_public_appearance','set_public_appearance','claim_vip_perk','get_public_profile','set_my_signature','equip_chat_cosmetic','get_equipped_chat_cosmetics'].includes(name))throw Error('商城操作无效');const requestedUser=user.id;const {data,error}=await client.rpc(name,args);if(user?.id!==requestedUser)throw Error('账号已切换，请刷新商城');if(error)throw Object.assign(Error(friendly(error)),{code:error.code,details:error.details,hint:error.hint});return data;},shopCatalog:async()=>{await initialization;if(!client)throw Error('账号组件未就绪');const {data,error}=await client.from('shop_catalog').select('id,name,category,price,min_tier,preview,asset_key,active').order('price');if(error)throw Error('商城还未开放或加载失败，请稍后重试');return data||[];},active,open,ready:initialization,refresh:sync,tier:()=>active()?Number(accountState?.vip?.tier||1):0,level:()=>Number(accountState?.profile?.level||1),perks:()=>accountState?.entitlements||{},state:()=>accountState};
 })();

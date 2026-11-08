@@ -56,6 +56,56 @@
       pendant: pn ? `../assets/shop-paid-pendant-${pn}.webp` : vp ? `../assets/vip-emblem-${vp[1]}.webp` : null,
       avatar: avatarSrc(m.avatar_id) };
   }
+  // 气泡皮肤：固定白名单（与主体 shop_catalog 种子 id 一致）；拥有/装备只看主体 get_shop_state 本人 inventory/equipped，不用 VIP 推断
+  const BUBBLE_SKINS = Object.freeze([
+    { id: 'paid-bubble-peach', name: '桃铃花笺', img: '../assets/shop-paid-bubble-1.webp' },
+    { id: 'paid-bubble-mint', name: '薄荷蝶语', img: '../assets/shop-paid-bubble-2.webp' },
+    { id: 'paid-bubble-lavender', name: '紫雾晚安', img: '../assets/shop-paid-bubble-3.webp' },
+    { id: 'paid-bubble-amber', name: '琥珀时光', img: '../assets/shop-paid-bubble-4.webp' }]);
+  function skinStates(state) {
+    const ok = state && typeof state === 'object' && Array.isArray(state.inventory);
+    const inv = ok ? state.inventory.filter(x => typeof x === 'string') : [];
+    const eq = ok && state.equipped && typeof state.equipped === 'object' ? state.equipped.bubble : null;
+    return BUBBLE_SKINS.map(k => ({ ...k, state: !ok ? 'unknown' : eq === k.id && inv.includes(k.id) ? 'equipped' : inv.includes(k.id) ? 'owned' : 'locked' }));
+  }
+  const SKIN_LABEL = { equipped: '使用中', owned: '已拥有', locked: '未拥有 · 商城获取', unknown: '登录后核验' };
+  const isSkinId = id => BUBBLE_SKINS.some(k => k.id === id);
+  // 我的页统计：只显示真实非负整数，其他一律“—”（不虚构 0）
+  const statText = n => Number.isInteger(n) && n >= 0 ? String(n) : '—';
+  // 顶部封面：仅由 themeFor 的固定结果映射站内图片
+  function coverFor(theme) {
+    let m = /^skin-([1-8])$/.exec(theme || ''); if (m) return `../assets/skin-${m[1]}.webp`;
+    m = /^paid-([1-4])$/.exec(theme || ''); if (m) return `../assets/shop-paid-background-${m[1]}.webp`;
+    m = /^limited-([1-4])$/.exec(theme || ''); if (m) return `../assets/shop-paid-limited-${m[1]}.webp`;
+    return null;
+  }
+  const profileProbe = e => !e ? 'deployed' : e.code === 'PGRST202' ? 'missing' : 'unknown';
+  // 站内游戏白名单（目录存在已核实）；game_id 只能来自此表，路径固定
+  const GAMES = Object.freeze([
+    { id: 'space-shooter', name: '萌娘打外星人', desc: '星舰巡航 · 首领弹幕' }, { id: 'snake', name: '贪吃蓝蓝', desc: '海盐星糖 · 灵巧转向' },
+    { id: 'fighter', name: '萌娘星光擂台', desc: '闯关试炼 · 星光连击' }, { id: 'monster-loot', name: '萌娘星糖远征', desc: '自动战斗 · 装备掉落' },
+    { id: 'moe-runner', name: '萌娘星风跑酷', desc: '二段跳 · 奇妙载具' }, { id: 'lili-merge', name: '栗栗合成大栗子', desc: '相同萌娘合成' },
+    { id: 'lili-match', name: '萌娘森林消消', desc: '三消休闲' }, { id: 'lili-2048', name: '萌娘伙伴 2048', desc: '滑动集结伙伴' }]);
+  const gameById = id => GAMES.find(g => g.id === id) || null;
+  const gameHref = id => gameById(id) ? `../${id}/` : null;
+  // 邀请卡本地预览：只用白名单字段；分数仅显示为“自报”，非法值丢弃
+  function invitePreview(id, score) {
+    const g = gameById(id); if (!g) return null;
+    const n = Number(score);
+    return { game_id: g.id, name: g.name, href: gameHref(g.id), score: Number.isSafeInteger(n) && n >= 0 && n <= 1e9 ? n : null, score_label: '自报分数（未验证）', sent: false };
+  }
+  const HASH_TABS = { planet: 'planet', square: 'square', following: 'square', treehole: 'tree', tree: 'tree', messages: 'chats', friends: 'friends', feed: 'tree', me: 'more', lobby: 'lobby', skins: 'more' };  // 旧 #feed 原指匿名树洞 → 仍进树洞，不落到公开广场（防身份混淆）
+  const tabFromHash = h => { const k = typeof h === 'string' ? h.replace(/^#/, '') : ''; return Object.prototype.hasOwnProperty.call(HASH_TABS, k) ? HASH_TABS[k] : null; };
+  // 我的头卡：只取主体本人投影的白名单 id；忽略主体返回的图片地址字段等任意字符串
+  function heroFromLook(m) {
+    if (!m || typeof m !== 'object') return { avatar: '../assets/avatar-whale.webp', vip: 'VIP 状态未读取', vipOn: false, pendant: null, badge: null };
+    const t = Number(m.vip_tier), tier = Number.isInteger(t) && t >= 1 && t <= 8 ? t : 0;
+    const look = safeLook({ badge_tier: tier, pendant_id: m.pendant_id, avatar_id: m.avatar && m.avatar.id });
+    return { avatar: look.avatar || '../assets/avatar-whale.webp', vip: tier ? `VIP ${tier}` : '未开通 VIP', vipOn: !!tier, pendant: look.pendant,
+      badge: typeof m.badge_id === 'string' && /^[a-z0-9_-]{1,32}$/i.test(m.badge_id) ? '已佩戴徽章' : null };
+  }
+  // 在线状态：仅 friend_list.online===true 视为在线；false 不能区分“离线/未公开”，null/缺失为未知
+  const friendStatus = v => v === true ? { kind: 'on', text: '在线' } : v === false ? { kind: 'off', text: '离线或未公开' } : { kind: 'unknown', text: '状态未知' };
   // 本人背景 → data-theme 值（CSS 中固定映射）；未知一律 starry
   // 依 shop/appearance-ids.json v1：VIP 背景 id → skin-N 资源；skin-N 本身不是合法 id。
   const VIP_BG = ['ocean', 'sakura', 'galaxy', 'neon', 'crystal', 'lunar', 'aurora', 'palace'];
@@ -161,11 +211,12 @@
     if (!x || !isUuid(x.conversation_id)) return null;
     const lm = x.last_message && typeof x.last_message.body === 'string' ? { body: x.last_message.body.slice(0, 80), created_at: x.last_message.created_at, mine: false } : null;
     const u = Number(x.unread_count);
-    return { id: x.conversation_id, kind: 'dm', title: String((x.peer && x.peer.nickname) || '好友').slice(0, 32), avatar: x.peer && x.peer.avatar_preset, last: lm, unread: Number.isSafeInteger(u) && u > 0 ? u : 0, updated_at: x.updated_at };
+    return { id: x.conversation_id, kind: 'dm', title: String((x.peer && x.peer.nickname) || '好友').slice(0, 32), avatar: x.peer && x.peer.avatar_preset, last: lm,
+      peer_pid: x.peer && isUuid(x.peer.public_id) ? x.peer.public_id : null, unread: Number.isSafeInteger(u) && u > 0 ? u : 0, updated_at: x.updated_at };
   }
   function normGuild(x) {
     if (!x || !isUuid(x.id)) return null;
     return { id: x.id, kind: 'guild', title: String(x.name || '公会').slice(0, 32), role: ['owner','admin','member'].includes(x.role) ? x.role : 'member', count: Number(x.member_count) || 0 };
   }
-  return { mergeById, refetchLimit, incrementalAfter, backoffDelay, createGen, classifyError, uuid, makeJob, safeLook, avatarSrc, themeFor, BUBBLE_IDS, readKey, unreadCount, maxId, advanceRead, insertAt, isImeEnter, EMOJI, ICEBREAKERS, searchMsgs, communityError, isRevoked, createScope, isUuid, mergeBySeq, normMsg, actionResult, maxSeq, normDm, normGuild };
+  return { mergeById, refetchLimit, incrementalAfter, backoffDelay, createGen, classifyError, uuid, makeJob, safeLook, tabFromHash, GAMES, gameById, gameHref, invitePreview, BUBBLE_SKINS, skinStates, SKIN_LABEL, isSkinId, statText, coverFor, profileProbe, heroFromLook, friendStatus, avatarSrc, themeFor, BUBBLE_IDS, readKey, unreadCount, maxId, advanceRead, insertAt, isImeEnter, EMOJI, ICEBREAKERS, searchMsgs, communityError, isRevoked, createScope, isUuid, mergeBySeq, normMsg, actionResult, maxSeq, normDm, normGuild };
 });

@@ -15,7 +15,7 @@
   const hhmm = iso => { try { return new Date(iso).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }); } catch { return ''; } };
   const fmt = iso => { try { return new Date(iso).toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }); } catch { return ''; } };
   const empty = (box, text) => box.replaceChildren(el('div', { class: 'sg-empty', text }));
-  const errText = e => (e && e.message) ? e.message.replace(/^.*?:\s*/, '') : '操作失败';
+  const errText = e => (e && e.message) ? (/暂不接受好友请求/.test(e.message) ? '对方未开启“愿意被推荐”，按其隐私设置暂不接受好友申请' : e.message.replace(/^.*?:\s*/, '')) : '操作失败';
   const visible = () => document.visibilityState === 'visible';
 
   function status(kind, text) { const c = $('sg-status'); c.dataset.kind = kind; c.textContent = text; }
@@ -38,32 +38,71 @@
   async function boot() {
     setEnabled(false);
     sb = window.StarSocialClient?.get();
-    if (!sb) { status('off', '未连接'); banner('服务尚未启用：Supabase SDK 未能加载，请检查网络后刷新。'); lobbyState('../assets/lan-chibi.webp', '暂时无法连接大厅'); return; }
+    if (!sb) { status('off', '未连接'); banner('服务尚未启用：Supabase SDK 未能加载，请检查网络后刷新。'); lobbyState('../assets/lan-chibi.webp', '暂时无法连接大厅'); offlineUI('暂时无法连接服务，联网后刷新再试'); return; }
     const { data: { session } = {} } = await sb.auth.getSession().catch(() => ({ data: {} }));
-    if (!session) { status('off', '未登录'); banner('登录后即可在大厅聊天。', { href: '../tools.html', text: '回到星糖宇宙登录 →' }); lobbyState('../assets/li-chibi.webp', '请先登录星糖宇宙账号'); return; }
+    if (!session) { status('off', '未登录'); banner('登录后即可在大厅聊天。', { href: '../tools.html', text: '回到星糖宇宙登录 →' }); lobbyState('../assets/li-chibi.webp', '请先登录星糖宇宙账号'); offlineUI(null); return; }
     me = session.user.id;
     const { data, error } = await sb.rpc('social_service_status');
-    if (error || !data?.enabled) { status('off', '未启用'); banner('服务尚未启用：大厅后端尚未部署，当前页面仅供预览，不会发送或保存任何内容。'); lobbyState('../assets/mo-chibi.webp', '大厅服务尚未启用'); return; }
+    if (error || !data?.enabled) { status('off', '未启用'); banner('服务尚未启用：大厅后端尚未部署，当前页面仅供预览，不会发送或保存任何内容。'); lobbyState('../assets/mo-chibi.webp', '大厅服务尚未启用'); offlineUI('社交服务尚未启用，当前仅可预览布局'); return; }
     ready = true; banner(''); status('ok', '在线'); setEnabled(true);
     sb.auth.onAuthStateChange((_e, s) => { if (!s) location.reload(); });
 
-    initLobby(); initComm(); loadOwnLook(true); loadPosts(true); loadProfile(); loadBlocks(); subscribeInbox(); initAdmin();
-    setInterval(() => { if (visible() && $('friends-fold').open) loadFriends(); }, 60000);
+    initLobby(); initComm(); loadOwnLook(true); probeProfile(); loadPosts(true); loadProfile(); loadBlocks(); subscribeInbox(); initAdmin(); window.dispatchEvent(new CustomEvent('sg-session'));
+    setInterval(() => { if (visible() && curTab === 'friends') loadFriends(); }, 60000);
   }
 
   // ---------- 导航 ----------
-  document.querySelectorAll('.sg-nav button').forEach(b => b.addEventListener('click', () => {
-    document.querySelectorAll('.sg-nav button').forEach(x => x.setAttribute('aria-selected', String(x === b)));
-    let title = '';
-    document.querySelectorAll('.sg-tab').forEach(t => { t.hidden = t.dataset.tab !== b.dataset.go; if (!t.hidden) title = t.dataset.title; });
-    $('sg-heading').textContent = title; $('lobby-form').hidden = b.dataset.go !== 'lobby';
-    if (b.dataset.go === 'lobby' && ready) lobbyRefresh(true);
+  // 未登录 / 不可用时的引导空态（不发任何请求，不编造好友/公会/在线）
+  function guideCard(img, title, lines, links) {
+    return el('div', { class: 'sg-guide' }, el('img', { src: img, alt: '' }), el('b', { text: title }), ...lines.map(t => el('p', { class: 'sg-muted', text: t })),
+      el('div', { class: 'sg-row sg-guide-links' }, ...links.map(([text, onclick, href]) => href ? el('a', { class: 'sg-primary', href, text }) : el('button', { type: 'button', class: 'sg-ghost', text, onclick }))));
+  }
+  function offlineUI(reason) {
+    const out = !reason, login = ['登录星糖宇宙', null, '../tools.html'];
+    const go = [['逛逛星糖大厅', () => showTab('lobby')], ['看看匿名树洞', () => showTab('tree')]];
+    $('conv-lobby-last').textContent = out ? '未登录 · 登录后可聊天' : reason;
+    $('dm-list').replaceChildren(guideCard('../assets/li-chibi.webp', out ? '你还没有登录' : '暂不可用', out ? ['登录后，这里会出现你和好友的私信。', '私信仅限双方都同意的好友。'] : [reason], out ? [login, ...go] : go));
+    $('guild-list').replaceChildren(el('div', { class: 'sg-empty', text: out ? '未登录：登录后显示你已加入的公会频道' : '公会频道暂不可用' }));
+    $('dm-more').hidden = $('guild-more').hidden = true;
+    $('req-list').replaceChildren(el('div', { class: 'sg-empty', text: out ? '未登录' : '暂不可用' }));
+    $('friend-list').replaceChildren(guideCard('../assets/lan-chibi.webp', out ? '登录后查看好友' : '好友暂不可用', out ? ['可以在大厅点别人的昵称申请好友，对方同意后会出现在这里。'] : [reason], out ? [login, go[0]] : [go[0]]));
+    $('discover-list').replaceChildren(); $('friend-search').disabled = true;
+  }
+  let curTab = 'planet';
+  function showTab(name) {
+    const sec = document.querySelector(`.sg-tab[data-tab="${name}"]`); if (!sec) return;
+    curTab = name;
+    document.querySelectorAll('.sg-tab').forEach(t => { t.hidden = t !== sec; });
+    document.querySelectorAll('.sg-nav button').forEach(x => x.setAttribute('aria-selected', String(x.dataset.go === sec.dataset.nav)));
+    $('sg-heading').textContent = sec.dataset.title; $('lobby-form').hidden = name !== 'lobby';
+    if (name === 'lobby' && ready) lobbyRefresh(true);
+    if ((name === 'friends' || name === 'more') && ready) loadFriends();
+    document.querySelectorAll('.sg-seg [data-go-nav]').forEach(x => x.setAttribute('aria-selected', String(x.dataset.goNav === name)));
     if (ready) syncRead();
-  }));
-  $('friends-fold').addEventListener('toggle', e => { if (e.target.open && ready) loadFriends(); });
+    window.dispatchEvent(new CustomEvent('sg-tab', { detail: name }));
+  }
+  document.querySelectorAll('.sg-nav button').forEach(b => b.addEventListener('click', () => showTab(b.dataset.go)));
+  // 星球：破冰话题（仅放入大厅草稿）与游戏入口（白名单站内链接）
+  $('ice-list').replaceChildren(...Core.ICEBREAKERS.map(t => el('div', { class: 'sg-ice' }, el('span', { text: t }),
+    el('button', { type: 'button', class: 'sg-ghost', text: '放入草稿', onclick: () => { showTab('lobby'); const i = $('lobby-input'); if (!i.disabled) { i.value = Core.insertAt(i.value, i.value.length, i.value.length, t, 300).value; i.dispatchEvent(new Event('input')); i.focus(); } else toast('登录后才能在大厅发言'); } }))));
+  $('game-grid').replaceChildren(...Core.GAMES.map(g => el('a', { class: 'sg-game', href: Core.gameHref(g.id) }, el('img', { src: '../assets/' + ({ lan: 'lan', li: 'li', mo: 'mo', hu: 'hu', xing: 'xing' }[({ 'space-shooter': 'xing', snake: 'lan', fighter: 'hu', 'monster-loot': 'li', 'moe-runner': 'lan', 'lili-merge': 'li', 'lili-match': 'mo', 'lili-2048': 'hu' })[g.id]]) + '-chibi.webp', alt: '' }), el('b', { text: g.name }), el('small', { class: 'sg-muted', text: g.desc }))));
+  // +游戏：挑选/预览/发送统一由 social-invite.js 处理（邀请白名单 7 款；大厅仅预览）
+  // 只读本地视图深链接：白名单映射，不读其它 hash 内容、不触发写请求
+  // #messages/thread=<uuid>：只作为"想打开哪段会话"的提示；须在服务端返回的会话列表中，或经服务端 community_chat_messages 成员校验通过才打开，绝不按 hash 造会话
+  let pendingThread = null;
+  const threadFromHash = h => { const m = /^#messages\/thread=(.*)$/.exec(h || ''); return !m ? undefined : Core.isUuid(m[1]) ? m[1].toLowerCase() : null; };
+  const fromHash = () => { const th = threadFromHash(location.hash); if (th !== undefined) { showTab('chats'); if (th === null) toast('会话链接无效'); else { pendingThread = th; try { openThread(); } catch {} } return; }
+    const t = Core.tabFromHash(location.hash); if (t) showTab(t); if (location.hash === '#skins') $('cc-section')?.scrollIntoView({ block: 'start' }); };
+  window.addEventListener('hashchange', fromHash); fromHash();
+  document.querySelectorAll('[data-go-nav]').forEach(b => b.addEventListener('click', () => showTab(b.dataset.goNav)));
+  $('friend-search').addEventListener('input', () => filterFriends());
+  function filterFriends() {
+    const q = $('friend-search').value.normalize('NFKC').trim().toLowerCase();
+    $('friend-list').querySelectorAll('[data-nick]').forEach(r => { r.hidden = !!q && !r.dataset.nick.toLowerCase().includes(q); });
+  }
 
   document.addEventListener('visibilitychange', () => { if (ready && visible()) syncRead(); });
-  $('conv-lobby').addEventListener('click', () => document.querySelector('.sg-nav [data-go="lobby"]').click());
+  $('conv-lobby').addEventListener('click', () => showTab('lobby'));
 
   // ---------- 会话搜索：仅已加载的本地消息（服务端已过滤隐藏/拉黑）；不发网络请求 ----------
   $('chat-search').addEventListener('input', e => {
@@ -71,7 +110,7 @@
     if (!q.trim()) return box.replaceChildren();
     const hits = Core.searchMsgs(msgs, q, 30);
     if (!hits.length) return empty(box, '已加载的大厅消息里没有找到');
-    box.replaceChildren(...hits.map(m => el('button', { type: 'button', class: 'sg-conv', onclick: () => { document.querySelector('.sg-nav [data-go="lobby"]').click(); setTimeout(() => { const n = log.querySelector(`.sg-msg[data-id="${CSS.escape(String(m.id))}"]`); if (n) { n.scrollIntoView({ block: 'center' }); n.classList.add('sg-hit'); setTimeout(() => n.classList.remove('sg-hit'), 1600); } }, 60); } },
+    box.replaceChildren(...hits.map(m => el('button', { type: 'button', class: 'sg-conv', onclick: () => { showTab('lobby'); setTimeout(() => { const n = log.querySelector(`.sg-msg[data-id="${CSS.escape(String(m.id))}"]`); if (n) { n.scrollIntoView({ block: 'center' }); n.classList.add('sg-hit'); setTimeout(() => n.classList.remove('sg-hit'), 1600); } }, 60); } },
       el('span', { class: 'sg-conv-main' }, el('b', { text: m.mine ? '我' : m.nickname }), el('small', { class: 'sg-muted', text: `${hhmm(m.created_at)} · ${m.body}` })))));
   });
 
@@ -97,6 +136,7 @@
     box.replaceChildren(...c.items.map(x => el('button', { type: 'button', class: 'sg-conv', role: 'listitem', onclick: () => openConv(x) },
       el('img', { class: 'sg-avatar', src: (x.kind === 'dm' && Core.avatarSrc(x.avatar)) || '../assets/lan-chibi.webp', alt: '' }),
       el('span', { class: 'sg-conv-main' }, el('b', { text: x.title }), el('small', { class: 'sg-muted', text: x.kind === 'dm' ? (x.last ? x.last.body : '暂无消息') : `${x.count} 位成员 · ${({ owner: '会长', admin: '管理员', member: '成员' })[x.role]}` })),
+      x.kind === 'dm' && x.last && x.last.created_at ? el('time', { class: 'sg-conv-time sg-muted', datetime: x.last.created_at, text: hhmm(x.last.created_at) }) : null,
       x.unread ? el('span', { class: 'sg-unread', text: x.unread > 99 ? '99+' : String(x.unread), 'aria-label': `${x.unread} 条未读（服务端）` }) : null)));
   }
   async function loadComm(kind, reset) {
@@ -118,12 +158,22 @@
       }
       c.state = 'ok';
     } catch (e) { c.state = e.kind === 'missing' ? 'missing' : 'error'; c.err = e.message; if (c.state === 'missing') { c.items = []; c.cursor = null; } }
-    finally { c.busy = false; renderCommList(kind); }
+    finally { c.busy = false; renderCommList(kind); if (kind === 'dm') openThread(); }
+  }
+  async function openThread() {
+    const th = pendingThread; if (!th || !ready || comm.dm.busy || comm.dm.state === 'loading') return;
+    pendingThread = null; if (conv && conv.kind === 'dm' && conv.id === th) return;
+    const it = comm.dm.items.find(x => x.id === th);
+    if (it) return openConv(it);
+    try { await commRpc('community_chat_messages', { p_conversation_id: th, p_before_seq: null, p_limit: 1 }); }
+    catch { return toast('会话不存在或无权查看'); }
+    return openConv({ kind: 'dm', id: th, title: '私信' });
   }
   $('dm-more').addEventListener('click', () => loadComm('dm'));
   $('guild-more').addEventListener('click', () => loadComm('guild'));
   function closeConv(reason) {
-    convScope.leave(); conv = null; $('conv-log').replaceChildren(); $('conv-view').hidden = true; $('conv-list').hidden = false; $('chat-search').parentElement.hidden = false;
+    queueMicrotask(() => window.dispatchEvent(new CustomEvent('sg-conv-change')));
+    convScope.leave(); conv = null; $('conv-log').replaceChildren(); $('conv-view').hidden = true; document.body.classList.remove('sg-conv-open'); $('conv-list').hidden = false; $('chat-search').parentElement.hidden = false;
     if (reason) toast(reason);
   }
   function dropRevoked(kind, id, e) {
@@ -133,21 +183,62 @@
   function renderConv() {
     if (!conv) return;
     const lg = $('conv-log'), stick = lg.scrollHeight - lg.scrollTop - lg.clientHeight < 60;
-    lg.replaceChildren(...(conv.msgs.length ? conv.msgs.map(m => el('div', { class: 'sg-msg' + (m.mine ? ' me' : '') }, el('div', { class: 'sg-msg-body' }, el('div', { class: 'sg-meta-line' }, ...(m.nickname && !m.mine ? [el('b', { text: m.nickname })] : []), el('time', { datetime: m.created_at, text: hhmm(m.created_at) })), el('div', { class: 'sg-bubble', text: m.body })))) : [el('div', { class: 'sg-empty', text: '暂无消息' })]));
+    lg.replaceChildren(...(conv.msgs.length ? conv.msgs.map(m => el('div', { class: 'sg-msg' + (m.mine ? ' me' : '') }, el('div', { class: 'sg-msg-body' }, el('div', { class: 'sg-meta-line' }, ...(m.nickname && !m.mine ? [el('b', { text: m.nickname })] : []), el('time', { datetime: m.created_at, text: hhmm(m.created_at) })), (m.invite && window.StarSocialInvite?.renderCard(m.invite)) || (m.sticker_id && window.StarSocialChatCore?.stickerAsset(m.sticker_id) ? el('div', { class: 'sg-bubble sg-sticker-msg' }, el('img', { src: window.StarSocialChatCore.stickerAsset(m.sticker_id), alt: '贴纸', width: '96', height: '96' })) : el('div', { class: 'sg-bubble', text: m.body }))))) : [el('div', { class: 'sg-empty', text: '暂无消息' })]));
+    applyLooks(lg);
     $('conv-older').hidden = conv.nextBefore == null;
     if (stick) lg.scrollTop = lg.scrollHeight;
     maybeMarkRead();
+  }
+  let kindsUndeployed = false, cardsUndeployed = false, myPidP = null;
+  // 私信气泡外观：只用服务端 get_equipped_chat_cosmetics(dm, 会话) 返回的行（服务端按好友/会话成员授权）；客户端不声明任何装备；default 不改原样式
+  const getMyPid = () => myPidP || (myPidP = Promise.resolve(sb.rpc('get_public_profile', { p_public_id: null })).then(r => Core.isUuid(r?.data?.public_id) ? r.data.public_id : null).catch(() => null));
+  async function loadLooks(t) {
+    if (!conv || conv.kind !== 'dm' || conv.looks || !window.StarChatCosmetics) return;
+    const c = conv; c.looks = {};
+    const mine = await getMyPid(); const pids = [mine, c.peer_pid].filter(Core.isUuid); if (!pids.length) return;
+    let r; try { r = await sb.rpc('get_equipped_chat_cosmetics', { p_public_ids: pids, p_context: 'dm', p_conversation_id: c.conversation_id, p_feed_post_ids: null }); } catch { return; }
+    if (!convScope.isCurrent(t) || conv !== c || r?.error || !Array.isArray(r?.data)) return;
+    const pick = pid => r.data.find(x => x && x.public_id === pid && pid) || null;
+    c.looks = { me: pick(mine), peer: pick(c.peer_pid) }; renderConv();
+  }
+  function applyLooks(lg) {
+    const C = window.StarChatCosmetics; if (!C || !conv || !conv.looks || !conv.msgs.length) return;
+    [...lg.children].forEach((node, i) => { const m = conv.msgs[i]; if (!m || m.invite || m.sticker_id) return;
+      const row = m.mine ? conv.looks.me : conv.looks.peer; const b = node.querySelector('.sg-bubble');
+      if (!b || !row) return;
+      const hasBubble = typeof row.bubble === 'string' && row.bubble !== 'default', hasFrame = typeof row.avatar_frame === 'string' && row.avatar_frame !== 'default';
+      if (!hasBubble && !hasFrame) return;
+      let av = null; if (hasFrame) { av = el('span', { class: 'sg-msg-av', 'aria-hidden': 'true' }); m.mine ? node.append(av) : node.prepend(av); }
+      try { C.render({ message: hasBubble ? b : null, avatar: av, badges: null }, row, { context: 'dm', animate: false }); if (hasBubble) node.dataset.look = row.bubble; if (hasFrame) node.dataset.frame = row.avatar_frame; } catch {} });
   }
   async function loadConvPage(t, before) {
     const d = await commRpc('community_chat_messages', { p_conversation_id: conv.conversation_id, p_before_seq: before ?? null, p_limit: 30 });
     if (!convScope.isCurrent(t)) return;                 // 已切换会话：丢弃，防止闪现他人消息
     conv.msgs = Core.mergeBySeq(conv.msgs, (d?.items || []).map(m => Core.normMsg(conv.kind, m, me, null)).filter(Boolean));
+    // 贴纸类型：仅以服务端 chat_message_kinds_v1 为准（未部署则全部按文字显示）；sticker_id 再经客户端白名单映射固定 asset
+    const ids = conv.msgs.filter(m => !m.kindChecked).map(m => String(m.id)).slice(-100);
+    if (ids.length && !kindsUndeployed) { try { const k = await sb.rpc('chat_message_kinds_v1', { p_conversation_id: conv.conversation_id, p_ids: ids });
+      if (!convScope.isCurrent(t)) return;
+      if (k?.error) { if (k.error.code === 'PGRST202') kindsUndeployed = true; throw k.error; }   // 失败不标记已检查，后续刷新可重试；未部署则停止请求，全部按文字显示
+      const map = new Map((Array.isArray(k?.data) ? k.data : []).map(r => [String(r.message_id), r.sticker_id]));
+      conv.msgs.forEach(m => { if (ids.includes(String(m.id))) { m.kindChecked = true; const sid = map.get(String(m.id)); if (window.StarSocialChatCore?.isSticker(sid)) m.sticker_id = sid; } });
+    } catch {} }
+    // 游戏邀请卡：仅以服务端 chat_message_cards_v1 投影为准；卡片消息每次刷新重取（结果合并到原卡片）；未部署则全部按文字显示
+    const cids = conv.msgs.filter(m => !m.cardChecked || m.invite).map(m => String(m.id)).slice(-100);
+    if (cids.length && !cardsUndeployed && window.StarSocialInviteCore) { try { const k = await sb.rpc('chat_message_cards_v1', { p_conversation_id: conv.conversation_id, p_ids: cids });
+      if (!convScope.isCurrent(t)) return;
+      if (k?.error) { if (k.error.code === 'PGRST202') cardsUndeployed = true; throw k.error; }
+      const map = new Map((Array.isArray(k?.data) ? k.data : []).map(r => [String(r.message_id), window.StarSocialInviteCore.normInvite(r.card)]));
+      conv.msgs.forEach(m => { if (cids.includes(String(m.id))) { m.cardChecked = true; const v = map.get(String(m.id)); m.invite = v && v.status !== 'hidden' ? v : null; } });
+    } catch {} }
+    loadLooks(t);
     conv.nextBefore = Number.isSafeInteger(Number(d?.next_before_seq)) && d?.next_before_seq != null ? Number(d.next_before_seq) : null;
     renderConv();
   }
   async function openConv(x) {
     const t = convScope.enter(x.kind + ':' + x.id);
-    conv = { kind: x.kind, id: x.id, conversation_id: x.kind === 'dm' ? x.id : null, title: x.title, msgs: [], nextBefore: null, readSent: 0 };
+    conv = { kind: x.kind, id: x.id, conversation_id: x.kind === 'dm' ? x.id : null, title: x.title, peer_pid: x.peer_pid || null, msgs: [], nextBefore: null, readSent: 0, looks: null };
+    document.body.classList.add('sg-conv-open');   // 全屏会话视图：固定顶栏/底部输入，消息区独立滚动
     $('conv-title').textContent = x.title; $('conv-log').replaceChildren(el('div', { class: 'sg-empty', text: '载入中…' }));
     $('conv-list').hidden = true; $('chat-search').parentElement.hidden = true; $('search-result').hidden = true; $('conv-view').hidden = false;
     try {
@@ -158,6 +249,7 @@
         conv.conversation_id = a.conversation_id;
       }
       await loadConvPage(t, null);
+      window.dispatchEvent(new CustomEvent('sg-conv-change'));
     } catch (e) {
       if (!convScope.isCurrent(t)) return;
       if (Core.isRevoked(e.kind)) return dropRevoked(x.kind, x.id, e);
@@ -180,6 +272,9 @@
   }
   $('conv-log').addEventListener('scroll', () => maybeMarkRead(), { passive: true });
   document.addEventListener('visibilitychange', () => { if (visible()) maybeMarkRead(); });
+  // 供 social-chat.js：只暴露当前会话 id 与刷新（不暴露 uid/消息内容）
+  window.StarSocialConv = { open: x => { if (!x || !['dm', 'guild'].includes(x.kind) || !Core.isUuid(x.id)) return Promise.resolve(); showTab('chats'); return openConv({ kind: x.kind, id: x.id, title: String(x.title || '会话').slice(0, 24) }); }, current: () => conv && conv.conversation_id ? { conversation_id: conv.conversation_id, kind: conv.kind } : null,
+    refresh: () => { if (conv) { const tok = convScope.enter(convScope.key); loadConvPage(tok, null).catch(() => {}); } } };
   function initComm() { loadComm('dm', true); loadComm('guild', true); }
 
   // ---------- 输入：表情 / 破冰话题（只插草稿） / 字数 / IME ----------
@@ -338,8 +433,11 @@
     jobs.set(job.clientId, { job, state: 'pending' }); render();
     const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), 12000);
     try {
-      const { data, error } = await sb.rpc('lobby_send', { p_body: job.body, p_client_id: job.clientId }).abortSignal(ctl.signal);
+      // 优先 15 号 lobby_send_v1（拒绝时持久化审核日志）；仅当 v1 未部署（PGRST202）时用原 lobby_send（同样服务端审核，仅缺拒绝日志）
+      let { data, error } = await sb.rpc('lobby_send_v1', { p_body: job.body, p_client_id: job.clientId }).abortSignal(ctl.signal);
+      if (error && error.code === 'PGRST202') ({ data, error } = await sb.rpc('lobby_send', { p_body: job.body, p_client_id: job.clientId }).abortSignal(ctl.signal));
       if (error) throw error;
+      if (data && data.ok === false) throw Object.assign(new Error(data.error?.code === 'TEXT_REJECTED' ? '内容未通过审核' : data.error?.code === 'RATE_LIMITED' ? '发送太频繁' : '发送失败'), { code: data.error?.code === 'RATE_LIMITED' ? 'P0001' : '22023', hint: data.error?.code === 'RATE_LIMITED' ? 'rate_limited' : 'banned' });
       jobs.delete(job.clientId); if (data) await refreshIncremental(); render(); toBottom();
     } catch (e) {
       const kind = Core.classifyError(e);
@@ -394,12 +492,29 @@
       if (error) throw error;
       const me = Array.isArray(data) ? data[0] : null;
       document.body.dataset.theme = Core.themeFor(me && me.background_id);
-      $('look-state').textContent = me ? (me.appearance_public ? '公开展示：开' : '公开展示：关') : '未读取到';
+      const cov = Core.coverFor(document.body.dataset.theme); $('me-cover').style.backgroundImage = cov ? `url("${cov}")` : '';
+      const hero = Core.heroFromLook(me);
+      $('me-avatar').src = hero.avatar; $('me-vip').textContent = hero.vip; $('me-vip').className = 'sg-tag' + (hero.vipOn ? ' vip' : '');
+      if (hero.pendant) { $('me-pendant').src = hero.pendant; $('me-pendant').hidden = false; } else $('me-pendant').hidden = true;
+      $('me-badge').hidden = !hero.badge; $('me-badge').textContent = hero.badge || '';
+      $('look-state').textContent = me ? (me.appearance_public ? '萌宠公开：开' : '萌宠公开：关') : '未读取到';
       $('look-state').classList.toggle('sg-off', !(me && me.appearance_public));
-    } catch { document.body.dataset.theme = 'starry'; $('look-state').textContent = '外观服务暂不可用'; $('look-state').classList.add('sg-off'); }
+    } catch { document.body.dataset.theme = 'starry'; $('look-state').textContent = '外观服务暂不可用'; $('look-state').classList.add('sg-off'); $('me-vip').textContent = 'VIP 状态暂不可读'; $('me-vip').className = 'sg-tag unknown'; }
   }
   window.addEventListener('starshopchange', () => loadOwnLook(true));
   document.addEventListener('visibilitychange', () => { if (!document.hidden) loadOwnLook(false); });
+
+  // 气泡/特效/头像框：统一入口为「我」页 #cc-section（social-appearance.js，get_shop_state + equip_chat_cosmetic）；旧四气泡入口已移除。
+
+  // ---------- 资料契约（PUBLIC-PROFILE-API，本地提案）：仅探测是否部署，未部署显示未接入；不调用写接口 ----------
+  async function probeProfile() {
+    try {
+      const { error } = await sb.rpc('get_public_profile', { p_public_id: '00000000-0000-4000-8000-000000000000' });
+      const st = Core.profileProbe(error);
+      $('me-sign').textContent = st === 'deployed' ? '签名：见下方「公开资料」' : '签名：未接入（资料接口未部署）';
+      $('me-level').textContent = st === 'deployed' ? '等级：见下方「公开资料」' : '等级：未接入';
+    } catch { /* 保持未接入 */ }
+  }
 
   // ---------- 树洞 ----------
   const PAGE = 20; let oldest = null;
@@ -451,7 +566,7 @@
   let beat = null;
   async function loadProfile() {
     const { data } = await sb.from('social_profiles').select('nickname,interests,discoverable').eq('user_id', me).maybeSingle();
-    if (data) { myNick = data.nickname; $('nick').value = data.nickname; $('discoverable').checked = data.discoverable; tagBox.querySelectorAll('input').forEach(i => { i.checked = data.interests.includes(i.value); }); }
+    if (data) { myNick = data.nickname; $('me-nick').textContent = data.nickname || '星糖旅人'; $('nick').value = data.nickname; $('discoverable').checked = data.discoverable; tagBox.querySelectorAll('input').forEach(i => { i.checked = data.interests.includes(i.value); }); }
     $('lobby-nick').textContent = myNick; heartbeat(data?.discoverable);
   }
   function heartbeat(on) { clearInterval(beat); if (!on) return; const tick = () => { if (visible()) rpc('social_heartbeat').catch(() => {}); }; tick(); beat = setInterval(tick, 60000); }
@@ -476,7 +591,7 @@
   }
 
   // ---------- 好友与私信（逐步开放） ----------
-  let chatWith = null, inboxChannel = null, matchTimer = null;
+  let inboxChannel = null, matchTimer = null;
   async function loadFriends() {
     try {
       const reqs = await rpc('friend_pending'); const rl = $('req-list');
@@ -484,32 +599,35 @@
         el('button', { type: 'button', class: 'sg-primary', text: '接受', onclick: e => guarded(e.target, async () => { await rpc('friend_respond', { p_request: r.request_id, p_accept: true }); loadFriends(); }) }),
         el('button', { type: 'button', text: '拒绝', onclick: e => guarded(e.target, async () => { await rpc('friend_respond', { p_request: r.request_id, p_accept: false }); loadFriends(); }) }))));
       const fr = await rpc('friend_list'); const fl = $('friend-list');
-      if (!fr.length) empty(fl, '还没有好友，可以在大厅点昵称申请'); else fl.replaceChildren(...fr.map(f => person(f.nickname, f.online,
+      $('stat-friends').textContent = Core.statText(Array.isArray(fr) ? fr.length : null); $('stat-friends').parentElement.classList.toggle('unknown', !Array.isArray(fr));
+      if (!fr.length) empty(fl, '还没有好友，可以在大厅点昵称申请'); else fl.replaceChildren(...fr.map(f => friendRow(f.nickname, f.online,
         el('button', { type: 'button', class: 'sg-primary', text: '私信', onclick: () => openChat(f) }),
-        el('button', { type: 'button', text: '拉黑', onclick: e => { if (confirm('拉黑后将解除好友，双方无法私信。确定？')) guarded(e.target, async () => { await rpc('social_block', { p_user: f.user_id }); if (chatWith?.user_id === f.user_id) closeChat(); loadFriends(); loadBlocks(); }); } }))));
+        el('button', { type: 'button', text: '拉黑', onclick: e => { if (confirm('拉黑后将解除好友，双方无法私信。确定？')) guarded(e.target, async () => { await rpc('social_block', { p_user: f.user_id }); if (conv?.kind === 'dm') closeConv(); loadFriends(); loadBlocks(); }); } }))));
     } catch (e) { empty($('friend-list'), '加载失败：' + errText(e)); }
+    filterFriends();
   }
-  function bubble(m) { const mine = m.sender_id === me; const b = el('div', { class: 'sg-msg' + (mine ? ' me' : '') }, el('div', { class: 'sg-msg-body' }, el('div', { class: 'sg-bubble', text: m.body }), mine ? null : el('button', { type: 'button', class: 'sg-retry', text: '举报', onclick: () => report('social_report', { p_type: 'message', p_target: String(m.id) }) }))); return b; }
+  function friendRow(nick, online, ...btns) {
+    const st = Core.friendStatus(online);
+    const row = el('div', { class: 'sg-friend', role: 'listitem' }, el('img', { class: 'sg-avatar', src: avatarFor(nick), alt: '' }),
+      el('span', { class: 'sg-conv-main' }, el('b', { text: nick }), el('small', { class: 'sg-dot-' + st.kind, text: st.text })), el('span', { class: 'sg-row' }, ...btns));
+    row.dataset.nick = String(nick || '').normalize('NFKC'); return row;
+  }
+  // 好友侧栏「私信」统一导向 owner community DM 会话流（community_dm_open → 会话视图，发送走 12 v1）。
+  // 旧 01 dm_send 可发送路径已移除；历史消息仍在同一 public.dm_messages，由 community_chat_messages 在会话视图中完整显示（不丢历史）。
+  // 接口缺失时明确提示待接，不回退旧接口。
   async function openChat(f) {
-    chatWith = f; $('chat').hidden = false; $('chat-title').textContent = '与 ' + f.nickname + ' 私信';
-    const cl = $('chat-log'); cl.replaceChildren();
-    const { data, error } = await sb.from('dm_messages').select('id,sender_id,recipient_id,body,created_at')
-      .or(`and(sender_id.eq.${me},recipient_id.eq.${f.user_id}),and(sender_id.eq.${f.user_id},recipient_id.eq.${me})`).order('id', { ascending: false }).limit(50);
-    if (error) return empty(cl, '加载失败：' + errText(error));
-    data.reverse().forEach(m => cl.append(bubble(m))); cl.scrollTop = cl.scrollHeight;
+    try {
+      const d = await commRpc('community_dm_open', { p_peer_id: f.user_id });
+      if (!Core.isUuid(d?.conversation_id)) throw Object.assign(new Error('会话打开失败'), { kind: 'UNKNOWN' });
+      showTab('chats');
+      await openConv({ kind: 'dm', id: d.conversation_id, title: f.nickname || '好友' });
+    } catch (e) { toast(e.kind === 'missing' ? '好友私信会话接口待接入（暂不可发送）' : '无法打开私信：' + e.message); }
   }
-  function closeChat() { chatWith = null; $('chat').hidden = true; }
-  function subscribeInbox() {
-    inboxChannel = sb.channel('dm-inbox-' + me).on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'dm_messages', filter: 'recipient_id=eq.' + me }, ({ new: m }) => {
-      if (chatWith && m.sender_id === chatWith.user_id) { const cl = $('chat-log'); cl.append(bubble(m)); cl.scrollTop = cl.scrollHeight; } else toast('收到一条新私信');
+  function subscribeInbox() {   // 仅提示与刷新当前会话；不在旧面板追加
+    inboxChannel = sb.channel('dm-inbox-' + me).on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'dm_messages', filter: 'recipient_id=eq.' + me }, () => {
+      if (conv && conv.kind === 'dm' && window.StarSocialConv) window.StarSocialConv.refresh(); else toast('收到一条新私信');
     }).subscribe();
   }
-  $('chat-close').addEventListener('click', closeChat);
-  $('chat-form').addEventListener('submit', e => { e.preventDefault(); const btn = e.submitter; guarded(btn, async () => {
-    const v = $('chat-input').value.trim(); if (!v || !chatWith) return;
-    const id = await rpc('dm_send', { p_to: chatWith.user_id, p_body: v }); $('chat-input').value = '';
-    const cl = $('chat-log'); cl.append(bubble({ id, sender_id: me, body: v })); cl.scrollTop = cl.scrollHeight;
-  }); });
   $('discover-load').addEventListener('click', e => guarded(e.target, async () => {
     const rows = await rpc('social_discover', { p_online_only: $('online-only').checked }); const box = $('discover-list');
     if (!rows.length) return empty(box, '暂时没有可推荐的人');

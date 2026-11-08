@@ -1,0 +1,33 @@
+import json,urllib.request,shlex
+from pathlib import Path
+root=Path('/workspace/side/merged');stage=root/'.rework-2048'
+env={}
+for line in Path('/home/box/.config/custom-llm.env').read_text().splitlines():
+ line=line.strip()
+ if not line or line.startswith('#'):continue
+ if line.startswith('export '):line=line[7:]
+ k,v=line.split('=',1);parts=shlex.split(v);env[k]=parts[0] if parts else ''
+prompt='''Build an ORIGINAL premium anime-themed 2048 browser game. Output ONLY a JSON object mapping filenames to full text: engine.js, game.js, style.css, index.html. This is a local static folder not a repository. No git, deployment, account or VIP logic. All files will reside one directory below shared scripts ../fx.js ../fx.css ../lobby.js ../game-invite-v0.js ../vendor/howler/howler.core.min.js ../game-audio.js. Must load these scripts then engine.js and game.js. Do not use a framework, remote assets or external services.
+
+Outcome: accurate classical 2048 with gorgeous original crystal/sakura confection anime palette, refined layered glass HUD, exquisite gradient tiles, small CSS motifs (stars, petals) but LARGE crisp numbers always readable. NOT crude emoji clutter or oversized doll. Background can use ../assets/bg-garden.webp or procedural CSS (existing FX.img assets available); do not assume a new asset exists. Portrait full-screen 100dvh, overlay HUD, icon-only actual action buttons with Chinese aria-label/title; score labels/title okay. Premium tight typography, carefully spacious board, thumb controls bottom, good responsive layout at390x844 and320x568, 5x5 readable. Standalone game root with z-index100 below lobby9000. UI should not cover mute toggle of shared audio (right12 top70). Lobby flow stays intact.
+
+Engine.js pure UMD window.Puzzle2048 + module.exports for Node tests. Public API: slide(board,dir) returns {board,gain,changed,motions,merges} (motions contain from/to/value for EVERY old source including both merging tiles, merges destinations with value). Must merge each tile once: [2,2,2,2]->[4,4,0,0], [4,4,8,0]->[8,8,0,0], never chain merge in same move. Store actual values (2,4,8), no blockers. spawn(board,rng=Math.random) immutable returns {board,tile} with value 2 if RNG<.9 else4 and uniform empty position; define deterministic RNG call order. hasMoves(board) accepts empties or horizontal/vertical equal. No win cap; continued play permits4096+. Invalid moves do not spawn or consume moves or undo.
+
+Game must use this engine; limited undo3 per new round snapshots of board/score/moves/won/continued, restores precisely, no undo replenishment exploit. Detect 2048 milestone once and show own beautiful overlay choices icon continue and icon finish. Continue does NOT grant rewards or finalize, allows larger tiles. Explicit finish or no moves finalizes exactly once. At terminal loss show own result overlay first with undo option if possible (no rewards yet), finish button finalizes. Modes classic4x4, expanded5x5, challenge4x4 limited60 VALID moves; no timer complexity. Exact target2048 in all modes, limited challenge ends at0 moves. Persist per-mode best under new lili-2048-rework key; NEVER update any best or localStorage from invite rounds. No save if invite. Allow keyboard arrow/WASD; actual pointer/swipe gesture must require pointerdown on board, reject hover and pointercancel, one move per down/up, threshold24px, ignore animation input or queue max1 intentional move. Smooth120ms slide using source DOM tiles moving transforms; retain both merging sources until finish; then rebuild destinations pop and spawn scale. Use reduced-motion support. Score +N floaters. Responsive resize no ghost timers. Disable stale animation callbacks on new round/quit. Correct undo after win and no moves. Score/rising sound pitch based on max merged tile via GameAudio.sfx('merge',{rate:...}); invalid, slide, power undo, win/lose and BGM all shared.
+
+Shared integration: FX.init({landscape:false}) initializes FX but game can render own DOM. Set FX.running=true onstart, false onquit/finish. GameAudio.mount(), setPauseCheck(()=>FX.paused||!FX.running). GameAudio.bgm('lili-2048') onstart; stop onquit/finalize. Lobby.init(config) sets modes; preserve id lili-2048 and original economy/char definitions as appropriate, stage use one s0 named甜星工坊 to avoid locked levels. onStart receives selection; map old story/endless to classic fallback. Lobby.selection returns selected mode. GameInviteV0.launch('lili-2048',startRun) after Lobby.init auto starts default story=>classic. On finish if GameInviteV0.active(): GameInviteV0.finish(score), NEVER Lobby.reportResult, NO best storage/rewards/progress/events. Else reportResult exactly once with score, stage0, stars,win, coins=floor(score/50),gems=0. Keep economy local normal flow. onQuit hide game root. Game root can stay under lobby on finalization; hide it first, invite finish displays own result UI. Shared invite return is handled by helper. Do not modify shared scripts.
+
+Expose window.__game for QA: state()=>deep copy {grid,score,size,mode,remaining,undoLeft,won,continued,phase,animating,best}, move(dir), undo(), continueGame(), finish(), plus start(sel) if useful. NEVER add debug arbitrary state setters in production. Pure engine supports unit tests. Animation loop optional use CSS. FX pause menu supported: provided pause icon calls Lobby.pauseMenu(). Do not create extra FX canvas controls/pause buttons overlapping own UI (FX.init auto pause may appear; handle by styling own game scope). Keyboard must not affect lobby unless FX.running and notFX.paused. All labels Chinese. No promises that crash console, storage robust.
+
+CURRENT GAME (for integrations ONLY, replace logic entirely):\n'''+(root/'lili-2048/game.js').read_text()+ '\nSHARED INVITE:\n'+(root/'game-invite-v0.js').read_text()+'\nAUDIO API DOC:\n'+(root/'vendor/howler/README-AUDIO.md').read_text()
+req=urllib.request.Request(env['OPENAI_BASE_URL'].rstrip('/')+'/chat/completions',data=json.dumps({'model':'claude-sonnet-5-5','messages':[{'role':'user','content':prompt}],'max_tokens':12000}).encode(),headers={'Authorization':'Bearer '+env['OPENAI_API_KEY'],'Content-Type':'application/json'})
+try:
+ with urllib.request.urlopen(req,timeout=240) as r: result=json.load(r)
+except urllib.error.HTTPError as e:
+ print('API error',e.code,e.read().decode()[:1000]);raise SystemExit(1)
+text=result['choices'][0]['message']['content'];(stage/'model-output.txt').write_text(text)
+if text.startswith('```'):text=text.split('\n',1)[1].rsplit('```',1)[0]
+files=json.loads(text)
+for name in ['engine.js','game.js','style.css','index.html']:
+ (stage/name).write_text(files[name])
+print('Generated four staged files. Usage:',json.dumps(result.get('usage',{})))

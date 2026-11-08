@@ -1,6 +1,8 @@
 // 贪吃蓝蓝 (snake) - game.js
 (function() {
 'use strict';
+GameAudio.mount();
+GameAudio.setPauseCheck(() => FX.paused || !FX.running);
 
 const {cv, ctx} = FX.init({landscape: false});
 
@@ -119,6 +121,7 @@ const shieldBtn = FX.button({icon:'item-shield', color:'#66ccff', size:72, right
 
 dashBtn.onPress = () => {
   if (!dashBtn.ready() || gameOver || countdownTimer > 0) return;
+  GameAudio.sfx('power');
   dashTimer = 2;
   snakeSpeed = 0.06;
   FX.banner('⚡ 冲刺');
@@ -133,6 +136,7 @@ dashBtn.onPress = () => {
 
 shieldBtn.onPress = () => {
   if (!shieldBtn.ready() || gameOver || countdownTimer > 0) return;
+  GameAudio.sfx('levelup');
   shieldActive = true;
   FX.banner('🛡 护盾');
   const head = snake[0];
@@ -455,7 +459,7 @@ function update(dt) {
     if (inputBuffer.length > 0) {
       const newDir = inputBuffer.shift();
       if (!(newDir.x === -dir.x && newDir.y === -dir.y)) {
-        dir = newDir;
+        dir = newDir; GameAudio.sfx('tap');
       }
     }
     
@@ -694,6 +698,7 @@ function moveSnake() {
 }
 
 function eatFood(f) {
+  if(combo>1) GameFXLib.combo(combo); GameAudio.sfx(f.type === 'berry' ? 'eat' : f.type === 'cake' ? 'levelup' : 'power', {rate: 1 + Math.min(combo, 5) * .07});
   f.collected = true;
   
   const pos = gridToScreen(f.x, f.y);
@@ -744,6 +749,7 @@ function eatFood(f) {
 
 function dropBomb() {
   if (!boss) return;
+  GameAudio.sfx('drop');
   
   let x, y;
   let attempts = 0;
@@ -762,6 +768,7 @@ function dropBomb() {
 }
 
 function die() {
+  GameAudio.sfx('invalid'); // Collision impact; endGame plays the final result cue.
   if (invulnTimer > 0) return;
   
   if (shieldActive) {
@@ -813,6 +820,8 @@ function win() {
 }
 
 function endGame(victory) {
+  if(victory) GameFXLib.win(); GameAudio.sfx(victory ? 'win' : 'lose'); GameAudio.stop();
+  if (GameInviteV0.active()) { FX.running = false; GameInviteV0.finish(score); return; }
   FX.running = false;
   
   const best = Math.max(store.bestScore, score);
@@ -1112,6 +1121,7 @@ function draw(ctx) {
 
 // === START ===
 function startRun(sel) {
+  GameAudio.bgm('snake');
   currentSel = sel;
   stage = sel.stage % stages.length;
   
@@ -1155,9 +1165,10 @@ FX.load(assets).then(() => {
       {id:'gem', icon:'item-star'}
     ],
     onStart: startRun,
-    onQuit: () => { FX.running = false; },
+    onQuit: () => { FX.running = false; GameAudio.stop(); },
     onSkinChange: (sel) => { if (currentSel) currentSel.skin = sel.skin; }
   });
+  GameInviteV0.launch('snake', startRun);
 });
 
 window.__game = {

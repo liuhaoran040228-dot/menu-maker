@@ -1,0 +1,40 @@
+{
+  "cellW": 320,
+  "cellH": 384,
+  "cols": 4,
+  "baseline": 356,
+  "animations": {
+    "idle": [
+      0,
+      1,
+      2
+    ],
+    "victory": [
+      3
+    ],
+    "run": [
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "jump": [
+      10
+    ],
+    "fall": [
+      11
+    ],
+    "hurt": [
+      12
+    ]
+  },
+  "source": "selected ice 03, reference-guided API edits",
+  "identity": "27-year-old adult; original SD proportions retained",
+  "scale": {
+    "idle": 0.4386206896551724,
+    "run": 0.5447470817120622,
+    "air": 0.43089430894308944
+  }
+}

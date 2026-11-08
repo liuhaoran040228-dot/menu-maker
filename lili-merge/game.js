@@ -1,5 +1,7 @@
 (function() {
 'use strict';
+GameAudio.mount();
+GameAudio.setPauseCheck(() => FX.paused || !FX.running);
 
 const {cv, ctx, W, H} = FX.init({landscape: false});
 
@@ -61,6 +63,9 @@ let currentSel = null;
 let paletteIdx = 0;
 const store = FX.store('lili-merge', {bestScore: 0});
 let bestScore = parseInt(store.bestScore) || 0;
+let matterMode = true, engine = null, physicsAccumulator = 0, loopStarted = false, aimPointer = null;
+const contacts = new Map();
+const orchard = new Image(); orchard.src = 'fuse-orchard.webp';
 
 // Stages config
 const stages = [
@@ -102,7 +107,7 @@ function checkMissions() {
       FX.banner('✓ ' + m.text.replace('{n}', m.value));
       FX.burst(W / 2, H * 0.4, {n: 40, color: '#ffd700', speed: 250, life: 1, size: 8, glow: true});
       FX.ring(W / 2, H * 0.4, {color: '#ff0', r: 120, life: 0.6});
-      score += 500;
+      score += 500; GameAudio.sfx('levelup');
     }
   });
 }
@@ -124,6 +129,8 @@ function createBall(x, y, tier) {
 }
 
 function resetGame() {
+  resetMatter();
+  aimPointer = null;
   balls = [];
   score = 0;
   nextTier = Math.floor(Math.random() * 4);
@@ -142,7 +149,8 @@ function resetGame() {
 }
 
 function dropBall() {
-  if (isGameOver || dropping || dropCooldown > 0) return;
+  if (isGameOver || !FX.running || FX.paused || dropping || dropCooldown > 0) return;
+  GameAudio.sfx('drop');
   
   const minX = JAR_LEFT + RADIUS[nextTier] + 5;
   const maxX = JAR_RIGHT - RADIUS[nextTier] - 5;
@@ -217,7 +225,7 @@ function updatePhysics(dt) {
         const dist = Math.hypot(dx, dy) || 0.01;
         const minDist = a.r + b.r;
 
-        if (dist < minDist) {
+        if (dist <= minDist + .8) {
           // Merge if same tier
           if (a.tier === b.tier && !a.merged && !b.merged && a.tier < TIERS - 1 && a.age > 5 && b.age > 5) {
             a.dead = true;
@@ -232,29 +240,13 @@ function updatePhysics(dt) {
             newBall.scaleY = 0.7;
             balls.push(newBall);
             
-            const points = (newTier + 1) * (newTier + 1) * 10;
-            score += points * (1 + combo * 0.2);
-            combo++;
-            comboTimer = 120;
-            missionProgress.merges++;
-            missionProgress.maxTier = Math.max(missionProgress.maxTier, newTier);
-            missionProgress.maxCombo = Math.max(missionProgress.maxCombo, combo);
-            
-            FX.hitstop(0.06);
-            FX.shake(5 + newTier);
-            FX.burst(newBall.x, newBall.y, {n: 25, color: PALETTES[paletteIdx].colors[newTier], speed: 180, life: 0.7, size: 7, glow: true});
-            FX.ring(newBall.x, newBall.y, {color: PALETTES[paletteIdx].colors[newTier], r: 100, life: 0.5});
-            FX.text(newBall.x, newBall.y - 40, 'Lv.' + (newTier + 1), {color: '#ffff00', size: 28, crit: true});
-            
-            if (combo > 1) {
-              FX.text(newBall.x, newBall.y - 70, combo + ' 连击!', {color: '#ff6699', size: 22, crit: false});
-            }
-            
+            recordMerge(newBall, newTier);
+
             continue;
           }
 
           // Separate overlapping balls
-          const overlap = (minDist - dist) / 2;
+          const overlap = Math.max(0,(minDist - dist) / 2);
           const nx = dx / dist;
           const ny = dy / dist;
           a.x -= nx * overlap;
@@ -296,6 +288,97 @@ function updatePhysics(dt) {
     comboTimer--;
     if (comboTimer === 0) combo = 0;
   }
+}
+
+
+// === FUSED ENGINE: Matter.js main, preserved classic solver second ===
+function recordMerge(newBall, newTier) {
+  const points = (newTier + 1) * (newTier + 1) * 10;
+  score += Math.round(points * (1 + combo * 0.2));
+  combo++;
+  if(combo>1) GameFXLib.combo(combo); GameAudio.sfx(combo > 1 ? 'combo' : 'merge', {rate: 1 + Math.min(combo, 7) * .08});
+  comboTimer = 120;
+  missionProgress.merges++;
+  missionProgress.maxTier = Math.max(missionProgress.maxTier, newTier);
+  missionProgress.maxCombo = Math.max(missionProgress.maxCombo, combo);
+  
+  FX.hitstop(0.06);
+  FX.shake(5 + newTier);
+  FX.burst(newBall.x, newBall.y, {n: 25, color: PALETTES[paletteIdx].colors[newTier], speed: 180, life: 0.7, size: 7, glow: true});
+  FX.ring(newBall.x, newBall.y, {color: PALETTES[paletteIdx].colors[newTier], r: 100, life: 0.5});
+  FX.text(newBall.x, newBall.y - 40, 'Lv.' + (newTier + 1), {color: '#ffff00', size: 28, crit: true});
+  
+  if (combo > 1) {
+    FX.text(newBall.x, newBall.y - 70, combo + ' 连击!', {color: '#ff6699', size: 22, crit: false});
+  }
+  
+}
+function resetMatter() {
+  if (engine) { Matter.Events.off(engine); Matter.World.clear(engine.world, false); Matter.Engine.clear(engine); }
+  contacts.clear(); physicsAccumulator = 0;
+  if (!matterMode) { engine = null; return; }
+  engine = Matter.Engine.create({enableSleeping: true});
+  engine.gravity.y = 1;
+  Matter.World.add(engine.world, [
+    Matter.Bodies.rectangle(JAR_LEFT - 16, H / 2, 32, H * 3, {isStatic: true}),
+    Matter.Bodies.rectangle(JAR_RIGHT + 16, H / 2, 32, H * 3, {isStatic: true}),
+    Matter.Bodies.rectangle(W / 2, JAR_BOTTOM + 20, JAR_WIDTH + 64, 40, {isStatic: true})
+  ]);
+  const collect = e => { for (const p of e.pairs) {
+    const a = p.bodyA.plugin?.piece, b = p.bodyB.plugin?.piece;
+    if (a && b) contacts.set([p.bodyA.id,p.bodyB.id].sort((x,y)=>x-y).join(':'), [a,b]);
+  }};
+  Matter.Events.on(engine, 'collisionStart', collect);
+  Matter.Events.on(engine, 'collisionActive', collect);
+}
+function attachBody(b) {
+  if (b.body) return;
+  b.body = Matter.Bodies.circle(b.x, b.y, b.r, {restitution: .13, friction: .34, frictionStatic: .7, density: .0015});
+  b.body.plugin.piece = b;
+  Matter.Body.setVelocity(b.body, {x:b.vx,y:b.vy});
+  Matter.World.add(engine.world, b.body);
+}
+function matterStep() {
+  // Reconcile the shared pieces array so original boosters work without changing VIP logic.
+  for (const body of [...engine.world.bodies]) {
+    const b = body.plugin?.piece;
+    if (b && (b.dead || !balls.includes(b))) Matter.World.remove(engine.world, body);
+  }
+  for (const b of balls) {
+    if (b.dead) continue;
+    attachBody(b);
+    if (Math.abs(b.body.circleRadius - b.r) > .01) {
+      const scale = b.r / b.body.circleRadius;
+      Matter.Body.scale(b.body, scale, scale); Matter.Sleeping.set(b.body,false);
+    }
+    if (Math.abs(b.body.velocity.x-b.vx)>.01 || Math.abs(b.body.velocity.y-b.vy)>.01) {
+      Matter.Sleeping.set(b.body,false); Matter.Body.setVelocity(b.body,{x:b.vx,y:b.vy});
+    }
+  }
+  contacts.clear();
+  Matter.Engine.update(engine, 1000 / 60);
+  for (const b of balls) {
+    if (b.dead || !b.body) continue;
+    b.x=b.body.position.x; b.y=b.body.position.y; b.vx=b.body.velocity.x; b.vy=b.body.velocity.y; b.age++;
+    const speed=Math.hypot(b.vx,b.vy);
+    b.scaleY=FX.lerp(b.scaleY,1-Math.min(.12,speed*.015),.22);
+    b.scaleX=FX.lerp(b.scaleX,1+Math.min(.12,speed*.015),.22);
+  }
+  for (const [a,b] of contacts.values()) {
+    if (a.dead || b.dead || a.merged || b.merged || a.age<6 || b.age<6 || a.tier!==b.tier || a.tier>=TIERS-1) continue;
+    a.dead=b.dead=a.merged=b.merged=true;
+    Matter.World.remove(engine.world,a.body); Matter.World.remove(engine.world,b.body);
+    const tier=a.tier+1,r=RADIUS[tier];
+    const n=createBall(Math.max(JAR_LEFT+r,Math.min(JAR_RIGHT-r,(a.x+b.x)/2)),Math.min(JAR_BOTTOM-r,(a.y+b.y)/2),tier);
+    n.vy=-1.4; n.scaleX=1.25; n.scaleY=.75; balls.push(n); attachBody(n); recordMerge(n,tier);
+  }
+  balls=balls.filter(b=>!b.dead);
+  const inDanger=balls.some(b=>b.age>90 && b.y-b.r<DANGER_Y && Math.abs(b.vy)<1.2);
+  dangerTimer=inDanger?dangerTimer+1:Math.max(0,dangerTimer-2);
+  if (dangerTimer>150 && !isGameOver) gameOver();
+  if(dropCooldown>0)dropCooldown--;
+  if(dropCooldown===0)dropping=false;
+  if(comboTimer>0 && --comboTimer===0)combo=0;
 }
 
 // === DRAWING ===
@@ -473,7 +556,7 @@ function drawDangerZone() {
 }
 
 function drawAim(pal) {
-  if (isGameOver || dropping) return;
+  if (isGameOver || !FX.running || FX.paused || dropping) return;
 
   // Aiming guide line
   ctx.globalAlpha = 0.5;
@@ -568,7 +651,7 @@ function updateHUD() {
   
   let hudHTML = `
     <a class="fx-icon" href="../tools.html">‹</a>
-    <span class="chip">💰 ${score}</span>
+    <span class="chip">${matterMode ? '⚙' : '◉'} ${Math.floor(score)}</span>
     <span class="chip">🏆 ${bestScore}</span>
     <span class="chip">✓ ${completedMissions}/3</span>
   `;
@@ -614,7 +697,7 @@ function drawMissionProgress() {
 
 // === INPUT ===
 cv.addEventListener('pointermove', e => {
-  if (isGameOver || dropping) return;
+  if (isGameOver || !FX.running || FX.paused || dropping) return;
   const rect = cv.getBoundingClientRect();
   const px = (e.clientX - rect.left) * (W / rect.width);
   const minX = JAR_LEFT + RADIUS[nextTier] + 5;
@@ -623,7 +706,7 @@ cv.addEventListener('pointermove', e => {
 });
 
 cv.addEventListener('pointerdown', e => {
-  if (isGameOver) return;
+  if (isGameOver || !FX.running || FX.paused) return;
   const rect = cv.getBoundingClientRect();
   const px = (e.clientX - rect.left) * (W / rect.width);
   const py = (e.clientY - rect.top) * (H / rect.height);
@@ -633,12 +716,19 @@ cv.addEventListener('pointerdown', e => {
     const minX = JAR_LEFT + RADIUS[nextTier] + 5;
     const maxX = JAR_RIGHT - RADIUS[nextTier] - 5;
     aimX = Math.max(minX, Math.min(maxX, px));
-    dropBall();
+    if (matterMode) { aimPointer=e.pointerId; cv.setPointerCapture(e.pointerId); e.stopPropagation(); }
+    else dropBall();
   }
 });
+cv.addEventListener('pointerup', e => {
+  if (aimPointer !== e.pointerId) return;
+  aimPointer=null; if(cv.hasPointerCapture(e.pointerId))cv.releasePointerCapture(e.pointerId);
+  dropBall(); e.stopPropagation();
+});
+cv.addEventListener('pointercancel', () => { aimPointer=null; });
 
 document.addEventListener('keydown', e => {
-  if (isGameOver) return;
+  if (isGameOver || !FX.running || FX.paused) return;
   if (e.code === 'Space') {
     e.preventDefault();
     dropBall();
@@ -653,11 +743,16 @@ document.addEventListener('keydown', e => {
 
 // === GAME LOOP ===
 function update(dt) {
-  if (FX.paused) return;
-
+  if (FX.paused || !FX.running || isGameOver) return;
   animTime += dt;
-  updatePhysics(dt);
+  physicsAccumulator += Math.min(.05,dt);
+  while (physicsAccumulator >= 1/60 && !isGameOver) {
+    if (matterMode) matterStep(); else updatePhysics(1/60);
+    physicsAccumulator -= 1/60;
+  }
+  if (isGameOver) return;
   checkMissions();
+  if (currentSel?.mode !== 'endless' && score >= stages[currentSel.stage].target) gameOver();
   updateHUD();
 }
 
@@ -674,6 +769,9 @@ function draw(c) {
   const bgImg = FX.img(pal.bg);
   c.drawImage(bgImg, bgX, bgY, bgW, bgH);
 
+  if (matterMode && orchard.complete && orchard.naturalWidth) {
+    c.save(); c.globalAlpha=.12; c.drawImage(orchard,0,H*.3,W,H*.7); c.restore();
+  }
   // Motes
   FX.motes(c, '#ffffff33');
 
@@ -712,6 +810,9 @@ function draw(c) {
 }
 
 function gameOver() {
+  if (isGameOver) return;
+  if(score >= stages[currentSel ? currentSel.stage : 0].target) GameFXLib.win(); GameAudio.sfx(score >= stages[currentSel ? currentSel.stage : 0].target ? 'win' : 'lose'); GameAudio.stop();
+  if (GameInviteV0.active()) { isGameOver = true; FX.running = false; GameInviteV0.finish(score); return; }
   isGameOver = true;
   FX.running = false;
 
@@ -745,6 +846,7 @@ function gameOver() {
 
 // === BOOSTERS ===
 function boosterShake() {
+  GameAudio.sfx('power');
   FX.shake(18);
   FX.burst(W / 2, H / 2, {n: 60, color: '#66ccff', speed: 280, life: 1, size: 10, glow: true});
   FX.ring(W / 2, H / 2, {color: '#66ccff', r: 150, life: 0.6});
@@ -757,6 +859,7 @@ function boosterShake() {
 }
 
 function boosterRemove() {
+  GameAudio.sfx('power');
   if (!window.VIP?.active()) {
     FX.banner('需要 VIP 解锁');
     return;
@@ -772,6 +875,7 @@ function boosterRemove() {
 }
 
 function boosterUpgrade() {
+  GameAudio.sfx('power');
   if (!window.VIP?.active()) {
     FX.banner('需要 VIP 解锁');
     return;
@@ -822,14 +926,25 @@ const upgradeBtn = FX.button({
   onPress: boosterUpgrade
 });
 
+shakeBtn.el.setAttribute('aria-label','摇一摇');
+removeBtn.el.setAttribute('aria-label','移除最小球');
+upgradeBtn.el.setAttribute('aria-label','升级一个球');
+
 // === START ===
 function startRun(sel) {
-  currentSel = sel;
-  paletteIdx = stages[sel.stage].theme;
+  GameAudio.bgm('lili-merge');
+  // Shared lobby only saves mode on settlement; preserve choice when starting too.
+  if (!GameInviteV0.active()) {
+    try { const saved=JSON.parse(localStorage.getItem('lobby-lili-merge')||'{}'); saved.selectedMode=sel.mode; localStorage.setItem('lobby-lili-merge',JSON.stringify(saved)); } catch (_) {}
+  }
+  currentSel = Object.assign({}, sel, {stage: Math.max(0,Math.min(stages.length-1,Number(sel.stage)||0))});
+  matterMode = sel.mode !== 'classic';
+  FX.paused = false;
+  paletteIdx = stages[currentSel.stage].theme;
   
   resetGame();
   FX.running = true;
-  FX.loop(update, draw);
+  if (!loopStarted) { loopStarted=true; FX.loop(update, draw); }
 }
 
 const assets = [
@@ -846,8 +961,9 @@ FX.load(assets).then(() => {
     orientation: 'portrait',
     bg: ['bg-garden', 'bg-sakura', 'bg-sky'],
     modes: [
-      {id: 'story', name: '故事', icon: 'item-star'},
-      {id: 'endless', name: '无尽', icon: 'item-ice'}
+      {id: 'story', name: '物理', icon: 'item-star'},
+      {id: 'endless', name: '无尽', icon: 'item-ice'},
+      {id: 'classic', name: '经典', icon: 'item-heart'}
     ],
     stages: stages,
     chars: [
@@ -867,17 +983,27 @@ FX.load(assets).then(() => {
       {id: 'gem', icon: 'item-star'}
     ],
     onStart: startRun,
-    onQuit: () => { FX.running = false; },
+    onQuit: () => { FX.running = false; GameAudio.stop(); },
     onSkinChange: (sel) => { 
       if (currentSel && sel.skin) {
         paletteIdx = Math.min(2, parseInt(sel.skin.id) || 0);
       }
     }
   });
+  GameInviteV0.launch('lili-merge', startRun);
 });
 
 window.__game = {
+  start: mode => { Lobby.hide(); startRun(Object.assign({},Lobby.selection(),{mode})); },
+  pair: () => { const y=JAR_BOTTOM-60; balls.push(createBall(W/2-16,y,0),createBall(W/2+16,y,0)); },
+  finish: gameOver,
+  drop: dropBall,
   state: () => ({
+    engine: matterMode ? 'matter' : 'classic',
+    mode: currentSel?.mode,
+    bestScore,
+    pieces: balls.filter(b=>!b.dead).map(b=>({x:b.x,y:b.y,r:b.r,tier:b.tier,vx:b.vx,vy:b.vy})),
+    merges: missionProgress.merges,
     balls: balls.length,
     score: score,
     nextTier: nextTier,

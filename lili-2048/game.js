@@ -1,955 +1,605 @@
-// 栗栗的美食 2048 (lili-2048) - game.js
 (function() {
-'use strict';
+  'use strict';
 
-const {cv, ctx, W, H} = FX.init({landscape: false});
-
-// === CONSTANTS ===
-const TILE_COLORS = [
-  '#f2e5ff','#dbefff','#ddf7ee','#ffe2e9','#fff0d1',
-  '#e9d5ff','#cbe8f4','#f5cce4','#d9e6ff','#e9dbff','#fff0b8'
-];
-
-const TIER_COLORS = [
-  {frame: '#e8b4f8', glow: '#d580ff'},
-  {frame: '#a8d8ff', glow: '#5eb3ff'},
-  {frame: '#98f0e6', glow: '#4dd9d0'},
-  {frame: '#ffb3d9', glow: '#ff6eb4'},
-  {frame: '#ffe8a8', glow: '#ffd966'},
-  {frame: '#d4c4ff', glow: '#9f7eff'},
-  {frame: '#b8dff8', glow: '#7ab8ff'},
-  {frame: '#f0c4e8', glow: '#e89bd9'},
-  {frame: '#c8deff', glow: '#8fb5ff'},
-  {frame: '#dcc8ff', glow: '#b395ff'},
-  {frame: '#fff4b8', glow: '#ffeb7a'},
-  {frame: '#ffd700', glow: '#ffaa00'}
-];
-
-// === IMAGE & TILE CACHE ===
-const tileImageCache = new Map();
-const tileSpriteCache = new Map();
-
-function getTileImage(value) {
-  const tier = Math.min(value, 11);
-  const key = `t2048-${tier}`;
-  
-  if (tileImageCache.has(key)) {
-    return tileImageCache.get(key);
-  }
-  
-  const img = FX.img(key);
-  tileImageCache.set(key, img);
-  return img;
-}
-
-function getCachedTileSprite(value, size) {
-  const key = `${value}_${size}`;
-  if (tileSpriteCache.has(key)) return tileSpriteCache.get(key);
-  
-  const canvas = document.createElement('canvas');
-  canvas.width = size;
-  canvas.height = size;
-  const c = canvas.getContext('2d');
-  
-  if (value < 0) {
-    c.fillStyle = '#888888';
-    c.beginPath();
-    c.roundRect(0, 0, size, size, 12);
-    c.fill();
-    c.strokeStyle = '#666666';
-    c.lineWidth = 3;
-    c.beginPath();
-    c.moveTo(size/3, size/3);
-    c.lineTo(2*size/3, 2*size/3);
-    c.moveTo(2*size/3, size/3);
-    c.lineTo(size/3, 2*size/3);
-    c.stroke();
-  } else if (value === 0) {
-    c.fillStyle = 'rgba(239, 227, 204, 0.4)';
-    c.beginPath();
-    c.roundRect(0, 0, size, size, 12);
-    c.fill();
-  } else {
-    const tierIdx = Math.min(value, 11);
-    const tierColor = TIER_COLORS[tierIdx - 1];
-    
-    const grad = c.createLinearGradient(0, 0, size, size);
-    grad.addColorStop(0, tierColor.frame);
-    grad.addColorStop(1, adjustColor(tierColor.frame, -25));
-    
-    c.fillStyle = grad;
-    c.shadowColor = tierColor.glow;
-    c.shadowBlur = 16;
-    c.shadowOffsetX = 0;
-    c.shadowOffsetY = 2;
-    
-    c.beginPath();
-    c.roundRect(4, 4, size - 8, size - 8, 14);
-    c.fill();
-    
-    c.shadowBlur = 0;
-    c.shadowColor = 'transparent';
-    
-    c.fillStyle = 'rgba(255, 255, 255, 0.35)';
-    c.beginPath();
-    c.roundRect(4, 4, size - 8, size * 0.25, 14);
-    c.fill();
-    
-    const imgSize = Math.floor(size * 0.82);
-    const imgX = (size - imgSize) / 2;
-    const imgY = (size - imgSize) * 0.35;
-    
-    try {
-      const tileImg = getTileImage(value);
-      if (tileImg.complete || tileImg.width > 0) {
-        c.drawImage(tileImg, imgX, imgY, imgSize, imgSize);
-      }
-    } catch (e) {
-      c.fillStyle = '#cccccc';
-      c.fillRect(imgX, imgY, imgSize, imgSize);
-    }
-    
-    const pillHeight = Math.floor(size * 0.22);
-    const pillY = size - pillHeight - 4;
-    
-    c.fillStyle = 'rgba(0, 0, 0, 0.15)';
-    c.beginPath();
-    c.roundRect(size * 0.1, pillY, size * 0.8, pillHeight, 8);
-    c.fill();
-    
-    c.fillStyle = 'rgba(255, 255, 255, 0.9)';
-    c.font = `bold ${Math.floor(size * 0.14)}px sans-serif`;
-    c.textAlign = 'center';
-    c.textBaseline = 'middle';
-    c.fillText(String(Math.pow(2, value)), size / 2, pillY + pillHeight / 2);
-  }
-  
-  tileSpriteCache.set(key, canvas);
-  return canvas;
-}
-
-function adjustColor(hex, amount) {
-  const num = parseInt(hex.slice(1), 16);
-  const r = Math.max(0, Math.min(255, (num >> 16) + amount));
-  const g = Math.max(0, Math.min(255, ((num >> 8) & 0x00FF) + amount));
-  const b = Math.max(0, Math.min(255, (num & 0x0000FF) + amount));
-  return '#' + ((r << 16) | (g << 8) | b).toString(16).padStart(6, '0');
-}
-
-// === STATE ===
-let currentSel = null;
-let gridSize = 4;
-let grid = [];
-let score = 0;
-let moveHistory = [];
-let targetTile = 8;
-let blockers = [];
-let undoUses = 3;
-let bombUses = 2;
-let shuffleUses = 1;
-
-let tileAnims = [];
-let mergeAnims = [];
-let spawnAnims = [];
-let chibiState = 'idle';
-let chibiT = 0;
-let comboCurrent = 0;
-let comboTimer = 0;
-
-const store = FX.store('lili-2048', {bestScore:0, bestStage:0});
-
-// === TILE ANIMATION ===
-class TileAnim {
-  constructor(fromRow, fromCol, toRow, toCol, value, isMerge) {
-    this.fromRow = fromRow;
-    this.fromCol = fromCol;
-    this.toRow = toRow;
-    this.toCol = toCol;
-    this.value = value;
-    this.isMerge = isMerge;
-    this.t = 0;
-    this.duration = 0.12;
-  }
-  
-  update(dt) {
-    this.t += dt;
-    return this.t >= this.duration;
-  }
-  
-  getPos(tileSize, gridX, gridY, gap) {
-    const progress = FX.ease.outCubic(Math.min(this.t / this.duration, 1));
-    const fromX = gridX + this.fromCol * (tileSize + gap) + tileSize/2;
-    const fromY = gridY + this.fromRow * (tileSize + gap) + tileSize/2;
-    const toX = gridX + this.toCol * (tileSize + gap) + tileSize/2;
-    const toY = gridY + this.toRow * (tileSize + gap) + tileSize/2;
-    return {
-      x: FX.lerp(fromX, toX, progress),
-      y: FX.lerp(fromY, toY, progress)
-    };
-  }
-}
-
-class MergeAnim {
-  constructor(row, col, value) {
-    this.row = row;
-    this.col = col;
-    this.value = value;
-    this.t = 0;
-    this.duration = 0.2;
-  }
-  
-  update(dt) {
-    this.t += dt;
-    return this.t >= this.duration;
-  }
-  
-  getScale() {
-    const t = this.t / this.duration;
-    if (t < 0.5) {
-      return 1 + FX.ease.outCubic(t * 2) * 0.3;
-    } else {
-      return 1.3 - FX.ease.outCubic((t - 0.5) * 2) * 0.3;
-    }
-  }
-}
-
-class SpawnAnim {
-  constructor(row, col) {
-    this.row = row;
-    this.col = col;
-    this.t = 0;
-    this.duration = 0.15;
-  }
-  
-  update(dt) {
-    this.t += dt;
-    return this.t >= this.duration;
-  }
-  
-  getScale() {
-    const t = Math.min(this.t / this.duration, 1);
-    return Math.max(0, FX.ease.outBack(t));
-  }
-}
-
-// === GRID LOGIC ===
-function initGrid() {
-  grid = [];
-  for (let r = 0; r < gridSize; r++) {
-    grid[r] = [];
-    for (let c = 0; c < gridSize; c++) {
-      grid[r][c] = 0;
-    }
-  }
-  
-  blockers.forEach(b => {
-    if (b.row < gridSize && b.col < gridSize) {
-      grid[b.row][b.col] = -1;
-    }
-  });
-  
-  addRandomTile();
-  addRandomTile();
-}
-
-function addRandomTile() {
-  const empty = [];
-  for (let r = 0; r < gridSize; r++) {
-    for (let c = 0; c < gridSize; c++) {
-      if (grid[r][c] === 0) {
-        empty.push({r, c});
-      }
-    }
-  }
-  
-  if (empty.length === 0) return;
-  
-  const pos = empty[Math.floor(Math.random() * empty.length)];
-  grid[pos.r][pos.c] = Math.random() < 0.9 ? 1 : 2;
-  spawnAnims.push(new SpawnAnim(pos.r, pos.c));
-}
-
-function moveLine(arr) {
-  const filtered = arr.filter(v => v > 0);
-  const result = [];
-  let i = 0;
-  
-  while (i < filtered.length) {
-    if (i < filtered.length - 1 && filtered[i] === filtered[i + 1] && filtered[i] < 11) {
-      const merged = filtered[i] + 1;
-      result.push(merged);
-      score += Math.pow(2, merged);
-      comboCurrent++;
-      i += 2;
-    } else {
-      result.push(filtered[i]);
-      i++;
-    }
-  }
-  
-  while (result.length < arr.length) {
-    result.push(0);
-  }
-  
-  return result;
-}
-
-function move(direction) {
-  if (!FX.running || FX.paused) return;
-  if (tileAnims.length > 0) return;
-  
-  const oldGrid = grid.map(row => row.slice());
-  const newGrid = grid.map(row => row.slice());
-  tileAnims = [];
-  comboCurrent = 0;
-  
-  if (direction === 'left' || direction === 'right') {
-    for (let r = 0; r < gridSize; r++) {
-      let line = newGrid[r].slice();
-      if (direction === 'right') line.reverse();
-      
-      const positions = [];
-      line.forEach((v, i) => {
-        if (v > 0) positions.push({col: i, value: v});
-      });
-      
-      const moved = moveLine(line);
-      if (direction === 'right') moved.reverse();
-      
-      newGrid[r] = moved;
-      
-      if (direction === 'right') {
-        positions.forEach(p => p.col = gridSize - 1 - p.col);
-      }
-      
-      positions.forEach(p => {
-        let targetCol = -1;
-        for (let c = (direction === 'left' ? 0 : gridSize - 1);
-             direction === 'left' ? c < gridSize : c >= 0;
-             direction === 'left' ? c++ : c--) {
-          if (moved[c] > 0) {
-            const isMerge = moved[c] > p.value;
-            if (targetCol === -1) {
-              targetCol = c;
-              if (p.col !== targetCol) {
-                tileAnims.push(new TileAnim(r, p.col, r, targetCol, p.value, isMerge));
-              }
-              if (isMerge) break;
-            } else {
-              break;
-            }
-          }
-        }
-      });
-    }
-  } else {
-    for (let c = 0; c < gridSize; c++) {
-      let line = [];
-      for (let r = 0; r < gridSize; r++) {
-        line.push(newGrid[r][c]);
-      }
-      
-      if (direction === 'down') line.reverse();
-      
-      const positions = [];
-      line.forEach((v, i) => {
-        if (v > 0) positions.push({row: i, value: v});
-      });
-      
-      const moved = moveLine(line);
-      if (direction === 'down') moved.reverse();
-      
-      for (let r = 0; r < gridSize; r++) {
-        newGrid[r][c] = moved[r];
-      }
-      
-      if (direction === 'down') {
-        positions.forEach(p => p.row = gridSize - 1 - p.row);
-      }
-      
-      positions.forEach(p => {
-        let targetRow = -1;
-        for (let r = (direction === 'up' ? 0 : gridSize - 1);
-             direction === 'up' ? r < gridSize : r >= 0;
-             direction === 'up' ? r++ : r--) {
-          if (moved[r] > 0) {
-            const isMerge = moved[r] > p.value;
-            if (targetRow === -1) {
-              targetRow = r;
-              if (p.row !== targetRow) {
-                tileAnims.push(new TileAnim(p.row, c, targetRow, c, p.value, isMerge));
-              }
-              if (isMerge) break;
-            } else {
-              break;
-            }
-          }
-        }
-      });
-    }
-  }
-  
-  const changed = JSON.stringify(oldGrid) !== JSON.stringify(newGrid);
-  
-  if (changed) {
-    moveHistory.push({grid: oldGrid, score});
-    if (moveHistory.length > 10) moveHistory.shift();
-    
-    grid = newGrid;
-    
-    if (comboCurrent > 0) {
-      comboTimer = 2.0;
-      chibiState = comboCurrent >= 2 ? 'cheer' : 'bounce';
-      chibiT = 0;
-      
-      if (comboCurrent >= 2) {
-        FX.banner(`连击 ×${comboCurrent}！`);
-      }
-    }
-    
-    setTimeout(() => {
-      grid.forEach((row, r) => {
-        row.forEach((val, c) => {
-          if (val > 0 && oldGrid[r][c] !== val) {
-            mergeAnims.push(new MergeAnim(r, c, val));
-            
-            const tileSize = Math.min((W - 80) / gridSize, 110);
-            const gap = 8;
-            const gridW = gridSize * tileSize + (gridSize - 1) * gap;
-            const gridX = (W - gridW) / 2;
-            const boardH = gridW;
-            const boardY = (H - boardH) / 2 - 30;
-            const gridY = boardY + 12;
-            const x = gridX + c * (tileSize + gap) + tileSize / 2;
-            const y = gridY + r * (tileSize + gap) + tileSize / 2;
-            
-            const tierColor = TIER_COLORS[Math.min(val, 11) - 1];
-            FX.burst(x, y, {
-              n: 12,
-              color: tierColor.frame,
-              speed: 120,
-              life: 0.5,
-              size: 6,
-              glow: true
-            });
-            
-            if (val >= targetTile) {
-              FX.ring(x, y, {color: '#ffd700', r: 80, life: 0.6});
-              FX.shake(6);
-            }
-          }
-        });
-      });
-      
-      addRandomTile();
-      checkGameState();
-    }, 130);
-  }
-}
-
-function checkGameState() {
-  const hasTarget = grid.some(row => row.some(v => v >= targetTile));
-  
-  if (hasTarget && currentSel.mode === 'story') {
-    setTimeout(() => {
-      gameWin();
-    }, 500);
-    return;
-  }
-  
-  const empty = grid.some(row => row.includes(0));
-  if (empty) return;
-  
-  for (let r = 0; r < gridSize; r++) {
-    for (let c = 0; c < gridSize; c++) {
-      if (grid[r][c] <= 0) continue;
-      if (c < gridSize - 1 && grid[r][c] === grid[r][c + 1]) return;
-      if (r < gridSize - 1 && grid[r][c] === grid[r + 1][c]) return;
-    }
-  }
-  
-  setTimeout(() => {
-    gameOver();
-  }, 500);
-}
-
-function gameWin() {
-  FX.running = false;
-  FX.banner('🏆 目标达成！');
-  
-  const best = Math.max(store.bestScore, score);
-  store.bestScore = best;
-  store.bestStage = Math.max(store.bestStage, currentSel.stage);
-  store.save();
-  
-  const maxTile = Math.max(...grid.flat());
-  const stars = maxTile >= targetTile + 2 ? 3 : maxTile >= targetTile + 1 ? 2 : 1;
-  
-  Lobby.reportResult({
-    stage: currentSel.stage,
-    stars,
-    coins: Math.floor(score / 10),
-    gems: Math.floor(score / 50),
-    win: true
-  });
-}
-
-function gameOver() {
-  FX.running = false;
-  FX.banner('没有空间了！');
-  
-  const best = Math.max(store.bestScore, score);
-  store.bestScore = best;
-  store.save();
-  
-  Lobby.reportResult({
-    stage: currentSel.stage,
-    stars: 0,
-    coins: Math.floor(score / 20),
-    gems: Math.floor(score / 100),
-    win: false
-  });
-}
-
-// === POWER-UPS ===
-const undoBtn = FX.button({
-  icon: 'item-heart',
-  color: '#ff6b9d',
-  size: 70,
-  right: W/2 - 105,
-  bottom: 50,
-  key: 'KeyZ',
-  onPress: () => {
-    if (undoUses <= 0) return;
-    if (moveHistory.length === 0) return;
-    
-    const prev = moveHistory.pop();
-    grid = prev.grid;
-    score = prev.score;
-    undoUses--;
-    
-    tileAnims = [];
-    mergeAnims = [];
-    spawnAnims = [];
-    
-    FX.burst(W / 2, H / 2, {
-      n: 20,
-      color: '#ff6b9d',
-      speed: 150,
-      life: 0.6,
-      size: 6,
-      glow: true
-    });
-  }
-});
-
-const bombBtn = FX.button({
-  icon: 'item-star',
-  color: '#ffaa00',
-  size: 70,
-  right: W/2 - 5,
-  bottom: 50,
-  key: 'KeyX',
-  onPress: () => {
-    if (bombUses <= 0) return;
-    
-    const tiles = [];
-    grid.forEach((row, r) => {
-      row.forEach((val, c) => {
-        if (val > 0) tiles.push({r, c, val});
-      });
-    });
-    
-    if (tiles.length === 0) return;
-    
-    const target = tiles[Math.floor(Math.random() * tiles.length)];
-    grid[target.r][target.c] = 0;
-    bombUses--;
-    
-    const tileSize = Math.min((W - 80) / gridSize, 110);
-    const gap = 8;
-    const gridW = gridSize * tileSize + (gridSize - 1) * gap;
-    const gridX = (W - gridW) / 2;
-    const boardH = gridW;
-    const boardY = (H - boardH) / 2 - 30;
-    const gridY = boardY + 12;
-    const x = gridX + target.c * (tileSize + gap) + tileSize / 2;
-    const y = gridY + target.r * (tileSize + gap) + tileSize / 2;
-    
-    FX.burst(x, y, {
-      n: 30,
-      color: '#ffaa00',
-      speed: 200,
-      life: 0.7,
-      size: 8,
-      glow: true
-    });
-    FX.shake(8);
-    FX.ring(x, y, {color: '#ff8800', r: 100, life: 0.6});
-  }
-});
-
-const shuffleBtn = FX.button({
-  icon: 'item-ice',
-  color: '#66ccff',
-  size: 70,
-  right: W/2 + 95,
-  bottom: 50,
-  key: 'KeyC',
-  onPress: () => {
-    if (shuffleUses <= 0) return;
-    
-    const values = [];
-    grid.forEach(row => {
-      row.forEach(val => {
-        if (val > 0) values.push(val);
-      });
-    });
-    
-    for (let i = values.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [values[i], values[j]] = [values[j], values[i]];
-    }
-    
-    let idx = 0;
-    for (let r = 0; r < gridSize; r++) {
-      for (let c = 0; c < gridSize; c++) {
-        if (grid[r][c] > 0) {
-          grid[r][c] = values[idx++];
-        }
-      }
-    }
-    
-    shuffleUses--;
-    
-    FX.burst(W / 2, H / 2, {
-      n: 40,
-      color: '#66ccff',
-      speed: 180,
-      life: 0.6,
-      size: 7,
-      glow: true
-    });
-    FX.banner('洗牌！');
-  }
-});
-
-// === INPUT ===
-let touchStartX = 0;
-let touchStartY = 0;
-let hasSwiped = false;
-
-cv.addEventListener('pointerdown', e => {
-  const rect = cv.getBoundingClientRect();
-  touchStartX = (e.clientX - rect.left) / rect.width * W;
-  touchStartY = (e.clientY - rect.top) / rect.height * H;
-  hasSwiped = false;
-});
-
-cv.addEventListener('pointermove', e => {
-  if (hasSwiped) return;
-  
-  const rect = cv.getBoundingClientRect();
-  const x = (e.clientX - rect.left) / rect.width * W;
-  const y = (e.clientY - rect.top) / rect.height * H;
-  
-  const dx = x - touchStartX;
-  const dy = y - touchStartY;
-  const dist = Math.hypot(dx, dy);
-  
-  if (dist > 40) {
-    hasSwiped = true;
-    if (Math.abs(dx) > Math.abs(dy)) {
-      move(dx > 0 ? 'right' : 'left');
-    } else {
-      move(dy > 0 ? 'down' : 'up');
-    }
-  }
-});
-
-addEventListener('keydown', e => {
-  if (!FX.running || FX.paused) return;
-  
-  const keyMap = {
-    ArrowLeft: 'left',
-    ArrowRight: 'right',
-    ArrowUp: 'up',
-    ArrowDown: 'down',
-    KeyA: 'left',
-    KeyD: 'right',
-    KeyW: 'up',
-    KeyS: 'down'
+  const CONFIG = {
+    classic: { size: 4, limit: null },
+    expanded: { size: 5, limit: null },
+    challenge: { size: 4, limit: 60 }
   };
-  
-  if (keyMap[e.code]) {
+
+  let state = {
+    grid: null,
+    score: 0,
+    best: 0,
+    size: 4,
+    mode: 'classic',
+    remaining: null,
+    undoLeft: 3,
+    won: false,
+    continued: false,
+    phase: 'idle',
+    animating: false,
+    finished: false,
+    undoStack: [],
+    inviteMode: false,
+    restartToken: null,
+    quitToken: null
+  };
+
+  FX.init({landscape:false});
+  let roundToken=0, animationTimer=0;
+  let dom = {};
+  let pointerState = { active: false, startX: 0, startY: 0 };
+  const SWIPE_THRESHOLD = 24;
+  const SCORE_RATE_BASE = 0.65;
+  const SCORE_RATE_INCREMENT = 0.085;
+  const SCORE_RATE_CAP = 1.8;
+
+  function loadBest(mode) {
+    try {
+      const parsed=JSON.parse(localStorage.getItem('lili-2048-rework')||'{}');
+      const old=mode==='classic'?JSON.parse(localStorage.getItem('lili-2048')||'{}').bestScore:0;
+      const value=Number.isFinite(parsed?.[mode])&&parsed[mode]>=0?parsed[mode]:0;
+      return Math.max(value,Number.isFinite(old)&&old>=0?old:0);
+    } catch (_) { return 0; }
+  }
+
+  function saveBest(mode, score) {
+    if (state.inviteMode) return;
+    try {
+      const data = localStorage.getItem('lili-2048-rework');
+      const parsed = data ? JSON.parse(data) : {};
+      if (score > (parsed[mode] || 0)) {
+        parsed[mode] = score;
+        localStorage.setItem('lili-2048-rework', JSON.stringify(parsed));
+      }
+    } catch {}
+  }
+
+  function initDOM() {
+    const root = document.createElement('div');
+    root.id = 'game-root';
+    root.innerHTML = `
+      <div class="moon"></div>
+      <div class="petal"></div>
+      <div class="petal"></div>
+      <div class="petal"></div>
+      <div class="petal"></div>
+      <div class="petal"></div>
+      <div class="petal"></div>
+      <div id="game-container">
+        <div id="hud">
+          <div class="stat-box"><div class="stat-label">分数</div><div class="stat-value" id="score-display">0</div></div>
+          <div class="stat-box"><div class="stat-label">最佳</div><div class="stat-value" id="best-display">0</div></div>
+          <div class="stat-box"><div class="stat-label">模式</div><div class="stat-value" id="mode-display">经典</div></div>
+          <div class="stat-box" id="challenge-box" style="display:none"><div class="stat-label">挑战</div><div class="stat-value" id="remaining-display">60</div></div>
+        </div>
+        <div id="board-wrapper">
+          <div id="board" class="size-4"></div>
+          <div id="overlay"><div class="overlay-content"><div class="overlay-title" id="overlay-title"></div><div class="overlay-message" id="overlay-message"></div><div class="overlay-actions" id="overlay-actions"></div></div></div>
+        </div>
+        <div id="controls">
+          <button class="icon-btn" id="undo-btn" aria-label="撤销">↶<span class="badge" id="undo-badge">3</span></button>
+          <button class="icon-btn" id="restart-btn" aria-label="重新开始">⟳</button>
+          <button class="icon-btn" id="finish-btn" aria-label="完成">✓</button>
+          <button class="icon-btn" id="pause-btn" aria-label="暂停" >⏸</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(root);
+
+    dom.root = root;
+    dom.board = root.querySelector('#board');
+    dom.scoreDisplay = root.querySelector('#score-display');
+    dom.bestDisplay = root.querySelector('#best-display');
+    dom.modeDisplay = root.querySelector('#mode-display');
+    dom.remainingDisplay = root.querySelector('#remaining-display');
+    dom.challengeBox = root.querySelector('#challenge-box');
+    dom.undoBtn = root.querySelector('#undo-btn');
+    dom.undoBadge = root.querySelector('#undo-badge');
+    dom.restartBtn = root.querySelector('#restart-btn');
+    dom.finishBtn = root.querySelector('#finish-btn');
+    dom.pauseBtn = root.querySelector('#pause-btn');
+    dom.overlay = root.querySelector('#overlay');
+    dom.overlayTitle = root.querySelector('#overlay-title');
+    dom.overlayMessage = root.querySelector('#overlay-message');
+    dom.overlayActions = root.querySelector('#overlay-actions');
+
+    dom.undoBtn.addEventListener('click', () => {
+      GameAudio.sfx('button');
+      undo();
+    });
+    dom.restartBtn.addEventListener('click', () => {
+      GameAudio.sfx('button');
+      confirmRestart();
+    });
+    dom.finishBtn.addEventListener('click', () => {
+      GameAudio.sfx('button');
+      confirmFinish();
+    });
+    dom.pauseBtn.addEventListener('click', () => {
+      GameAudio.sfx('button');
+      if (typeof Lobby !== 'undefined' && Lobby.pauseMenu) {
+        Lobby.pauseMenu();
+      }
+    });
+
+    setupInput();
+    window.addEventListener('resize',()=>{if(state.grid&&!state.animating)renderBoard();});
+    window.addEventListener('blur',handlePointerCancel);
+  }
+
+  function setupInput() {
+    dom.board.addEventListener('pointerdown', handlePointerDown, { passive: false });
+    dom.board.addEventListener('pointermove', handlePointerMove, { passive: false });
+    dom.board.addEventListener('pointerup', handlePointerUp, { passive: false });
+    dom.board.addEventListener('pointercancel', handlePointerCancel, { passive: false });
+    document.addEventListener('keydown', handleKeyDown);
+    dom.board.addEventListener('lostpointercapture',handlePointerCancel);
+  }
+
+  function handlePointerDown(e) {
+    if (!FX.running || FX.paused || (e.pointerType === 'mouse' && e.button !== 0) || !e.isPrimary || state.animating || state.phase !== 'playing' || dom.overlay.classList.contains('active')) return;
     e.preventDefault();
-    move(keyMap[e.code]);
+    pointerState.active = true; pointerState.id=e.pointerId;
+    try { dom.board.setPointerCapture(e.pointerId); } catch (_) {}
+    pointerState.startX = e.clientX;
+    pointerState.startY = e.clientY;
   }
-});
 
-// === UPDATE ===
-function update(dt) {
-  if (FX.paused) return;
-  
-  chibiT += dt;
-  
-  if (chibiState === 'bounce' && chibiT > 0.3) {
-    chibiState = 'idle';
-  } else if (chibiState === 'cheer' && chibiT > 0.8) {
-    chibiState = 'idle';
+  function handlePointerMove(e) {
+    if (!pointerState.active) return;
+    e.preventDefault();
   }
-  
-  tileAnims = tileAnims.filter(anim => !anim.update(dt));
-  mergeAnims = mergeAnims.filter(anim => !anim.update(dt));
-  spawnAnims = spawnAnims.filter(anim => !anim.update(dt));
-  
-  if (comboTimer > 0) {
-    comboTimer -= dt;
-  }
-  
-  const usesStr = `
-    <span class="chip" style="opacity:${undoUses>0?1:0.4}">↩×${undoUses}</span>
-    <span class="chip" style="opacity:${bombUses>0?1:0.4}">💣×${bombUses}</span>
-    <span class="chip" style="opacity:${shuffleUses>0?1:0.4}">🔀×${shuffleUses}</span>
-  `;
-  
-  const foodIcons = ['🍙','🍰','🍓','🍊','🍇','🍑','🍋','🍉','🍒','🍍','🏆'];
-  
-  FX.hud(`
-    <a class="fx-icon" href="../tools.html">‹</a>
-    <span class="chip">🍱 ${score}</span>
-    <span class="chip">🎯 ${foodIcons[targetTile-1]}</span>
-    ${usesStr}
-    <span class="grow"></span>
-  `);
-}
 
-// === DRAW ===
-function drawTile(ctx, value, x, y, size, scale = 1) {
-  const s = Math.max(0, size * scale);
-  
-  if (s === 0) return;
-  
-  const cached = getCachedTileSprite(value, size);
-  
-  if (scale === 1) {
-    ctx.drawImage(cached, x - size/2, y - size/2);
-  } else {
-    ctx.save();
-    ctx.translate(x, y);
-    ctx.scale(scale, scale);
-    ctx.drawImage(cached, -size/2, -size/2);
-    ctx.restore();
-  }
-}
+  function handlePointerUp(e) {
+    if (!pointerState.active || !e.isPrimary || e.pointerId !== pointerState.id) return;
+    e.preventDefault();
+    pointerState.active = false;
 
-function draw(ctx) {
-  const stageBg = currentSel && currentSel.stageId ? 
-    (currentSel.stage === 0 ? 'bg-garden' :
-     currentSel.stage === 1 ? 'bg-sakura' :
-     currentSel.stage === 2 ? 'bg-forest' :
-     currentSel.stage === 3 ? 'bg-neon' :
-     currentSel.stage === 4 ? 'bg-snow' : 'bg-sky') : 'bg-garden';
-  
-  const bgImg = FX.img(stageBg);
-  const bgScale = Math.max(W / 640, H / 360);
-  const bgW = 640 * bgScale;
-  const bgH = 360 * bgScale;
-  const bgX = (W - bgW) / 2;
-  const bgY = (H - bgH) / 2;
-  ctx.drawImage(bgImg, bgX, bgY, bgW, bgH);
-  
-  FX.motes(ctx, '#ffd6e8');
-  
-  const tileSize = Math.min((W - 80) / gridSize, 110);
-  const gap = 8;
-  const gridW = gridSize * tileSize + (gridSize - 1) * gap;
-  const gridX = (W - gridW) / 2;
-  const boardH = gridW;
-  const boardY = (H - boardH) / 2 - 30;
-  const gridY = boardY + 12;
-  
-  const chibiSize = 160;
-  const chibiX = W / 2;
-  const chibiY = boardY - chibiSize / 2 - 20;
-  const chibiImg = FX.img('li-chibi');
-  
-  let chibiSy = 1;
-  let chibiOffset = 0;
-  
-  if (chibiState === 'bounce') {
-    const t = Math.min(chibiT / 0.3, 1);
-    chibiSy = 1 + Math.sin(t * Math.PI) * 0.3;
-    chibiOffset = -Math.sin(t * Math.PI) * 20;
-  } else if (chibiState === 'cheer') {
-    chibiSy = 1 + Math.sin(chibiT * 15) * 0.15;
-    chibiOffset = -Math.sin(chibiT * 10) * 15;
-  } else {
-    chibiSy = 1 + Math.sin(FX.time * 2) * 0.05;
+    const dx = e.clientX - pointerState.startX;
+    const dy = e.clientY - pointerState.startY;
+    const absDx = Math.abs(dx);
+    const absDy = Math.abs(dy);
+
+    if (absDx < SWIPE_THRESHOLD && absDy < SWIPE_THRESHOLD) return;
+
+    let dir = null;
+    if (absDx > absDy) {
+      dir = dx > 0 ? 'right' : 'left';
+    } else {
+      dir = dy > 0 ? 'down' : 'up';
+    }
+
+    if (dir) move(dir);
   }
-  
-  if (currentSel && currentSel.skin && currentSel.skin.filter) {
-    ctx.filter = currentSel.skin.filter;
+
+  function handlePointerCancel() {
+    pointerState.active = false;
   }
-  
-  FX.drawSprite(ctx, chibiImg, chibiX, chibiY + chibiOffset, chibiSize, {
-    sy: chibiSy,
-    sx: 1 / chibiSy
-  });
-  
-  ctx.filter = 'none';
-  
-  ctx.fillStyle = '#d9c7a8';
-  ctx.shadowColor = 'rgba(0,0,0,0.15)';
-  ctx.shadowBlur = 15;
-  ctx.beginPath();
-  ctx.roundRect(gridX - 12, boardY, gridW + 24, boardH + 24, 16);
-  ctx.fill();
-  ctx.shadowBlur = 0;
-  
-  for (let r = 0; r < gridSize; r++) {
-    for (let c = 0; c < gridSize; c++) {
-      const x = gridX + c * (tileSize + gap) + tileSize / 2;
-      const y = gridY + r * (tileSize + gap) + tileSize / 2;
-      
-      const isAnimating = tileAnims.some(a => 
-        (a.toRow === r && a.toCol === c && !a.isMerge) ||
-        (a.fromRow === r && a.fromCol === c)
-      );
-      
-      const isMerging = mergeAnims.some(a => a.row === r && a.col === c);
-      const isSpawning = spawnAnims.some(a => a.row === r && a.col === c);
-      
-      if (!isAnimating && !isMerging) {
-        const scale = isSpawning ? spawnAnims.find(a => a.row === r && a.col === c).getScale() : 1;
-        drawTile(ctx, grid[r][c], x, y, tileSize, scale);
-      } else if (!isAnimating) {
-        drawTile(ctx, grid[r][c], x, y, tileSize, 1);
+
+  function handleKeyDown(e) {
+    if (state.animating || state.phase !== 'playing' || dom.overlay.classList.contains('active')) return;
+    if (typeof Lobby !== 'undefined' && typeof FX !== 'undefined' && (FX.paused || !FX.running)) return;
+
+    const keyMap = {
+      ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right',
+      w: 'up', W: 'up', s: 'down', S: 'down', a: 'left', A: 'left', d: 'right', D: 'right',
+      z: 'undo', Z: 'undo'
+    };
+
+    const action = keyMap[e.key];
+    if (!action) return;
+    e.preventDefault();
+    if (action === 'undo') {
+      undo();
+    } else {
+      move(action);
+    }
+  }
+
+  function startRun(inviteOptions) {
+    const isInvite = !!(inviteOptions && typeof GameInviteV0 !== 'undefined' && GameInviteV0.active());
+    const mode = (inviteOptions && inviteOptions.mode) || 'classic';
+    const normalizedMode = CONFIG[mode] ? mode : 'classic';
+
+    const config = CONFIG[normalizedMode];
+    roundToken++; clearTimeout(animationTimer);
+    pointerState.active=false;
+    state.grid = Array.from({length:config.size},()=>Array(config.size).fill(0));
+    FX.running=true; FX.paused=false;
+    dom.overlay.classList.remove('active');
+    dom.root.querySelectorAll('.score-floater').forEach(el=>el.remove());
+    state.score = 0;
+    state.best = loadBest(normalizedMode);
+    state.size = config.size;
+    state.mode = normalizedMode;
+    state.remaining = config.limit;
+    state.undoLeft = 3;
+    state.won = false;
+    state.continued = false;
+    state.phase = 'playing';
+    state.animating = false;
+    state.finished = false;
+    state.undoStack = [];
+    state.inviteMode = isInvite;
+    state.restartToken = null;
+    state.quitToken = null;
+
+    const spawn1 = Puzzle2048.spawn(state.grid);
+    state.grid = spawn1.board;
+    const spawn2 = Puzzle2048.spawn(state.grid);
+    state.grid = spawn2.board;
+
+    Lobby.hide();dom.root.classList.add('active');
+    dom.board.className = `size-${state.size}`;
+    dom.modeDisplay.textContent = { classic: '经典', expanded: '扩展', challenge: '挑战' }[state.mode];
+    dom.challengeBox.style.display = state.remaining !== null ? 'block' : 'none';
+
+    updateDisplay();
+    renderBoard();
+
+    if (typeof GameAudio !== 'undefined') {
+      GameAudio.bgm('lili-2048');
+    }
+  }
+
+  function move(dir) {
+    if (state.animating || state.phase !== 'playing' || dom.overlay.classList.contains('active')) return;
+    if (typeof Lobby !== 'undefined' && typeof FX !== 'undefined' && (FX.paused || !FX.running)) return;
+
+    const result = Puzzle2048.slide(state.grid, dir);
+    if (!result.changed) {
+      GameAudio.sfx('invalid');
+      return;
+    }
+
+    saveUndo();
+
+    state.animating = true;
+    const gain = result.gain;
+    state.score += gain;
+
+    if (state.remaining !== null) {
+      state.remaining--;
+    }
+
+    GameAudio.sfx('swap');
+    if (result.merges.length > 0) {
+      const high=Math.max(...result.merges.map(m=>m.value));
+      GameAudio.sfx('merge',{rate:Math.min(SCORE_RATE_CAP,SCORE_RATE_BASE+Math.log2(high)*SCORE_RATE_INCREMENT)});
+    }
+
+    animateMove(result, () => {
+      state.grid = result.board;
+      const spawnResult = Puzzle2048.spawn(state.grid);
+      state.grid = spawnResult.board;
+
+      renderBoard();
+      result.merges.forEach(m=>getTileElement(m.r,m.c)?.classList.add('merge-pop'));
+      const spawnTile = spawnResult.tile;
+      if (spawnTile) {
+        const el = getTileElement(spawnTile.r, spawnTile.c);
+        if (el) {
+          el.classList.add('pop');
+          setTimeout(() => el.classList.remove('pop'), 150);
+        }
+      }
+
+      updateDisplay();
+
+      if (!state.inviteMode) {
+        saveBest(state.mode, state.score);
+        state.best = Math.max(state.best, state.score);
+        dom.bestDisplay.textContent = state.best;
+      }
+
+      if (gain > 0) {
+        showScoreFloater(gain);
+      }
+
+      checkWin();
+      checkLoss();
+
+      state.animating = false;
+    });
+  }
+
+  function animateMove(result, callback) {
+    const token=roundToken;
+    dom.board.querySelectorAll('.tile').forEach(el=>el.remove());
+    const tiles=result.motions.map(m=>{
+      const el=document.createElement('div');el.className='tile';el.dataset.value=m.value;el.textContent=m.value;
+      positionTile(el,m.from.r,m.from.c);dom.board.appendChild(el);return{el,to:m.to};
+    });
+    void dom.board.offsetWidth;
+    requestAnimationFrame(()=>{
+      if(token!==roundToken)return;
+      tiles.forEach(({el,to})=>positionTile(el,to.r,to.c));
+      animationTimer=setTimeout(()=>{if(token!==roundToken)return;tiles.forEach(t=>t.el.remove());callback();},matchMedia('(prefers-reduced-motion: reduce)').matches?0:125);
+    });
+  }
+
+  function saveUndo() {
+    state.undoStack.push({
+      grid: JSON.parse(JSON.stringify(state.grid)),
+      score: state.score,
+      remaining: state.remaining,
+      won: state.won,
+      continued: state.continued,
+      phase: state.phase
+    });
+    if (state.undoStack.length > 3) {
+      state.undoStack.shift();
+    }
+  }
+
+  function undo() {
+    if (state.finished || state.undoLeft === 0 || state.undoStack.length === 0 || state.animating) return;
+    if (typeof Lobby !== 'undefined' && typeof FX !== 'undefined' && (FX.paused || !FX.running)) return;
+
+    const snapshot = state.undoStack.pop();
+    state.grid = snapshot.grid;
+    state.score = snapshot.score;
+    state.remaining = snapshot.remaining;
+    state.won = snapshot.won;
+    state.continued = snapshot.continued;
+    state.phase = snapshot.phase;
+    state.undoLeft--;
+
+    if (dom.overlay.classList.contains('active')) {
+      dom.overlay.classList.remove('active');
+    }
+
+    updateDisplay();
+    renderBoard();
+    GameAudio.sfx('power');
+  }
+
+  function milestone() {
+    const actions=[];
+    if(state.remaining===null || state.remaining>0)actions.push({icon:'▶',label:'继续',action:continueGame});
+    if(state.undoLeft>0 && state.undoStack.length)actions.push({icon:'↶',label:'撤销',action:undo});
+    actions.push({icon:'✓',label:'完成',action:finish});
+    showOverlay('星糖闪耀 · 2048','已达成目标，继续探索更高数字',actions);
+  }
+  function checkWin() {
+    if(!state.won && state.grid.some(row=>row.some(v=>v>=2048))){state.won=true;state.phase='won';GameAudio.sfx('win');milestone();}
+  }
+  function checkLoss() {
+    if(state.finished || state.phase==='won')return;
+    if((state.remaining!==null && state.remaining<=0) || !Puzzle2048.hasMoves(state.grid)){
+      const newlyLost=state.phase!=='lost';state.phase='lost';
+      if(newlyLost)GameAudio.sfx('lose');
+      const actions=[];
+      if(state.undoLeft>0 && state.undoStack.length)actions.push({icon:'↶',label:'撤销',action:undo});
+      actions.push({icon:'✓',label:'完成',action:finish});
+      showOverlay(state.remaining!==null && state.remaining<=0?'挑战结束':'棋盘已满',`最终分数 ${state.score}`,actions);
+    }
+  }
+  function continueGame() {
+    if(state.phase!=='won'||state.finished||(state.remaining!==null && state.remaining<=0))return;
+    state.continued=true;state.phase='playing';dom.overlay.classList.remove('active');GameAudio.sfx('button');checkLoss();
+  }
+
+  function showOverlay(title, message, actions) {
+    dom.overlayTitle.textContent = title;
+    dom.overlayMessage.textContent = message;
+    dom.overlayActions.innerHTML = '';
+
+    actions.forEach(({ icon, label, action }) => {
+      const btn = document.createElement('button');
+      btn.className = 'overlay-btn';
+      btn.textContent = icon;
+      btn.setAttribute('aria-label', label);
+      btn.addEventListener('click', action);
+      dom.overlayActions.appendChild(btn);
+    });
+
+    dom.overlay.classList.add('active');
+  }
+
+  function confirmRestart() {
+    if(state.animating || state.finished || dom.overlay.classList.contains('active'))return;
+    state.restartToken = Math.random();
+    const token = state.restartToken;
+    showOverlay('重新开始？', '当前进度将丢失', [
+      { icon: '✓', label: '确认', action: () => {
+        if (state.restartToken === token) {
+          restart();
+        }
+      }},
+      { icon: '✕', label: '取消', action: () => {
+        if (state.restartToken === token) {
+          state.restartToken = null;
+          dom.overlay.classList.remove('active');
+          GameAudio.sfx('button');
+        }
+      }}
+    ]);
+  }
+
+  function restart() {
+    state.restartToken = null;
+    dom.overlay.classList.remove('active');
+    startRun({ mode: state.mode });
+  }
+
+  function confirmFinish() {
+    if(state.animating || state.finished || dom.overlay.classList.contains('active'))return;
+    state.quitToken = Math.random();
+    const token = state.quitToken;
+    showOverlay('确认完成？', '结算当前分数', [
+      { icon: '✓', label: '确认', action: () => {
+        if (state.quitToken === token) {
+          finish();
+        }
+      }},
+      { icon: '✕', label: '取消', action: () => {
+        if (state.quitToken === token) {
+          state.quitToken = null;
+          dom.overlay.classList.remove('active');
+          GameAudio.sfx('button');
+        }
+      }}
+    ]);
+  }
+
+  function finish() {
+    if (state.finished || state.animating || !FX.running || FX.paused) return;
+    state.finished = true;
+    state.quitToken = null;
+
+    if (state.inviteMode && typeof GameInviteV0 !== 'undefined' && GameInviteV0.active()) {
+      GameInviteV0.finish(state.score);
+      quit();
+      return;
+    }
+
+    if (!state.inviteMode) {
+      saveBest(state.mode, state.score);
+    }
+
+    if (typeof Lobby !== 'undefined' && Lobby.reportResult) {
+      Lobby.reportResult({
+        stage: 0,
+        score: state.score,
+        stars: state.won ? 3 : 0,
+        coins: Math.floor(state.score / 50),
+        gems: 0,
+        win: state.won
+      });
+    }
+
+    quit();
+  }
+
+  function quit() {
+    dom.root.classList.remove('active');
+    roundToken++;clearTimeout(animationTimer);state.animating=false;pointerState.active=false;
+    FX.running=false;state.finished=true;state.phase='finished';
+
+    if (typeof GameAudio !== 'undefined') {
+      GameAudio.stop();
+    }
+  }
+
+  function renderBoard() {
+    dom.board.innerHTML = '';
+
+    for (let i = 0; i < state.size * state.size; i++) {
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      dom.board.appendChild(cell);
+    }
+
+    for (let r = 0; r < state.size; r++) {
+      for (let c = 0; c < state.size; c++) {
+        const value = state.grid[r][c];
+        if (value > 0) {
+          const tile = document.createElement('div');
+          tile.className = 'tile';
+          tile.dataset.value = value;
+          tile.textContent = value;
+          positionTile(tile, r, c);
+          dom.board.appendChild(tile);
+        }
       }
     }
   }
-  
-  tileAnims.forEach(anim => {
-    const pos = anim.getPos(tileSize, gridX, gridY, gap);
-    drawTile(ctx, anim.value, pos.x, pos.y, tileSize, 1);
-  });
-  
-  mergeAnims.forEach(anim => {
-    const x = gridX + anim.col * (tileSize + gap) + tileSize / 2;
-    const y = gridY + anim.row * (tileSize + gap) + tileSize / 2;
-    const scale = anim.getScale();
-    drawTile(ctx, grid[anim.row][anim.col], x, y, tileSize, scale);
-  });
-  
-  FX.drawFX(ctx);
-  FX.vignette(ctx);
-}
 
-// === START ===
-function startRun(sel) {
-  currentSel = sel;
-  
-  const stageConfig = [
-    {size: 4, target: 7, blockers: []},
-    {size: 4, target: 8, blockers: [{row:1,col:1}, {row:2,col:2}]},
-    {size: 5, target: 8, blockers: [{row:0,col:2}, {row:4,col:2}]},
-    {size: 5, target: 9, blockers: [{row:1,col:1}, {row:1,col:3}, {row:3,col:1}, {row:3,col:3}]},
-    {size: 5, target: 10, blockers: [{row:2,col:0}, {row:2,col:4}, {row:0,col:2}, {row:4,col:2}]},
-    {size: 5, target: 11, blockers: []}
-  ];
-  
-  const config = sel.mode === 'story' && sel.stage < stageConfig.length
-    ? stageConfig[sel.stage]
-    : {size: 4, target: 11, blockers: []};
-  
-  gridSize = config.size;
-  targetTile = config.target;
-  blockers = config.blockers;
-  
-  score = 0;
-  moveHistory = [];
-  tileAnims = [];
-  mergeAnims = [];
-  spawnAnims = [];
-  chibiState = 'idle';
-  chibiT = 0;
-  comboCurrent = 0;
-  comboTimer = 0;
-  
-  undoUses = 3 + (window.VIP && VIP.active() ? 2 : 0);
-  bombUses = 2;
-  shuffleUses = 1;
-  
-  undoBtn.right = W/2 - 105;
-  bombBtn.right = W/2 - 5;
-  shuffleBtn.right = W/2 + 95;
-  
-  tileSpriteCache.clear();
-  
-  initGrid();
-  
-  FX.running = true;
-  FX.loop(update, draw);
-}
+  function positionTile(el,r,c) {
+    const css=getComputedStyle(dom.board),pad=parseFloat(css.paddingLeft)||12,gap=parseFloat(css.gap)||8;
+    const size=(dom.board.clientWidth-2*pad-(state.size-1)*gap)/state.size;
+    el.style.left='0';el.style.top='0';el.style.width=size+'px';el.style.height=size+'px';
+    el.style.transform=`translate(${pad+c*(size+gap)}px,${pad+r*(size+gap)}px)`;
+    el.dataset.row=r;el.dataset.col=c;
+    el.style.fontSize=Math.min(size*.39,Math.max(15,size/(String(el.textContent).length*.67)))+'px';
+  }
 
-// === INIT ===
-const assets = [
-  'bg-garden','bg-sakura','bg-forest','bg-neon','bg-snow','bg-sky',
-  'li-chibi',
-  'item-heart','item-star','item-ice',
-  't2048-1','t2048-2','t2048-3','t2048-4','t2048-5','t2048-6','t2048-7','t2048-8','t2048-9','t2048-10','t2048-11'
-];
+  function getTileElement(r,c) { return dom.board.querySelector(`.tile[data-row="${r}"][data-col="${c}"]`); }
 
-FX.load(assets).then(() => {
-  window.Lobby.init({
-    id: 'lili-2048',
-    title: '栗栗的美食 2048',
-    orientation: 'portrait',
-    bg: ['bg-garden'],
-    modes: [
-      {id: 'story', name: '故事', icon: 'item-star'},
-      {id: 'endless', name: '无尽', icon: 'item-ice'}
-    ],
-    stages: [
-      {id: 's0', name: '初级', bg: 'bg-garden'},
-      {id: 's1', name: '入门', bg: 'bg-sakura'},
-      {id: 's2', name: '进阶', bg: 'bg-forest'},
-      {id: 's3', name: '挑战', bg: 'bg-neon'},
-      {id: 's4', name: '困难', bg: 'bg-snow'},
-      {id: 's5', name: '终极', bg: 'bg-sky'}
-    ],
-    chars: [
-      {id: 'li', name: '栗栗', img: 'li-chibi', chibi: 'li-chibi', hp: 100, atk: 80, speed: 90}
-    ],
-    skins: [
-      {id: 'default', char: 'li', name: '原味', filter: 'none', rarity: 'N'},
-      {id: 'sakura', char: 'li', name: '樱糖', filter: 'hue-rotate(340deg) saturate(1.2)', rarity: 'R', vip: true},
-      {id: 'starry', char: 'li', name: '星河', filter: 'hue-rotate(200deg) saturate(1.3) brightness(1.1)', rarity: 'SR', vip: true}
-    ],
-    currency: [
-      {id: 'coin', icon: 'item-heart'},
-      {id: 'gem', icon: 'item-star'}
-    ],
-    onStart: startRun,
-    onQuit: () => { FX.running = false; },
-    onSkinChange: (sel) => {
-      if (currentSel) currentSel.skin = sel.skin;
+  function updateDisplay() {
+    dom.scoreDisplay.textContent = state.score;
+    dom.bestDisplay.textContent = state.best;
+    dom.undoBadge.textContent = state.undoLeft;
+    dom.undoBtn.classList.toggle('disabled', state.undoLeft === 0 || state.undoStack.length === 0);
+    dom.undoBtn.disabled=state.undoLeft===0 || state.undoStack.length===0 || state.finished;
+
+    if (state.remaining !== null) {
+      dom.remainingDisplay.textContent = state.remaining;
     }
-  });
-});
+  }
 
-window.__game = {
-  state: () => ({
-    grid: grid.map(row => row.slice()),
-    score,
-    gridSize,
-    targetTile,
-    maxTile: Math.max(...grid.flat()),
-    emptyTiles: grid.flat().filter(v => v === 0).length,
-    powerups: {undo: undoUses, bomb: bombUses, shuffle: shuffleUses},
-    animating: tileAnims.length > 0
-  }),
-  move
-};
+  function showScoreFloater(gain) {
+    const display = gain;
 
+    const floater = document.createElement('div');
+    floater.className = 'score-floater';
+    floater.textContent = `+${display}`;
+    floater.style.left = '50%';
+    floater.style.top = '30%';
+    floater.style.transform = 'translateX(-50%)';
+    dom.root.appendChild(floater);
+
+    setTimeout(() => floater.remove(), 800);
+  }
+
+  window.__game = {
+    state: () => JSON.parse(JSON.stringify({
+      grid: state.grid,
+      score: state.score,
+      size: state.size,
+      mode: state.mode,
+      remaining: state.remaining,
+      undoLeft: state.undoLeft,
+      won: state.won,
+      continued: state.continued,
+      phase: state.phase,
+      animating: state.animating,
+      best: state.best
+    })),
+    move,
+    undo,
+    continueGame,
+    finish,
+    start: startRun
+  };
+
+  if (typeof FX !== 'undefined') {
+    FX.load(['bg-garden', 'li-chibi', 'item-star', 'item-ice', 'item-heart']).then(() => {
+      if (typeof Lobby !== 'undefined') {
+        Lobby.init({
+          id: 'lili-2048',
+          title: '栗栗的星糖2048',
+          orientation: 'portrait',
+          bg: ['bg-garden'],
+          modes: [
+            { id: 'classic', name: '经典模式', description: '4×4 无限制', icon: 'item-star' },
+            { id: 'expanded', name: '扩展模式', description: '5×5 无限制', icon: 'item-ice' },
+            { id: 'challenge', name: '挑战模式', description: '4×4 限60步', icon: 'item-heart' }
+          ],
+          stages: [{ id: 's0', name: '星糖工坊', bg: 'bg-garden' }],
+          chars: [{ id: 'li', name: '栗栗', img: 'li-chibi', chibi: 'li-chibi', hp: 100, atk: 80, speed: 90 }],
+          skins: [{id:'default',char:'li',name:'原味',filter:'none',rarity:'N'}, {id:'sakura',char:'li',name:'樱糖',filter:'hue-rotate(340deg) saturate(1.2)',rarity:'R',vip:true}, {id:'starry',char:'li',name:'星河',filter:'hue-rotate(200deg) saturate(1.3) brightness(1.1)',rarity:'SR',vip:true}],
+          currency: [{ id: 'coin', icon: 'item-heart' }, { id: 'gem', icon: 'item-star' }],
+          onStart: startRun,
+          onQuit: quit
+        });
+
+        if (typeof GameAudio !== 'undefined') {
+          GameAudio.mount();
+          GameAudio.setPauseCheck(() => {
+            return (typeof FX !== 'undefined' && (FX.paused || !FX.running));
+          });
+        }
+
+        initDOM();
+
+        if (typeof GameInviteV0 !== 'undefined') {
+          GameInviteV0.launch('lili-2048', startRun);
+        }
+      }
+    });
+  }
 })();
