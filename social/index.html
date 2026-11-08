@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,interactive-widget=resizes-content">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#0e1021">
+<title>星糖大厅 · 星糖宇宙</title>
+<link rel="stylesheet" href="./social.css">
+</head>
+<body class="sg-page">
+<header class="sg-top">
+  <a class="sg-back" href="../tools.html" aria-label="返回星糖宇宙">‹</a>
+  <div class="sg-title"><h1 id="sg-heading">星糖大厅</h1><span id="sg-status" class="sg-chip" aria-live="polite">连接中…</span></div>
+  <img class="sg-mascot" src="../assets/xing-chibi.webp" alt="" aria-hidden="true">
+</header>
+
+<div id="sg-banner" class="sg-banner" role="status" aria-live="polite" hidden></div>
+
+<main class="sg-main">
+  <!-- 大厅：默认首屏 -->
+  <section id="tab-lobby" class="sg-tab sg-lobby" data-tab="lobby" data-title="星糖大厅">
+    <div id="lobby-log" class="sg-log" role="log" aria-live="polite" aria-label="大厅消息">
+      <div class="sg-state"><img src="../assets/lan-chibi.webp" alt=""><p>正在载入大厅…</p></div>
+    </div>
+    <button id="lobby-newpill" class="sg-newpill" type="button" hidden>有新消息 ↓</button>
+  </section>
+
+  <!-- 会话列表：只列真实存在的入口；好友/公会无接口时为空态，不造假会话/未读 -->
+  <section id="tab-chats" class="sg-tab sg-scroll" data-tab="chats" data-title="会话" hidden>
+    <label class="sg-search"><span class="sg-sr">搜索已加载的大厅消息</span><input id="chat-search" type="search" maxlength="50" autocomplete="off" placeholder="搜索已加载的大厅消息（仅本机）"></label>
+    <div id="search-result" class="sg-list" aria-live="polite" hidden></div>
+    <div id="conv-list" class="sg-list" role="list">
+      <button type="button" id="conv-lobby" class="sg-conv" role="listitem" data-go-tab="lobby">
+        <img class="sg-avatar" src="../assets/xing-chibi.webp" alt="">
+        <span class="sg-conv-main"><b>星糖大厅</b><small id="conv-lobby-last" class="sg-muted">尚未载入</small></span>
+        <span id="conv-lobby-unread" class="sg-unread" hidden></span>
+      </button>
+      <h3 class="sg-sub">好友私信</h3>
+      <div id="dm-list" class="sg-list"><div class="sg-empty">尚未检测</div></div>
+      <button id="dm-more" class="sg-ghost sg-block" type="button" hidden>加载更多私信</button>
+      <h3 class="sg-sub">公会频道</h3>
+      <div id="guild-list" class="sg-list"><div class="sg-empty">尚未检测</div></div>
+      <button id="guild-more" class="sg-ghost sg-block" type="button" hidden>加载更多公会</button>
+    </div>
+    <div id="conv-view" class="sg-card" hidden>
+      <div class="sg-row"><button id="conv-back" class="sg-ghost" type="button">‹ 返回</button><h3 id="conv-title">会话</h3></div>
+      <button id="conv-older" class="sg-ghost sg-block" type="button" hidden>加载更早消息</button>
+      <div id="conv-log" class="sg-log sg-log-sm" role="log" aria-live="polite"></div>
+      <p class="sg-muted" id="conv-note">只读预览：发送暂未开放（接口契约尚未包含服务端内容审核）。</p>
+    </div>
+  </section>
+
+  <!-- 树洞 -->
+  <section id="tab-tree" class="sg-tab sg-scroll" data-tab="tree" data-title="匿名树洞" hidden>
+    <form id="post-form" class="sg-card sg-compose">
+      <label for="post-body">匿名说点什么 · 不显示昵称和头像</label>
+      <textarea id="post-body" maxlength="500" rows="3" placeholder="写下此刻的心情…不要留下联系方式或链接哦"></textarea>
+      <div class="sg-row"><small id="post-count">0/500</small><button type="submit" class="sg-primary">匿名发布</button></div>
+    </form>
+    <div id="post-list" class="sg-list" aria-live="polite"></div>
+    <button id="post-more" class="sg-ghost sg-block" hidden>加载更多</button>
+  </section>
+
+  <!-- 更多：资料 / 好友(逐步开放) / 公会(轮廓) / 管理 -->
+  <section id="tab-more" class="sg-tab sg-scroll" data-tab="more" data-title="更多" hidden>
+    <form id="profile-form" class="sg-card">
+      <h2>大厅昵称</h2>
+      <p class="sg-muted">昵称会显示在大厅发言旁，其他人可点昵称申请加好友。树洞永远匿名。</p>
+      <input id="nick" maxlength="16" placeholder="星糖旅人" aria-label="昵称">
+      <details class="sg-sub"><summary>兴趣与推荐（逐步开放）</summary>
+        <fieldset id="interests" class="sg-tags"><legend>兴趣（最多 8 个）</legend></fieldset>
+        <label class="sg-check"><input type="checkbox" id="discoverable"> 愿意被推荐 / 参与随机匹配（显示在线状态）</label>
+      </details>
+      <button class="sg-primary" type="submit">保存</button>
+    </form>
+
+    <div class="sg-card" id="look-card">
+      <h2>大厅外观 <em id="look-state" class="sg-badge sg-off">未读取</em></h2>
+      <p class="sg-muted">背景、气泡、徽章、挂件、头像统一由商城/VIP 系统管理与保存；大厅背景自动使用你装备的背景（仅你自己看到）。他人只会在你于商城勾选“公开外观”后看到你的徽章/气泡/挂件/头像，关闭后立即从旧消息上撤下。</p>
+      <p><a class="sg-ghost" href="../shop.html">去商城更换外观 / 公开设置</a></p>
+      <label class="sg-check"><input type="checkbox" id="fx-toggle" checked> 显示发言特效（仅影响本机）</label>
+      <p class="sg-muted">入场播报：未启用。</p>
+    </div>
+
+    <details class="sg-card sg-fold" id="friends-fold">
+      <summary><span>好友与私信</span><em class="sg-badge">逐步开放</em></summary>
+      <p class="sg-muted">好友功能仍在完善，可能调整。私信仅限双方同意后的好友。</p>
+      <h3>好友请求</h3><div id="req-list" class="sg-list"></div>
+      <h3>我的好友</h3><div id="friend-list" class="sg-list"></div>
+      <div id="chat" class="sg-chat" hidden>
+        <div class="sg-row"><h3 id="chat-title">私信</h3><button id="chat-close" class="sg-ghost" type="button">关闭</button></div>
+        <div id="chat-log" class="sg-log sg-log-sm" aria-live="polite"></div>
+        <form id="chat-form" class="sg-row"><input id="chat-input" maxlength="500" autocomplete="off" placeholder="友善聊天，禁止联系方式/链接" aria-label="私信内容"><button class="sg-primary" type="submit">发送</button></form>
+      </div>
+      <h3>随机匹配 / 推荐</h3>
+      <div class="sg-row"><button id="match-join" class="sg-ghost" type="button">开始匹配</button><button id="match-leave" class="sg-ghost" type="button" hidden>取消</button>
+        <label class="sg-check"><input type="checkbox" id="online-only"> 只看在线</label><button id="discover-load" class="sg-ghost" type="button">刷新推荐</button></div>
+      <div id="match-result" aria-live="polite"></div>
+      <div id="discover-list" class="sg-list"></div>
+    </details>
+
+    <details class="sg-card sg-fold">
+      <summary><span>公会群聊</span><em class="sg-badge sg-off">即将开放</em></summary>
+      <div class="sg-state sg-state-sm"><img src="../assets/mo-chibi.webp" alt=""><p>公会功能尚未启用：建群、邀请、审批与群聊会在后续版本逐步开放。<br>当前没有任何公会或成员数据。</p></div>
+    </details>
+
+    <div class="sg-card"><h2>已拉黑</h2><div id="block-list" class="sg-list"></div></div>
+
+    <details class="sg-card sg-fold" id="admin-fold" hidden>
+      <summary><span>管理员审核</span><em class="sg-badge">仅管理员</em></summary>
+      <div class="sg-row"><button id="admin-refresh" class="sg-ghost" type="button">刷新队列</button><button id="admin-bans" class="sg-ghost" type="button">封禁列表</button></div>
+      <div id="admin-list" class="sg-list"></div>
+    </details>
+
+    <div class="sg-card sg-muted"><h2>安全说明</h2><p>服务端会拦截常见联系方式、链接和违规词语，但无法保证穷尽；部分词语会进入人工审核。遇到骚扰请举报或拉黑。头像为站内占位图，不代表真实身份。</p></div>
+  </section>
+</main>
+
+<!-- 大厅输入区：固定在底部导航之上，适配键盘与安全区 -->
+<form id="lobby-form" class="sg-composer" data-for="lobby">
+  <p id="lobby-hint" class="sg-hint">你的昵称“<b id="lobby-nick">星糖旅人</b>”会公开显示，别人可点昵称申请好友 · 禁止联系方式与链接</p>
+  <div id="emoji-panel" class="sg-panel" role="group" aria-label="表情" hidden></div>
+  <div id="topic-panel" class="sg-panel sg-topics" role="group" aria-label="破冰话题（插入草稿，不会自动发送）" hidden></div>
+  <div class="sg-tools">
+    <button type="button" id="emoji-btn" class="sg-tool" aria-expanded="false" aria-controls="emoji-panel" aria-label="表情">☺</button>
+    <button type="button" id="topic-btn" class="sg-tool" aria-expanded="false" aria-controls="topic-panel">话题</button>
+    <button type="button" id="image-btn" class="sg-tool" aria-disabled="true" title="图片功能准备中">图片</button>
+    <small id="lobby-count" class="sg-muted" aria-live="off">0/300</small>
+  </div>
+  <div class="sg-composer-row">
+    <input id="lobby-input" maxlength="300" autocomplete="off" enterkeyhint="send" placeholder="和大家打个招呼…" aria-label="大厅消息">
+    <button id="lobby-send" class="sg-primary" type="submit">发送</button>
+  </div>
+</form>
+
+<nav class="sg-nav" role="tablist" aria-label="主导航">
+  <button role="tab" data-go="lobby" aria-selected="true"><span aria-hidden="true">✦</span>大厅</button>
+  <button role="tab" data-go="chats" aria-selected="false"><span aria-hidden="true">✉</span>会话<span id="nav-unread" class="sg-unread sg-dot" hidden></span></button>
+  <button role="tab" data-go="tree" aria-selected="false"><span aria-hidden="true">☾</span>树洞</button>
+  <button role="tab" data-go="more" aria-selected="false"><span aria-hidden="true">☰</span>更多</button>
+</nav>
+
+<dialog id="report-dialog" class="sg-dialog sg-sheet" aria-label="举报">
+  <form method="dialog">
+    <h2>举报</h2>
+    <select id="report-reason" aria-label="举报原因">
+      <option value="spam">广告/导流</option><option value="contact">留联系方式</option><option value="abuse">辱骂骚扰</option>
+      <option value="sexual">色情低俗</option><option value="illegal">违法违规</option><option value="other">其他</option>
+    </select>
+    <div class="sg-row"><button value="cancel" class="sg-ghost">取消</button><button value="ok" class="sg-primary">提交</button></div>
+  </form>
+</dialog>
+
+<dialog id="user-sheet" class="sg-dialog sg-sheet" aria-labelledby="sheet-title">
+  <form method="dialog">
+    <div class="sg-person"><img id="sheet-avatar" class="sg-avatar" src="../assets/avatar-whale.webp" alt=""><div><h2 id="sheet-title">用户</h2><small id="sheet-quote" class="sg-muted"></small></div></div>
+    <div class="sg-list">
+      <button value="friend" class="sg-primary">申请加好友（对方同意后才能私聊）</button>
+      <button value="report">举报这条消息</button>
+      <button value="block">拉黑此人</button>
+      <button value="cancel" class="sg-ghost">取消</button>
+    </div>
+  </form>
+</dialog>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0/dist/umd/supabase.min.js" crossorigin="anonymous"></script>
+<script src="./social-core.js"></script>
+<script src="./social-client.js"></script>
+<script src="./social.js"></script>
+</body>
+</html>
