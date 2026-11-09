@@ -124,6 +124,7 @@ if (typeof document !== 'undefined') {
   const btn = (text, action, id) => {
     const b = make('button', text, 'sq-action');
     b.type = 'button'; b.dataset.action = action; if (id != null) b.dataset.id = String(id);
+    b.setAttribute('data-pet-avoid', '');   // 动态操作钮：桌宠避让
     return b;
   };
 
@@ -259,7 +260,7 @@ if (typeof document !== 'undefined') {
     }
     if (post.mine) actions.appendChild(btn('删除', 'delete-post', post.post_id));
 
-    const reportWrap = make('span', null, 'sq-report');
+    const reportWrap = make('span', null, 'sq-report'); reportWrap.setAttribute('data-pet-avoid', '');
     const reason = make('select');
     reason.appendChild(make('option', '请选择举报原因'));
     ['垃圾广告', '不友善内容', '侵权', '其他'].forEach(x => reason.appendChild(make('option', x)));

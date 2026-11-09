@@ -30,7 +30,7 @@
     <div class="sg-card">
       <h2>兴趣匹配</h2>
       <div class="sg-row"><button id="match-join" class="sg-ghost" type="button">开始匹配</button><button id="match-leave" class="sg-ghost" type="button" hidden>取消</button>
-        <label class="sg-check"><input type="checkbox" id="online-only"> 只看在线</label><button id="discover-load" class="sg-ghost" type="button">刷新推荐</button></div>
+        <label class="sg-check"><input type="checkbox" id="online-only"> 只看在线</label><button id="discover-load" class="sg-ghost" type="button" data-pet-avoid>刷新推荐</button></div>
       <div id="match-result" aria-live="polite"></div>
       <div id="discover-list" class="sg-list"></div>
     </div>
@@ -77,7 +77,7 @@
       <div class="sg-row"><button id="conv-back" class="sg-ghost" type="button">‹ 返回</button><h3 id="conv-title">会话</h3><a class="sg-ghost" href="#skins">聊天外观</a></div>
       <button id="conv-older" class="sg-ghost sg-block" type="button" hidden>加载更早消息</button>
       <div id="conv-log" class="sg-log sg-log-sm" role="log" aria-live="polite"></div>
-      <form id="conv-form" data-pet-avoid class="sg-conv-bar" autocomplete="off"><button type="button" id="conv-game-btn" class="sg-icon-btn" aria-haspopup="dialog" aria-label="邀请好友玩游戏" disabled title="正在确认邀请能力">🎮</button><input id="conv-input" maxlength="500" placeholder="友善聊天 · 发送前服务端审核" aria-label="会话消息" disabled><button id="conv-emoji-btn" class="sg-icon-btn" type="button" aria-controls="emoji-pop" aria-label="表情">😊</button><button id="conv-sticker-btn" class="sg-icon-btn" type="button" aria-controls="sticker-pop" aria-label="贴纸">🖼️</button><button id="conv-send" class="sg-primary sg-send-btn" type="submit" disabled>发送</button><button id="conv-retry" class="sg-ghost sg-send-btn" type="button" hidden>重试</button></form>
+      <form id="conv-form" data-pet-avoid class="sg-conv-bar" autocomplete="off"><button type="button" id="conv-game-btn" class="sg-icon-btn" aria-haspopup="dialog" aria-label="邀请好友玩游戏" disabled title="正在确认邀请能力">🎮</button><input id="conv-input" maxlength="500" placeholder="友善聊天 · 发送前服务端审核" aria-label="会话消息" disabled><button id="conv-emoji-btn" class="sg-icon-btn" type="button" aria-controls="emoji-pop" aria-label="表情">😊</button><button id="conv-sticker-btn" class="sg-icon-btn" type="button" aria-controls="sticker-pop" aria-label="贴纸">🖼️</button><button id="conv-send" class="sg-primary sg-send-btn" data-pet-avoid type="submit" disabled>发送</button><button id="conv-retry" class="sg-ghost sg-send-btn" type="button" hidden>重试</button></form>
       <small id="conv-send-state" class="sg-send-state" role="status" aria-live="polite"></small>
       <p class="sg-muted" id="conv-note" role="status"></p>
     </div>
@@ -145,7 +145,7 @@
       </div>
     </div>
 
-    <nav class="sg-card sg-entry-grid" aria-label="我的功能">
+    <nav class="sg-card sg-entry-grid" aria-label="我的功能" data-pet-avoid>
       <a href="../shop.html"><span aria-hidden="true">🛍</span>星糖商城</a>
       <a href="../vip-center.html"><span aria-hidden="true">👑</span>VIP 中心</a>
       <a href="../gacha.html"><span aria-hidden="true">✧</span>星愿扭蛋</a>
@@ -228,14 +228,14 @@
   </div>
 </form>
 
-<nav class="sg-nav" role="tablist" aria-label="主导航">
+<nav class="sg-nav" role="tablist" aria-label="主导航" data-pet-avoid>
   <button role="tab" data-go="planet" aria-selected="true"><span aria-hidden="true">✦</span>星球</button>
   <button role="tab" data-go="square" aria-selected="false"><span aria-hidden="true">☾</span>广场</button>
   <button role="tab" data-go="chats" aria-selected="false"><span aria-hidden="true">✉</span>消息<span id="nav-unread" class="sg-unread sg-dot" hidden></span></button>
   <button role="tab" data-go="more" aria-selected="false"><span aria-hidden="true">✧</span>我的</button>
 </nav>
 
-<dialog id="report-dialog" class="sg-dialog sg-sheet" aria-label="举报">
+<dialog id="report-dialog" data-pet-avoid class="sg-dialog sg-sheet" aria-label="举报">
   <form method="dialog">
     <h2>举报</h2>
     <select id="report-reason" aria-label="举报原因">
@@ -246,7 +246,7 @@
   </form>
 </dialog>
 
-<dialog id="game-sheet" class="sg-dialog sg-sheet" aria-labelledby="game-sheet-h">
+<dialog id="game-sheet" data-pet-avoid class="sg-dialog sg-sheet" aria-labelledby="game-sheet-h">
   <form method="dialog">
     <h2 id="game-sheet-h">邀请一起玩</h2>
     <div id="game-pick" class="sg-game-picker" role="group" aria-label="选择游戏"></div>
@@ -256,7 +256,7 @@
   </form>
 </dialog>
 
-<dialog id="user-sheet" class="sg-dialog sg-sheet" aria-labelledby="sheet-title">
+<dialog id="user-sheet" data-pet-avoid class="sg-dialog sg-sheet" aria-labelledby="sheet-title">
   <form method="dialog">
     <div class="sg-person"><img id="sheet-avatar" class="sg-avatar" src="../assets/avatar-whale.webp" alt=""><div><h2 id="sheet-title">用户</h2><small id="sheet-quote" class="sg-muted"></small></div></div>
     <div class="sg-list">
