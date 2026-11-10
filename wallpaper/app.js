@@ -7,7 +7,7 @@
   const HIS_KEY = "yuanjing-wallpaper-history-v1";
   const THEME_KEY = "yuanjing-wallpaper-theme-v1";
   const WEEK = "日一二三四五六";
-  const ASSET_V = "20261110e";
+  const ASSET_V = "20261110f";
   const HOME_APPS = [
     ["电话", "#34c759", "☎"],
     ["信息", "#30d158", "✉"],
@@ -593,7 +593,7 @@
     if (dl) parts.push("已下载到本机");
     $("pv-counts").textContent = parts.length
       ? parts.join(" · ")
-      : "下载后请到系统相册里设为壁纸。左右滑动可切换。";
+      : "点图片可全屏预览，左右滑动可切换。下载后到系统相册里设为壁纸。";
   }
   function similarOf(item) {
     return state.data.wallpapers
@@ -603,6 +603,22 @@
   function currentIndex() {
     if (!state.current) return -1;
     return state.list.findIndex((w) => w.id === state.current.id);
+  }
+
+
+  function enterFull() {
+    const pv = $("preview");
+    pv.classList.add("full");
+    const el = document.documentElement;
+    try { if (el.requestFullscreen && !document.fullscreenElement) el.requestFullscreen({ navigationUI: "hide" }).catch(() => {}); } catch (e) {}
+    const hint = $("pv-full-hint");
+    hint.classList.add("show");
+    clearTimeout(state.fullHintTimer);
+    state.fullHintTimer = setTimeout(() => hint.classList.remove("show"), 1800);
+  }
+  function exitFull() {
+    $("preview").classList.remove("full");
+    try { if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => {}); } catch (e) {}
   }
 
   function openPreview(id, list) {
@@ -634,6 +650,7 @@
   }
 
   function closePreview(silent) {
+    exitFull();
     $("preview").hidden = true;
     document.body.style.overflow = "";
     clearInterval(state.clockTimer);
@@ -801,6 +818,16 @@
     document.body.addEventListener("click", onClick);
     $("btn-back").addEventListener("click", goBack);
     $("btn-close").addEventListener("click", () => closePreview());
+    $("btn-full").addEventListener("click", (e) => { e.stopPropagation(); enterFull(); });
+    $("pv-stage").addEventListener("click", (e) => {
+      if ($("preview").classList.contains("full")) { e.stopPropagation(); exitFull(); return; }
+      if (e.target.closest("button")) return;
+      enterFull();
+    });
+    document.addEventListener("fullscreenchange", () => {
+      if (!document.fullscreenElement) $("preview").classList.remove("full");
+    });
+
     $("btn-search").addEventListener("click", openSearch);
     $("btn-guide").addEventListener("click", openGuide);
     $("btn-fav").addEventListener("click", () => {

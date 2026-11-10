@@ -815,3 +815,22 @@ body.sheet-open .top {
   .pack-bar { max-width: 720px; left: 50%; right: auto; width: 720px; transform: translateX(-50%); }
 }
 .row-sec { scroll-margin-top: 64px; }
+
+/* 全屏预览 */
+.pv-full {
+  position: absolute; top: 12px; right: 12px; z-index: 6;
+  height: 34px; padding: 0 12px; border-radius: 17px; border: 0;
+  background: rgba(0,0,0,.45); color: #fff; font-size: 13px;
+}
+.pv-full-hint {
+  position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%);
+  z-index: 6; padding: 6px 12px; border-radius: 14px;
+  background: rgba(0,0,0,.45); color: #fff; font-size: 12px;
+  opacity: 0; pointer-events: none; transition: opacity .3s;
+}
+.preview.full .pv-bar { display: none; }
+.preview.full .pv-stage { height: 100vh; height: 100dvh; flex: none; }
+.preview.full .pv-close,
+.preview.full .pv-nav,
+.preview.full .pv-full { display: none; }
+.preview.full .pv-full-hint.show { opacity: 1; }
