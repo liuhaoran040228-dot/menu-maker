@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#16111f">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="星糖壁纸">
+  <meta name="description" content="星糖宇宙原创手机壁纸与主题包">
+  <title>星糖壁纸</title>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" type="image/png" href="./icons/favicon.png">
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="./app.css">
+</head>
+<body>
+  <header class="top">
+    <div class="top-in">
+      <h1>星糖壁纸</h1>
+      <p class="sub">星糖宇宙 · 原创插画</p>
+    </div>
+  </header>
+
+  <main id="main">
+    <section id="view-discover" class="view">
+      <article class="daily" id="daily"></article>
+      <nav class="cats" id="cats" aria-label="分类"></nav>
+      <div class="grid" id="grid"></div>
+    </section>
+
+    <section id="view-themes" class="view" hidden>
+      <header class="view-head">
+        <h2>主题包</h2>
+        <p>每张壁纸都配有从画面提取的主题色，点开即可预览。</p>
+      </header>
+      <div class="theme-list" id="themes"></div>
+    </section>
+
+    <section id="view-favs" class="view" hidden>
+      <header class="view-head">
+        <h2>我的收藏</h2>
+        <p id="fav-count"></p>
+      </header>
+      <div class="grid" id="fav-grid"></div>
+      <p class="empty" id="fav-empty" hidden>还没有收藏。<br>在发现页点一颗星，喜欢的壁纸会出现在这里。</p>
+    </section>
+  </main>
+
+  <nav class="tabbar" aria-label="主导航">
+    <button type="button" class="tab on" data-view="discover">
+      <span class="ico" aria-hidden="true">✧</span>
+      <span>发现</span>
+    </button>
+    <button type="button" class="tab" data-view="themes">
+      <span class="ico" aria-hidden="true">▣</span>
+      <span>主题包</span>
+    </button>
+    <button type="button" class="tab" data-view="favs">
+      <span class="ico" aria-hidden="true">★</span>
+      <span>收藏</span>
+    </button>
+  </nav>
+
+  <div id="preview" class="preview" hidden>
+    <div class="pv-stage">
+      <img id="pv-img" class="pv-img" alt="">
+      <div id="ov-lock" class="ov ov-lock">
+        <div class="lock-status">
+          <span class="lock-carrier">星糖</span>
+          <span class="lock-icons">●●● ☾</span>
+        </div>
+        <div class="lock-clock">
+          <div id="lock-time" class="lock-time">12:00</div>
+          <div id="lock-date" class="lock-date">1月1日 星期三</div>
+        </div>
+        <div class="lock-dock">
+          <span class="lock-btn lock-flash" aria-hidden="true"></span>
+          <span class="lock-btn lock-cam" aria-hidden="true"></span>
+        </div>
+      </div>
+      <div id="ov-home" class="ov ov-home" hidden>
+        <div class="home-status">
+          <span id="home-time">12:00</span>
+          <span>☾</span>
+        </div>
+        <div class="home-grid" id="home-grid"></div>
+        <div class="home-dock" id="home-dock"></div>
+      </div>
+    </div>
+    <div class="pv-bar">
+      <div class="pv-title">
+        <strong id="pv-name"></strong>
+        <span id="pv-cat"></span>
+      </div>
+      <div class="pv-modes" role="tablist" aria-label="预览模式">
+        <button type="button" class="mode on" data-mode="lock">锁屏</button>
+        <button type="button" class="mode" data-mode="home">桌面</button>
+        <button type="button" class="mode" data-mode="plain">原图</button>
+      </div>
+      <div class="pv-actions">
+        <button type="button" class="btn ghost" id="btn-close">关闭</button>
+        <button type="button" class="btn ghost" id="btn-fav">收藏</button>
+        <button type="button" class="btn primary" id="btn-dl">下载壁纸</button>
+      </div>
+      <p class="pv-hint">下载后请在系统相册里设为壁纸。苹果手机请长按图片保存。</p>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" hidden></div>
+  <script src="./app.js"></script>
+</body>
+</html>

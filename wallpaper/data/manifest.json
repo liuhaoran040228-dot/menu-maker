@@ -1,0 +1,958 @@
+{
+  "app": "星糖壁纸",
+  "version": "20261110",
+  "width": 1080,
+  "height": 2340,
+  "categories": [
+    {
+      "id": "dream",
+      "name": "星糖梦境",
+      "desc": "暖街、花灯、星堡与海边的风景画"
+    },
+    {
+      "id": "xiuxian",
+      "name": "古风修仙",
+      "desc": "仙山云海、雷劫与秘境"
+    },
+    {
+      "id": "flower",
+      "name": "花间旅记",
+      "desc": "樱之鸟居、水晶宫殿与海边晴沙"
+    },
+    {
+      "id": "scroll",
+      "name": "星夜绘卷",
+      "desc": "少女与星空、极光、鲸落的宽幅插画"
+    },
+    {
+      "id": "glam",
+      "name": "星耀华裳",
+      "desc": "五位星糖角色的华服立绘"
+    },
+    {
+      "id": "stage",
+      "name": "幻境舞台",
+      "desc": "星舞台、花道与银河剧场"
+    }
+  ],
+  "wallpapers": [
+    {
+      "id": "warm-town",
+      "name": "暖阳小镇",
+      "themeName": "暖阳小镇",
+      "category": "dream",
+      "file": "wallpapers/warm-town.webp",
+      "thumb": "thumbs/warm-town.webp",
+      "width": 1080,
+      "height": 2340,
+      "accent": "#be906f",
+      "colors": [
+        "#be906f",
+        "#ecc49b",
+        "#805a3a",
+        "#97a8dd"
+      ]
+    },
+    {
+      "id": "dusk-market",
+      "name": "黄昏集市",
+      "themeName": "黄昏集市",
+      "category": "dream",
+      "file": "wallpapers/dusk-market.webp",
+      "thumb": "thumbs/dusk-market.webp",
+      "width": 1080,
+      "height": 2340,
+      "accent": "#c78c6c",
+      "colors": [
+        "#c78c6c",
+        "#f2bc8c",
+        "#965f3c",
+        "#bfa2b0"
+      ]
+    },
+    {
+      "id": "sakura-dusk",
+      "name": "樱庭暮色",
+      "themeName": "樱庭暮色",
+      "category": "dream",
+      "file": "wallpapers/sakura-dusk.webp",
+      "thumb": "thumbs/sakura-dusk.webp",
+      "width": 1080,
+      "height": 2340,
+      "accent": "#cc94ad",
+      "colors": [
+        "#cc94ad",
+        "#906d96",
+        "#594e7f",
+        "#854e51"
+      ]
+    },
+    {
+      "id": "lantern-bridge",
+      "name": "花灯古桥",
+      "themeName": "花灯古桥",
+      "category": "dream",
+      "file": "wallpapers/lantern-bridge.webp",
+      "thumb": "thumbs/lantern-bridge.webp",
+      "width": 1080,
+      "height": 2340,
+      "accent": "#91709d",
+      "colors": [
+        "#91709d",
+        "#524b85",
+        "#c091a7",
+        "#8c586c"
+      ]
+    },
+    {
+      "id": "moon-corridor",
+      "name": "月下回廊",
+      "themeName": "月下回廊",
+      "category": "dream",
+      "file": "wallpapers/moon-corridor.webp",
+      "thumb": "thumbs/moon-corridor.webp",
+      "width": 1080,
+      "height": 2340,
+      "accent": "#a77281",
+      "colors": [
+        "#a77281",
+        "#d79a99",
+        "#79423f",
+        "#72628e"
+      ]
+    },
+    {
+      "id": "spring-pavilion",
+      "name": "春夜亭桥",
+      "themeName": "春夜亭桥",
+      "category": "dream",
+      "file": "wallpapers/spring-pavilion.webp",
+      "thumb": "thumbs/spring-pavilion.webp",
+      "width": 1080,
+      "height": 2340,
+      "accent": "#a48095",
+      "colors": [
+        "#a48095",
+        "#826781",
+        "#dca6a3",
+        "#6c464a"
+      ]
+    },
+    {
+      "id": "autumn-lanterns",
+      "name": "秋林灯影",
+      "themeName": "秋林灯影",
+      "category": "dream",
+      "file": "wallpapers/autumn-lanterns.webp",
+      "thumb": "thumbs/autumn-lanterns.webp",
+      "width": 1080,
+      "height": 2340,
+      "accent": "#986e80",
+      "colors": [
+        "#986e80",
+        "#4c4d91",
+        "#d39f9d",
+        "#6b434b"
+      ]
+    },
+    {
+      "id": "autumn-path",
+      "name": "秋日林道",
+      "themeName": "秋日林道",
+      "category": "dream",
+      "file": "wallpapers/autumn-path.webp",
+      "thumb": "thumbs/autumn-path.webp",
+      "width": 1080,
+      "height": 2340,
+      "accent": "#d8b289",
+      "colors": [
+        "#d8b289",
+        "#a27e63",
+        "#a5b5e5",
+        "#75614b"
+      ]
+    },
+    {
+      "id": "golden-trail",
+      "name": "金秋小径",
+      "themeName": "金秋小径",
+      "category": "dream",
+      "file": "wallpapers/golden-trail.webp",
+      "thumb": "thumbs/golden-trail.webp",
+      "width": 1080,
+      "height": 2340,
+      "accent": "#d9a876",
+      "colors": [
+        "#d9a876",
+        "#9f7e57",
+        "#6f573a",
+        "#d0cfd2"
+      ]
+    },
+    {
+      "id": "candy-castle",
+      "name": "甜梦城堡",
+      "themeName": "甜梦城堡",
+      "category": "dream",
+      "file": "wallpapers/candy-castle.webp",
+      "thumb": "thumbs/candy-castle.webp",
+      "width": 1080,
+      "height": 2340,
+      "accent": "#e5acaa",
+      "colors": [
+        "#e5acaa",
+        "#cd9088",
+        "#f6c6c2",
+        "#a37166"
+      ]
+    },
+    {
+      "id": "candy-land",
+      "name": "糖果乐园",
+      "themeName": "糖果乐园",
+      "category": "dream",
+      "file": "wallpapers/candy-land.webp",
+      "thumb": "thumbs/candy-land.webp",
+      "width": 1080,
+      "height": 2340,
+      "accent": "#e6aa9d",
+      "colors": [
+        "#e6aa9d",
+        "#cd8c7f",
+        "#efc1c6",
+        "#a56757"
+      ]
+    },
+    {
+      "id": "seaside-stand",
+      "name": "海岸甜站",
+      "themeName": "海岸甜站",
+      "category": "dream",
+      "file": "wallpapers/seaside-stand.webp",
+      "thumb": "thumbs/seaside-stand.webp",
+      "width": 1080,
+      "height": 2340,
+      "accent": "#6eb1f7",
+      "colors": [
+        "#6eb1f7",
+        "#eac6bd",
+        "#b7d1f1",
+        "#a595a4"
+      ]
+    },
+    {
+      "id": "sunny-beach",
+      "name": "晴空海滨",
+      "themeName": "晴空海滨",
+      "category": "dream",
+      "file": "wallpapers/sunny-beach.webp",
+      "thumb": "thumbs/sunny-beach.webp",
+      "width": 1080,
+      "height": 2340,
+      "accent": "#55a5f6",
+      "colors": [
+        "#55a5f6",
+        "#9ccbf4",
+        "#f1d1ca",
+        "#aa9ba4"
+      ]
+    },
+    {
+      "id": "moonlit-castle",
+      "name": "月夜星堡",
+      "themeName": "月夜星堡",
+      "category": "dream",
+      "file": "wallpapers/moonlit-castle.webp",
+      "thumb": "thumbs/moonlit-castle.webp",
+      "width": 1080,
+      "height": 2340,
+      "accent": "#9578b4",
+      "colors": [
+        "#9578b4",
+        "#63569b",
+        "#252b67",
+        "#c3a1d1"
+      ]
+    },
+    {
+      "id": "star-castle",
+      "name": "星河城堡",
+      "themeName": "星河城堡",
+      "category": "dream",
+      "file": "wallpapers/star-castle.webp",
+      "thumb": "thumbs/star-castle.webp",
+      "width": 1080,
+      "height": 2340,
+      "accent": "#263479",
+      "colors": [
+        "#263479",
+        "#9685b8",
+        "#6b6294",
+        "#c4a7c7"
+      ]
+    },
+    {
+      "id": "amethyst-realm",
+      "name": "紫晶星域",
+      "themeName": "紫晶星域",
+      "category": "dream",
+      "file": "wallpapers/amethyst-realm.webp",
+      "thumb": "thumbs/amethyst-realm.webp",
+      "width": 1080,
+      "height": 2340,
+      "accent": "#755fd1",
+      "colors": [
+        "#755fd1",
+        "#5142ab",
+        "#a88eef",
+        "#2a246f"
+      ]
+    },
+    {
+      "id": "fallen-star-city",
+      "name": "星落遗都",
+      "themeName": "星落遗都",
+      "category": "dream",
+      "file": "wallpapers/fallen-star-city.webp",
+      "thumb": "thumbs/fallen-star-city.webp",
+      "width": 1080,
+      "height": 2340,
+      "accent": "#746ec4",
+      "colors": [
+        "#746ec4",
+        "#504aa2",
+        "#a499e2",
+        "#29286f"
+      ]
+    },
+    {
+      "id": "dusk-garden",
+      "name": "暮色花园",
+      "themeName": "暮色花园",
+      "category": "dream",
+      "file": "wallpapers/dusk-garden.webp",
+      "thumb": "thumbs/dusk-garden.webp",
+      "width": 1080,
+      "height": 2340,
+      "accent": "#6494ec",
+      "colors": [
+        "#6494ec",
+        "#afbfe7",
+        "#e3cab8",
+        "#908891"
+      ]
+    },
+    {
+      "id": "dawn-courtyard",
+      "name": "晨曦庭园",
+      "themeName": "晨曦庭园",
+      "category": "dream",
+      "file": "wallpapers/dawn-courtyard.webp",
+      "thumb": "thumbs/dawn-courtyard.webp",
+      "width": 1080,
+      "height": 2340,
+      "accent": "#92c0f6",
+      "colors": [
+        "#92c0f6",
+        "#989bae",
+        "#e0d3cf",
+        "#777d7e"
+      ]
+    },
+    {
+      "id": "spirit-woods",
+      "name": "灵木秘境",
+      "themeName": "灵木秘境",
+      "category": "xiuxian",
+      "file": "wallpapers/spirit-woods.webp",
+      "thumb": "thumbs/spirit-woods.webp",
+      "width": 1080,
+      "height": 2340,
+      "accent": "#6d7acd",
+      "colors": [
+        "#6d7acd",
+        "#585c9a",
+        "#9ea3e3",
+        "#353c6e"
+      ]
+    },
+    {
+      "id": "grand-hall",
+      "name": "太虚殿堂",
+      "themeName": "太虚殿堂",
+      "category": "xiuxian",
+      "file": "wallpapers/grand-hall.webp",
+      "thumb": "thumbs/grand-hall.webp",
+      "width": 1080,
+      "height": 2340,
+      "accent": "#417993",
+      "colors": [
+        "#417993",
+        "#6eb7c0",
+        "#274f68",
+        "#142c3a"
+      ]
+    },
+    {
+      "id": "ice-palace",
+      "name": "极寒仙宫",
+      "themeName": "极寒仙宫",
+      "category": "xiuxian",
+      "file": "wallpapers/ice-palace.webp",
+      "thumb": "thumbs/ice-palace.webp",
+      "width": 1080,
+      "height": 2340,
+      "accent": "#4b7dc7",
+      "colors": [
+        "#4b7dc7",
+        "#76a1e0",
+        "#1b3d89",
+        "#a8c5f1"
+      ]
+    },
+    {
+      "id": "cloud-gate",
+      "name": "云中仙门",
+      "themeName": "云中仙门",
+      "category": "xiuxian",
+      "file": "wallpapers/cloud-gate.webp",
+      "thumb": "thumbs/cloud-gate.webp",
+      "width": 1080,
+      "height": 2340,
+      "accent": "#7a82a3",
+      "colors": [
+        "#7a82a3",
+        "#795657",
+        "#ae9eaf",
+        "#d3c1c7"
+      ]
+    },
+    {
+      "id": "three-realms",
+      "name": "三千世界",
+      "themeName": "三千世界",
+      "category": "xiuxian",
+      "file": "wallpapers/three-realms.webp",
+      "thumb": "thumbs/three-realms.webp",
+      "width": 1080,
+      "height": 2340,
+      "accent": "#b99888",
+      "colors": [
+        "#b99888",
+        "#9095b8",
+        "#70677b",
+        "#d4c1c2"
+      ]
+    },
+    {
+      "id": "ancient-ruins",
+      "name": "古道遗迹",
+      "themeName": "古道遗迹",
+      "category": "xiuxian",
+      "file": "wallpapers/ancient-ruins.webp",
+      "thumb": "thumbs/ancient-ruins.webp",
+      "width": 1080,
+      "height": 2340,
+      "accent": "#887daf",
+      "colors": [
+        "#887daf",
+        "#ac9ece",
+        "#5a5183",
+        "#cbbae1"
+      ]
+    },
+    {
+      "id": "sunrise-peak",
+      "name": "仙山朝阳",
+      "themeName": "仙山朝阳",
+      "category": "xiuxian",
+      "file": "wallpapers/sunrise-peak.webp",
+      "thumb": "thumbs/sunrise-peak.webp",
+      "width": 1080,
+      "height": 2340,
+      "accent": "#e5cfb9",
+      "colors": [
+        "#e5cfb9",
+        "#b8a28d",
+        "#97a4bc",
+        "#7d756d"
+      ]
+    },
+    {
+      "id": "thunder-sky",
+      "name": "雷劫苍穹",
+      "themeName": "雷劫苍穹",
+      "category": "xiuxian",
+      "file": "wallpapers/thunder-sky.webp",
+      "thumb": "thumbs/thunder-sky.webp",
+      "width": 1080,
+      "height": 2340,
+      "accent": "#7b5d9a",
+      "colors": [
+        "#7b5d9a",
+        "#473661",
+        "#96645f",
+        "#d0a3a3"
+      ]
+    },
+    {
+      "id": "lava-mountain",
+      "name": "熔火灵山",
+      "themeName": "熔火灵山",
+      "category": "xiuxian",
+      "file": "wallpapers/lava-mountain.webp",
+      "thumb": "thumbs/lava-mountain.webp",
+      "width": 1080,
+      "height": 2340,
+      "accent": "#e45b34",
+      "colors": [
+        "#e45b34",
+        "#9c3f3f",
+        "#e59f6e",
+        "#622329"
+      ]
+    },
+    {
+      "id": "blue-shore",
+      "name": "碧海晴沙",
+      "themeName": "碧海晴沙",
+      "category": "flower",
+      "file": "wallpapers/blue-shore.webp",
+      "thumb": "thumbs/blue-shore.webp",
+      "width": 1080,
+      "height": 2340,
+      "accent": "#4485cd",
+      "colors": [
+        "#4485cd",
+        "#67b3e8",
+        "#a1cae7",
+        "#dcdadd"
+      ]
+    },
+    {
+      "id": "violet-city",
+      "name": "紫霞都城",
+      "themeName": "紫霞都城",
+      "category": "flower",
+      "file": "wallpapers/violet-city.webp",
+      "thumb": "thumbs/violet-city.webp",
+      "width": 1080,
+      "height": 2340,
+      "accent": "#6e6db6",
+      "colors": [
+        "#6e6db6",
+        "#4c4f91",
+        "#192b61",
+        "#aaa6df"
+      ]
+    },
+    {
+      "id": "cloud-palace",
+      "name": "云端仙阙",
+      "themeName": "云端仙阙",
+      "category": "flower",
+      "file": "wallpapers/cloud-palace.webp",
+      "thumb": "thumbs/cloud-palace.webp",
+      "width": 1080,
+      "height": 2340,
+      "accent": "#c2a091",
+      "colors": [
+        "#c2a091",
+        "#e6cbc2",
+        "#7a86ad",
+        "#b5b6d0"
+      ]
+    },
+    {
+      "id": "rose-garden",
+      "name": "玫瑰花园",
+      "themeName": "玫瑰花园",
+      "category": "flower",
+      "file": "wallpapers/rose-garden.webp",
+      "thumb": "thumbs/rose-garden.webp",
+      "width": 1080,
+      "height": 2340,
+      "accent": "#eeaf96",
+      "colors": [
+        "#eeaf96",
+        "#c68d91",
+        "#99655f",
+        "#8d73a6"
+      ]
+    },
+    {
+      "id": "star-hall",
+      "name": "星糖大厅",
+      "themeName": "星糖大厅",
+      "category": "flower",
+      "file": "wallpapers/star-hall.webp",
+      "thumb": "thumbs/star-hall.webp",
+      "width": 1080,
+      "height": 2340,
+      "accent": "#d69b8d",
+      "colors": [
+        "#d69b8d",
+        "#e6b1a4",
+        "#be7d73",
+        "#f3ccc2"
+      ]
+    },
+    {
+      "id": "crystal-palace",
+      "name": "水晶宫殿",
+      "themeName": "水晶宫殿",
+      "category": "flower",
+      "file": "wallpapers/crystal-palace.webp",
+      "thumb": "thumbs/crystal-palace.webp",
+      "width": 1080,
+      "height": 2340,
+      "accent": "#eaa7a5",
+      "colors": [
+        "#eaa7a5",
+        "#d68d8d",
+        "#f4bbbb",
+        "#edced6"
+      ]
+    },
+    {
+      "id": "sakura-torii",
+      "name": "樱之鸟居",
+      "themeName": "樱之鸟居",
+      "category": "flower",
+      "file": "wallpapers/sakura-torii.webp",
+      "thumb": "thumbs/sakura-torii.webp",
+      "width": 1080,
+      "height": 2340,
+      "accent": "#77a3f9",
+      "colors": [
+        "#77a3f9",
+        "#a785b2",
+        "#7e5d84",
+        "#dbb6da"
+      ]
+    },
+    {
+      "id": "star-court",
+      "name": "星海之庭",
+      "themeName": "星海之庭",
+      "category": "flower",
+      "file": "wallpapers/star-court.webp",
+      "thumb": "thumbs/star-court.webp",
+      "width": 1080,
+      "height": 2340,
+      "accent": "#565a9a",
+      "colors": [
+        "#565a9a",
+        "#797cba",
+        "#222e70",
+        "#aea5d1"
+      ]
+    },
+    {
+      "id": "soft-studio",
+      "name": "柔光画室",
+      "themeName": "柔光画室",
+      "category": "flower",
+      "file": "wallpapers/soft-studio.webp",
+      "thumb": "thumbs/soft-studio.webp",
+      "width": 1080,
+      "height": 2340,
+      "accent": "#e1b9c3",
+      "colors": [
+        "#e1b9c3",
+        "#cca1ad",
+        "#eaceda",
+        "#a484a4"
+      ]
+    },
+    {
+      "id": "whale-dusk",
+      "name": "鲸落夕海",
+      "themeName": "鲸落夕海",
+      "category": "scroll",
+      "file": "wallpapers/whale-dusk.webp",
+      "thumb": "thumbs/whale-dusk.webp",
+      "width": 1080,
+      "height": 2340,
+      "accent": "#ce89a9",
+      "colors": [
+        "#ce89a9",
+        "#b66289",
+        "#e9aebe",
+        "#7378b7"
+      ]
+    },
+    {
+      "id": "star-observatory",
+      "name": "星象夜话",
+      "themeName": "星象夜话",
+      "category": "scroll",
+      "file": "wallpapers/star-observatory.webp",
+      "thumb": "thumbs/star-observatory.webp",
+      "width": 1080,
+      "height": 2340,
+      "accent": "#eb9bb6",
+      "colors": [
+        "#eb9bb6",
+        "#a33756",
+        "#ce6e8b",
+        "#f7bed0"
+      ]
+    },
+    {
+      "id": "neon-night",
+      "name": "霓虹夜曲",
+      "themeName": "霓虹夜曲",
+      "category": "scroll",
+      "file": "wallpapers/neon-night.webp",
+      "thumb": "thumbs/neon-night.webp",
+      "width": 1080,
+      "height": 2340,
+      "accent": "#695589",
+      "colors": [
+        "#695589",
+        "#322e65",
+        "#9c7ca9",
+        "#c7b4d8"
+      ]
+    },
+    {
+      "id": "hex-walk",
+      "name": "星咒夜行",
+      "themeName": "星咒夜行",
+      "category": "scroll",
+      "file": "wallpapers/hex-walk.webp",
+      "thumb": "thumbs/hex-walk.webp",
+      "width": 1080,
+      "height": 2340,
+      "accent": "#4f48b5",
+      "colors": [
+        "#4f48b5",
+        "#579df0",
+        "#c573eb",
+        "#292a76"
+      ]
+    },
+    {
+      "id": "ice-aria",
+      "name": "冰晶咏叹",
+      "themeName": "冰晶咏叹",
+      "category": "scroll",
+      "file": "wallpapers/ice-aria.webp",
+      "thumb": "thumbs/ice-aria.webp",
+      "width": 1080,
+      "height": 2340,
+      "accent": "#6f9ddb",
+      "colors": [
+        "#6f9ddb",
+        "#2778c8",
+        "#9fafe0",
+        "#ccc4e6"
+      ]
+    },
+    {
+      "id": "moon-prayer",
+      "name": "月桂祈愿",
+      "themeName": "月桂祈愿",
+      "category": "scroll",
+      "file": "wallpapers/moon-prayer.webp",
+      "thumb": "thumbs/moon-prayer.webp",
+      "width": 1080,
+      "height": 2340,
+      "accent": "#cbaba8",
+      "colors": [
+        "#cbaba8",
+        "#a58780",
+        "#e3c5bf",
+        "#2f344b"
+      ]
+    },
+    {
+      "id": "aurora-road",
+      "name": "辉夜长路",
+      "themeName": "辉夜长路",
+      "category": "scroll",
+      "file": "wallpapers/aurora-road.webp",
+      "thumb": "thumbs/aurora-road.webp",
+      "width": 1080,
+      "height": 2340,
+      "accent": "#47c7d2",
+      "colors": [
+        "#47c7d2",
+        "#42589a",
+        "#9a84c0",
+        "#d3b7df"
+      ]
+    },
+    {
+      "id": "wisteria-night",
+      "name": "紫藤夜宴",
+      "themeName": "紫藤夜宴",
+      "category": "scroll",
+      "file": "wallpapers/wisteria-night.webp",
+      "thumb": "thumbs/wisteria-night.webp",
+      "width": 1080,
+      "height": 2340,
+      "accent": "#b484ae",
+      "colors": [
+        "#b484ae",
+        "#875f8a",
+        "#e3b7c8",
+        "#52376c"
+      ]
+    },
+    {
+      "id": "foxfire-gown",
+      "name": "狐火华裳",
+      "themeName": "狐火华裳",
+      "category": "glam",
+      "file": "wallpapers/foxfire-gown.webp",
+      "thumb": "thumbs/foxfire-gown.webp",
+      "width": 1080,
+      "height": 2340,
+      "accent": "#de7747",
+      "colors": [
+        "#de7747",
+        "#b54b2d",
+        "#ebb28f",
+        "#7f2716"
+      ]
+    },
+    {
+      "id": "ice-tide-gown",
+      "name": "冰澜华裳",
+      "themeName": "冰澜华裳",
+      "category": "glam",
+      "file": "wallpapers/ice-tide-gown.webp",
+      "thumb": "thumbs/ice-tide-gown.webp",
+      "width": 1080,
+      "height": 2340,
+      "accent": "#5d95c9",
+      "colors": [
+        "#5d95c9",
+        "#8ab4db",
+        "#b5d3eb",
+        "#386188"
+      ]
+    },
+    {
+      "id": "golden-gown",
+      "name": "金晖华裳",
+      "themeName": "金晖华裳",
+      "category": "glam",
+      "file": "wallpapers/golden-gown.webp",
+      "thumb": "thumbs/golden-gown.webp",
+      "width": 1080,
+      "height": 2340,
+      "accent": "#d8b7a5",
+      "colors": [
+        "#d8b7a5",
+        "#be9889",
+        "#ead0be",
+        "#896256"
+      ]
+    },
+    {
+      "id": "jade-wing-gown",
+      "name": "翠羽华裳",
+      "themeName": "翠羽华裳",
+      "category": "glam",
+      "file": "wallpapers/jade-wing-gown.webp",
+      "thumb": "thumbs/jade-wing-gown.webp",
+      "width": 1080,
+      "height": 2340,
+      "accent": "#bdb9a1",
+      "colors": [
+        "#bdb9a1",
+        "#d9d3bb",
+        "#9b9b83",
+        "#afb8c7"
+      ]
+    },
+    {
+      "id": "star-crown-gown",
+      "name": "星冕华裳",
+      "themeName": "星冕华裳",
+      "category": "glam",
+      "file": "wallpapers/star-crown-gown.webp",
+      "thumb": "thumbs/star-crown-gown.webp",
+      "width": 1080,
+      "height": 2340,
+      "accent": "#675876",
+      "colors": [
+        "#675876",
+        "#968297",
+        "#352f4c",
+        "#c1adbe"
+      ]
+    },
+    {
+      "id": "star-stage",
+      "name": "星舞台",
+      "themeName": "星舞台",
+      "category": "stage",
+      "file": "wallpapers/star-stage.webp",
+      "thumb": "thumbs/star-stage.webp",
+      "width": 1080,
+      "height": 2340,
+      "accent": "#756ed6",
+      "colors": [
+        "#756ed6",
+        "#424aa7",
+        "#b7a0e7",
+        "#232661"
+      ]
+    },
+    {
+      "id": "loot-valley",
+      "name": "秘境谷地",
+      "themeName": "秘境谷地",
+      "category": "stage",
+      "file": "wallpapers/loot-valley.webp",
+      "thumb": "thumbs/loot-valley.webp",
+      "width": 1080,
+      "height": 2340,
+      "accent": "#2b86f3",
+      "colors": [
+        "#2b86f3",
+        "#7eaad8",
+        "#4d6c77",
+        "#c3cfaa"
+      ]
+    },
+    {
+      "id": "flower-road",
+      "name": "花道晚霞",
+      "themeName": "花道晚霞",
+      "category": "stage",
+      "file": "wallpapers/flower-road.webp",
+      "thumb": "thumbs/flower-road.webp",
+      "width": 1080,
+      "height": 2340,
+      "accent": "#d47c9f",
+      "colors": [
+        "#d47c9f",
+        "#f6a89b",
+        "#ab5b75",
+        "#854156"
+      ]
+    },
+    {
+      "id": "galaxy-theater",
+      "name": "银河剧场",
+      "themeName": "银河剧场",
+      "category": "stage",
+      "file": "wallpapers/galaxy-theater.webp",
+      "thumb": "thumbs/galaxy-theater.webp",
+      "width": 1080,
+      "height": 2340,
+      "accent": "#575ead",
+      "colors": [
+        "#575ead",
+        "#8b87c8",
+        "#1d2a6c",
+        "#c7b7dc"
+      ]
+    }
+  ]
+}
