@@ -215,7 +215,7 @@
     }
     // 弹层互斥：同一时间只开一个（含 social.js 的 emoji/topic 面板）；切 tab / hashchange / Escape / 外点关闭；
     // 打开时定位到输入区上方，不遮挡工具按钮。
-    const POPS = [['emoji-more-btn', 'emoji-pop'], ['sticker-btn', 'sticker-pop'], ['emoji-btn', 'emoji-panel'], ['topic-btn', 'topic-panel']];
+    const POPS = [['emoji-more-btn', 'emoji-pop'], ['sticker-btn', 'sticker-pop'], ['emoji-btn', 'emoji-panel'], ['topic-btn', 'topic-panel'], ['plus-btn', 'plus-panel'], ['conv-plus-btn', 'conv-plus-panel'], ['conv-sticker-btn', 'sticker-pop']];
     function closePops(except) {
       POPS.forEach(([b, p]) => { const pe = document.getElementById(p), be = document.getElementById(b);
         if (pe && pe !== except && !pe.hidden) { pe.hidden = true; if (be) be.setAttribute('aria-expanded', 'false'); } });
@@ -241,7 +241,7 @@
     document.addEventListener('keydown', e => { if (e.key === 'Escape') closePops(null); });
     document.addEventListener('click', e => {
       const t = e.target; if (!t || !t.closest) return;
-      if (t.closest('.sg-pop, .sg-panel, #emoji-more-btn, #sticker-btn, #emoji-btn, #topic-btn, #conv-sticker-btn, #conv-emoji-btn')) return;
+      if (t.closest('.sg-pop, .sg-panel, .sg-chat-menu, #emoji-more-btn, #sticker-btn, #emoji-btn, #topic-btn, #plus-btn, #conv-plus-btn, #lobby-more-btn, #conv-more-btn, #conv-sticker-btn, #conv-emoji-btn')) return;
       ['emoji-pop', 'sticker-pop'].forEach(p => { const pe = document.getElementById(p); if (pe && !pe.hidden) togglePop(document.getElementById(p === 'emoji-pop' ? 'emoji-more-btn' : 'sticker-btn') || pe, pe, false); });
     });
     root.addEventListener('sg-tab', () => closePops(null));

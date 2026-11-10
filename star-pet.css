@@ -12,4 +12,7 @@
 /* Transient chat dock; independent of the persisted user hide preference. */
 #star-pet.sp-thread-docked{transform:none!important;width:0;height:0}
 #star-pet.sp-thread-docked>.sp-body,#star-pet.sp-thread-docked>.sp-controls,#star-pet.sp-thread-docked>.sp-restore,#star-pet.sp-thread-docked>.sp-menu,#star-pet.sp-thread-docked>.sp-bubble{display:none!important}
-#star-pet .sp-thread-tab{position:fixed;right:2px;top:calc(env(safe-area-inset-top,0px) + 6px);width:24px;height:24px;text-align:center;line-height:22px;border:1px solid #e5cfef;border-radius:12px;background:#faf1ff;color:#73518c;opacity:.85;pointer-events:none}
+#star-pet .sp-thread-tab{position:fixed;right:-16px;top:calc(env(safe-area-inset-top,0px) + 56px + 8px);bottom:auto;width:28px;height:28px;text-align:center;line-height:26px;border:1px solid #e5cfef;border-radius:14px 0 0 14px;background:#faf1ff;color:#73518c;opacity:.92;pointer-events:auto;cursor:pointer;z-index:1;box-shadow:-2px 2px 8px #0002}
+
+#star-pet.sp-chat-expanded:not(.sp-thread-docked){width:68px;height:88px}
+#star-pet.sp-chat-expanded:not(.sp-thread-docked)>.sp-controls{display:none!important}

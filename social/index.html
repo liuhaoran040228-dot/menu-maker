@@ -47,12 +47,39 @@
   </section>
 
   <!-- 大厅：星球/消息子视图 -->
-  <section id="tab-lobby" class="sg-tab sg-lobby" data-tab="lobby" data-nav="chats" data-title="星糖大厅" hidden>
-    <div class="sg-subbar"><button type="button" class="sg-ghost" data-go-nav="chats">‹ 消息</button><span class="sg-muted">公开大厅 · 所有登录旅人可见</span><a class="sg-ghost" href="#skins">聊天外观</a></div>
+  <section id="tab-lobby" class="sg-tab sg-lobby sg-chatroom" data-tab="lobby" data-nav="chats" data-title="星糖大厅" hidden>
+    <header class="sg-chat-head" data-pet-avoid>
+      <button type="button" class="sg-chat-back" data-go-nav="chats" aria-label="返回消息">‹</button>
+      <div class="sg-chat-title"><b>星糖大厅</b><small id="lobby-online" class="sg-muted">公开 · 登录旅人可见</small></div>
+      <button type="button" id="lobby-more-btn" class="sg-icon-btn" aria-haspopup="menu" aria-expanded="false" aria-controls="lobby-more-menu" aria-label="更多">⋯</button>
+      <div id="lobby-more-menu" class="sg-chat-menu" role="menu" hidden>
+        <a role="menuitem" href="#skins">聊天外观</a>
+        <button type="button" role="menuitem" id="lobby-rules-btn">大厅规则</button>
+      </div>
+    </header>
     <div id="lobby-log" class="sg-log" role="log" aria-live="polite" aria-label="大厅消息">
       <div class="sg-state"><img src="../assets/lan-chibi.webp" alt=""><p>正在载入大厅…</p></div>
     </div>
     <button id="lobby-newpill" class="sg-newpill" type="button" hidden>有新消息 ↓</button>
+<form id="lobby-form" data-pet-avoid class="sg-composer sg-chat-bar" data-for="lobby" hidden>
+  <p id="lobby-hint" class="sg-hint" hidden>你的昵称“<b id="lobby-nick">星糖旅人</b>”会公开显示，别人可点昵称申请好友 · 禁止联系方式与链接 <button type="button" id="lobby-hint-dismiss" class="sg-hint-x" aria-label="关闭提示">×</button></p>
+  <div id="emoji-panel" class="sg-panel" role="group" aria-label="表情" hidden></div>
+  <div id="plus-panel" class="sg-panel sg-plus-panel" role="group" aria-label="更多工具" hidden>
+    <button type="button" id="topic-btn" class="sg-tool" aria-expanded="false" aria-controls="topic-panel">话题</button>
+    <button type="button" id="game-btn" class="sg-tool" aria-haspopup="dialog">游戏</button>
+    <button type="button" id="sticker-btn" class="sg-tool" aria-expanded="false" aria-controls="sticker-pop">贴纸</button>
+    <button type="button" id="image-btn" class="sg-tool" aria-disabled="true" title="图片功能准备中">图片</button>
+  </div>
+  <div id="topic-panel" class="sg-panel sg-topics" role="group" aria-label="破冰话题（插入草稿，不会自动发送）" hidden></div>
+  <div class="sg-composer-row">
+    <button type="button" id="plus-btn" class="sg-icon-btn" aria-expanded="false" aria-controls="plus-panel" aria-label="更多">＋</button>
+    <input id="lobby-input" maxlength="300" autocomplete="off" enterkeyhint="send" placeholder="和大家打个招呼…" aria-label="大厅消息">
+    <button type="button" id="emoji-more-btn" class="sg-icon-btn" aria-expanded="false" aria-controls="emoji-pop" aria-label="表情">😊</button>
+    <button type="button" id="emoji-btn" class="sg-tool" hidden aria-expanded="false" aria-controls="emoji-panel" aria-label="表情">☺</button>
+    <button id="lobby-send" class="sg-primary sg-send-btn" type="submit">发送</button>
+  </div>
+  <small id="lobby-count" class="sg-muted" aria-live="off" hidden>0/300</small>
+</form>
   </section>
 
   <!-- 会话列表：只列真实存在的入口；好友/公会无接口时为空态，不造假会话/未读 -->
@@ -74,10 +101,29 @@
       <button id="guild-more" class="sg-ghost sg-block" type="button" hidden>加载更多公会</button>
     </div>
     <div id="conv-view" class="sg-card" hidden>
-      <div class="sg-row"><button id="conv-back" class="sg-ghost" type="button">‹ 返回</button><h3 id="conv-title">会话</h3><a class="sg-ghost" href="#skins">聊天外观</a></div>
+      <header class="sg-chat-head" data-pet-avoid>
+        <button type="button" id="conv-back" class="sg-chat-back" aria-label="返回">‹</button>
+        <div class="sg-chat-title"><b id="conv-title">会话</b><small id="conv-online" class="sg-muted" hidden></small></div>
+        <button type="button" id="conv-more-btn" class="sg-icon-btn" aria-haspopup="menu" aria-expanded="false" aria-controls="conv-more-menu" aria-label="更多">⋯</button>
+        <div id="conv-more-menu" class="sg-chat-menu" role="menu" hidden>
+          <a role="menuitem" href="#skins">聊天外观</a>
+        </div>
+      </header>
       <button id="conv-older" class="sg-ghost sg-block" type="button" hidden>加载更早消息</button>
       <div id="conv-log" class="sg-log sg-log-sm" role="log" aria-live="polite"></div>
-      <form id="conv-form" data-pet-avoid class="sg-conv-bar" autocomplete="off"><button type="button" id="conv-game-btn" class="sg-icon-btn" aria-haspopup="dialog" aria-label="邀请好友玩游戏" disabled title="正在确认邀请能力">🎮</button><input id="conv-input" maxlength="500" placeholder="友善聊天 · 发送前服务端审核" aria-label="会话消息" disabled><button id="conv-emoji-btn" class="sg-icon-btn" type="button" aria-controls="emoji-pop" aria-label="表情">😊</button><button id="conv-sticker-btn" class="sg-icon-btn" type="button" aria-controls="sticker-pop" aria-label="贴纸">🖼️</button><button id="conv-send" class="sg-primary sg-send-btn" data-pet-avoid type="submit" disabled>发送</button><button id="conv-retry" class="sg-ghost sg-send-btn" type="button" hidden>重试</button></form>
+      <form id="conv-form" data-pet-avoid class="sg-composer sg-chat-bar sg-conv-bar" autocomplete="off">
+        <div id="conv-plus-panel" class="sg-panel sg-plus-panel" role="group" aria-label="更多工具" hidden>
+          <button type="button" id="conv-game-btn" class="sg-tool" aria-haspopup="dialog" aria-label="邀请好友玩游戏" disabled title="正在确认邀请能力">游戏</button>
+          <button type="button" id="conv-sticker-btn" class="sg-tool" aria-controls="sticker-pop">贴纸</button>
+        </div>
+        <div class="sg-composer-row">
+          <button type="button" id="conv-plus-btn" class="sg-icon-btn" aria-expanded="false" aria-controls="conv-plus-panel" aria-label="更多">＋</button>
+          <input id="conv-input" maxlength="500" placeholder="友善聊天 · 发送前服务端审核" aria-label="会话消息" disabled>
+          <button id="conv-emoji-btn" class="sg-icon-btn" type="button" aria-controls="emoji-pop" aria-label="表情">😊</button>
+          <button id="conv-send" class="sg-primary sg-send-btn" data-pet-avoid type="submit" disabled>发送</button>
+          <button id="conv-retry" class="sg-ghost sg-send-btn" type="button" hidden>重试</button>
+        </div>
+      </form>
       <small id="conv-send-state" class="sg-send-state" role="status" aria-live="polite"></small>
       <p class="sg-muted" id="conv-note" role="status"></p>
     </div>
@@ -206,27 +252,9 @@
   </section>
 </main>
 
-<!-- 大厅输入区：固定在底部导航之上，适配键盘与安全区 -->
+<!-- 表情/贴纸弹层（fixed，锚定输入） -->
 <div id="emoji-pop" class="sg-pop" data-pet-avoid hidden><emoji-picker id="emoji-picker" class="dark" data-source="../vendor/emoji-picker-element-data@1.8.0/zh/cldr-native/data.json" locale="zh"></emoji-picker></div>
 <div id="sticker-pop" class="sg-pop" data-pet-avoid hidden><div id="sticker-preview"></div></div>
-<form id="lobby-form" data-pet-avoid class="sg-composer" data-for="lobby" hidden>
-  <p id="lobby-hint" class="sg-hint">你的昵称“<b id="lobby-nick">星糖旅人</b>”会公开显示，别人可点昵称申请好友 · 禁止联系方式与链接</p>
-  <div id="emoji-panel" class="sg-panel" role="group" aria-label="表情" hidden></div>
-  <div id="topic-panel" class="sg-panel sg-topics" role="group" aria-label="破冰话题（插入草稿，不会自动发送）" hidden></div>
-  <div class="sg-tools">
-    <button type="button" id="emoji-btn" class="sg-tool" aria-expanded="false" aria-controls="emoji-panel" aria-label="表情">☺</button>
-    <button type="button" id="topic-btn" class="sg-tool" aria-expanded="false" aria-controls="topic-panel">话题</button>
-    <button type="button" id="game-btn" class="sg-tool" aria-haspopup="dialog">+游戏</button>
-    <button type="button" id="emoji-more-btn" class="sg-tool" aria-expanded="false" aria-controls="emoji-pop" aria-label="更多表情">😊+</button>
-    <button type="button" id="sticker-btn" class="sg-tool" aria-expanded="false" aria-controls="sticker-pop">贴纸</button>
-    <button type="button" id="image-btn" class="sg-tool" aria-disabled="true" title="图片功能准备中">图片</button>
-    <small id="lobby-count" class="sg-muted" aria-live="off">0/300</small>
-  </div>
-  <div class="sg-composer-row">
-    <input id="lobby-input" maxlength="300" autocomplete="off" enterkeyhint="send" placeholder="和大家打个招呼…" aria-label="大厅消息">
-    <button id="lobby-send" class="sg-primary" type="submit">发送</button>
-  </div>
-</form>
 
 <nav class="sg-nav" role="tablist" aria-label="主导航" data-pet-avoid>
   <button role="tab" data-go="planet" aria-selected="true"><span aria-hidden="true">✦</span>星球</button>

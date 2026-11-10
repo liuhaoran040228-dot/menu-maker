@@ -12,6 +12,8 @@
 .sg-page::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.35;z-index:0; /* under content */
   background-image:radial-gradient(1px 1px at 12% 18%,#fff8,transparent 60%),radial-gradient(1px 1px at 72% 12%,#fff6,transparent 60%),radial-gradient(1.5px 1.5px at 40% 60%,#ffd6f0aa,transparent 60%),radial-gradient(1px 1px at 88% 70%,#fff7,transparent 60%),radial-gradient(1px 1px at 25% 85%,#cfc6ff99,transparent 60%)}
 .sg-page *{box-sizing:border-box}
+/* 守卫：任何 display:flex/grid 规则不得压过 HTML hidden */
+.sg-page [hidden],.sg-page[hidden],[hidden]{display:none!important}
 .sg-page>*{position:relative;z-index:var(--z-content)}
 /* 顶栏 */
 .sg-top{flex:none;position:sticky;top:0;z-index:var(--z-nav);display:flex;align-items:center;gap:8px;padding:calc(6px + var(--safe-t)) 12px 6px;background:linear-gradient(180deg,#0e1021f2,#0e1021cc);border-bottom:1px solid var(--line);backdrop-filter:blur(8px)}
@@ -140,8 +142,10 @@
 .sg-page[data-theme=paid-2]{background-image:url(../assets/shop-paid-background-2.webp)}
 .sg-page[data-theme=paid-3]{background-image:url(../assets/shop-paid-background-3.webp)}
 .sg-page[data-theme=paid-4]{background-image:url(../assets/shop-paid-background-4.webp)}
-.sg-av-wrap{position:relative;flex:none;width:34px;height:34px}
-.sg-pendant{position:absolute;right:-6px;bottom:-6px;width:20px;height:20px;object-fit:contain;pointer-events:none}
+.sg-av-wrap{position:relative;flex:none;width:40px;height:40px;overflow:hidden;border-radius:12px;isolation:isolate}
+.sg-av-wrap .sg-avatar{width:100%;height:100%;object-fit:cover;display:block}
+.sg-pendant{position:absolute;right:0;bottom:0;width:16px;height:16px;max-width:40%;max-height:40%;object-fit:contain;pointer-events:none;z-index:1}
+.sg-vip{width:14px;height:14px;object-fit:contain;vertical-align:-2px;flex:none}
 .sg-page[data-theme=skin-1]{background-image:url(../assets/skin-1.webp)}
 .sg-page[data-theme=skin-2]{background-image:url(../assets/skin-2.webp)}
 .sg-page[data-theme=skin-3]{background-image:url(../assets/skin-3.webp)}
@@ -309,8 +313,9 @@ a.sg-ghost:hover,a.sg-ghost:focus-visible{border-color:#b9a6ff;outline:none}
 /* 外观气泡：有服务端外观行时不被“我方紫色”覆盖 */
 
 /* 会话输入栏：单行（游戏 / 输入 / 表情 / 贴纸 / 发送），390 宽内不溢出 */
-.sg-conv-bar{display:flex;flex-wrap:nowrap;align-items:center;gap:4px;width:100%;max-width:100%;min-width:0;box-sizing:border-box}
-.sg-conv-bar>*{flex:0 0 auto;box-sizing:border-box}
+.sg-conv-bar{display:flex;flex-direction:column;flex-wrap:nowrap;align-items:stretch;gap:4px;width:100%;max-width:100%;min-width:0;box-sizing:border-box}
+.sg-conv-bar .sg-composer-row{display:flex;flex-wrap:nowrap;align-items:center;gap:4px;width:100%;min-width:0}
+.sg-conv-bar .sg-composer-row>*{flex:0 0 auto;box-sizing:border-box}
 .sg-conv-bar #conv-input{flex:1 1 auto;min-width:0;width:0;height:44px;text-overflow:ellipsis}
 .sg-icon-btn{width:44px;height:44px;min-width:44px;padding:0;display:inline-flex;align-items:center;justify-content:center;border:1px solid #ffffff22;border-radius:12px;background:#ffffff0d;color:inherit;font-size:20px;line-height:1}
 .sg-icon-btn:disabled{opacity:.45}
@@ -325,7 +330,12 @@ a.sg-ghost:hover,a.sg-ghost:focus-visible{border-color:#b9a6ff;outline:none}
 
 /* 桌宠：社交侧可安全约束（不改 star-pet.js）。对话态降到 float，低于导航/弹层/输入 */
 body.sg-in-conversation #star-pet{z-index:var(--z-float)!important}
-body.sg-in-conversation #star-pet .sp-thread-tab{top:calc(var(--safe-t) + 52px);z-index:var(--z-float)}
+body.sg-in-chatroom #star-pet{z-index:var(--z-float)!important}
+body.sg-in-conversation #star-pet .sp-thread-tab,
+body.sg-in-chatroom #star-pet .sp-thread-tab{top:calc(var(--safe-t) + var(--chat-head-h,56px) + 8px);bottom:auto;right:-16px;left:auto;z-index:var(--z-float);opacity:.92}
+body.sg-in-chatroom #star-pet:not(.sp-thread-docked){max-width:72px;max-height:96px}
+body.sg-in-chatroom #star-pet:not(.sp-thread-docked) .sp-body,
+body.sg-in-chatroom #star-pet:not(.sp-thread-docked) .sp-body .starshow{width:64px!important;height:64px!important}
 body.sg-in-conversation #star-pet:not(.sp-thread-docked){max-width:72px;max-height:96px}
 body.sg-in-conversation #star-pet:not(.sp-thread-docked) .sp-body,
 body.sg-in-conversation #star-pet:not(.sp-thread-docked) .sp-body .starshow{width:64px!important;height:64px!important}
@@ -334,3 +344,50 @@ body.sg-in-conversation #star-pet:not(.sp-thread-docked) .sp-body .starshow{widt
 body.sg-in-conversation .sg-top{visibility:hidden;pointer-events:none}
 /* demo 黄条抬离底部导航 */
 html[data-demo="synthetic"] #sg-demo-banner{bottom:calc(var(--nav-h) + var(--safe-b) + 8px)!important}
+
+/* —— 聊天室统一壳：单层顶栏、无主导航、底栏进文档流（flex 列，gap≥0） —— */
+body.sg-in-chatroom .sg-top{visibility:hidden;pointer-events:none}
+body.sg-in-chatroom .sg-nav{visibility:hidden;pointer-events:none;height:0!important;padding:0!important;overflow:hidden;min-height:0!important}
+body.sg-in-chatroom{--scroll-pad-b:calc(var(--safe-b) + 16px);--log-pad-b:12px}
+/* demo 黄条：聊天室内隐藏，不压顶/底 */
+html[data-demo="synthetic"] body.sg-in-chatroom #sg-demo-banner{display:none!important}
+body.sg-in-chatroom .sg-toast{bottom:calc(var(--safe-b) + var(--kb-inset) + 14px)}
+body.sg-in-chatroom .sg-newpill{position:absolute;bottom:calc(var(--composer-h,72px) + 10px)}
+/* 大厅：头/日志/底栏同一 flex 列；composer 取消 fixed */
+body.sg-in-chatroom .sg-lobby{display:flex;flex-direction:column;flex:1;min-height:0;height:100%;overflow:hidden}
+body.sg-in-chatroom .sg-lobby .sg-log{flex:1 1 auto;min-height:0;padding:10px 12px 12px}
+body.sg-in-chatroom #lobby-form.sg-composer,
+body.sg-in-chatroom #conv-form.sg-composer{position:relative;left:auto;right:auto;bottom:auto;flex:0 0 auto;width:100%;max-width:none;margin:0;z-index:var(--z-nav);padding-bottom:calc(8px + var(--safe-b) + var(--kb-inset))}
+body.sg-in-chatroom #lobby-form{border-top:1px solid var(--line);background:linear-gradient(180deg,#12142bcc,#12142bf7)}
+/* 私聊：表单已在 #conv-view flex 列内，取消 fixed 叠层；日志底垫只需小 gap */
+body.sg-conv-open #conv-log{padding:8px 2px 12px!important}
+body.sg-conv-open #conv-form.sg-composer{position:relative;left:auto;right:auto;bottom:auto;flex:0 0 auto;width:100%;max-width:none;margin:0;padding-bottom:calc(8px + var(--safe-b) + var(--kb-inset))}
+html[data-demo="synthetic"] body.sg-conv-open #conv-view{padding-bottom:var(--safe-b)!important}
+
+.sg-chat-head{position:sticky;top:0;z-index:var(--z-conv);display:grid;grid-template-columns:44px minmax(0,1fr) 44px;align-items:center;gap:6px;
+  min-height:48px;padding:calc(var(--safe-t) + 4px) 8px 8px;background:linear-gradient(180deg,#171a36f2,#171a36cc);border-bottom:1px solid #ffffff14;backdrop-filter:blur(8px)}
+.sg-chat-back{width:44px;height:44px;border:0;border-radius:12px;background:#ffffff10;color:inherit;font-size:22px;line-height:1}
+.sg-chat-title{min-width:0;display:flex;flex-direction:column;gap:2px}
+.sg-chat-title b{font-size:16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sg-chat-title small{font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sg-chat-menu{position:absolute;right:8px;top:calc(100% - 4px);z-index:var(--z-modal);min-width:140px;padding:6px;border-radius:12px;background:var(--card);border:1px solid var(--line);box-shadow:0 8px 24px #0006;display:flex;flex-direction:column;gap:2px}
+.sg-chat-menu a,.sg-chat-menu button{display:block;width:100%;text-align:left;border:0;background:transparent;color:inherit;font:inherit;padding:10px 12px;border-radius:8px;text-decoration:none;min-height:44px}
+.sg-chat-menu a:hover,.sg-chat-menu button:hover{background:#ffffff12}
+.sg-lobby{display:flex;flex-direction:column;min-height:0;flex:1;overflow:hidden}
+.sg-lobby .sg-log{flex:1 1 auto;min-height:0;padding:10px 12px 12px}
+
+/* 底栏单行 */
+.sg-chat-bar .sg-composer-row{display:flex;flex-wrap:nowrap;align-items:center;gap:4px;width:100%;min-width:0}
+.sg-chat-bar .sg-composer-row #lobby-input{flex:1 1 auto;min-width:0;width:0;height:44px}
+.sg-chat-bar .sg-tools{display:none}
+.sg-plus-panel{display:flex;flex-wrap:wrap;gap:8px;padding:10px}
+.sg-plus-panel .sg-tool{min-height:44px;padding:0 14px;border-radius:999px}
+.sg-hint{display:flex;align-items:flex-start;gap:8px;margin:0 0 6px;padding:8px 10px;border-radius:12px;background:#231f55;border:1px solid #b9a6ff44;font-size:12px;line-height:1.45;color:#e6defc}
+.sg-hint[hidden]{display:none!important}
+.sg-hint-x{margin-left:auto;border:0;background:#ffffff18;color:inherit;width:28px;height:28px;border-radius:8px;flex:none}
+#lobby-count[hidden]{display:none!important}
+
+/* 会话全屏顶栏改用 sg-chat-head（去掉旧双层） */
+body.sg-conv-open #conv-view>.sg-chat-head{flex:0 0 auto}
+body.sg-conv-open #conv-view{padding-top:0}
+body.sg-in-conversation.sg-in-chatroom #conv-view{z-index:var(--z-conv)}

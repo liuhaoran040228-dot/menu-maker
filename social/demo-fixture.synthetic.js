@@ -602,6 +602,68 @@ window.__SG_DEMO_FIXTURE = {
     "author_badge": null
    }
   ],
-  "lobby_history": []
+  "lobby_history": [
+    {
+      "id": 101,
+      "nickname": "演示·小星",
+      "body": "大家好～今天天气真好！",
+      "created_at": "2026-11-10T01:00:00.000Z",
+      "mine": false,
+      "bubble_id": null,
+      "pendant_id": "paid-pendant-peach",
+      "avatar_id": "pink",
+      "badge_tier": 2
+    },
+    {
+      "id": 102,
+      "nickname": "演示·蓝蓝",
+      "body": "如果你能穿越进一部作品，你选哪部？长消息长消息长消息——星糖宇宙欢迎每一位旅人来大厅打个招呼，记得友善交流，禁止发联系方式与外链。",
+      "created_at": "2026-11-10T01:01:00.000Z",
+      "mine": false,
+      "bubble_id": "paid-bubble-mint",
+      "pendant_id": "paid-pendant-lavender",
+      "avatar_id": "lunar",
+      "badge_tier": 3
+    },
+    {
+      "id": 103,
+      "nickname": "演示·虎虎",
+      "body": "你好",
+      "created_at": "2026-11-10T01:02:00.000Z",
+      "mine": false,
+      "pendant_id": "vip5",
+      "avatar_id": "fox"
+    },
+    {
+      "id": 104,
+      "nickname": "演示用户（合成）",
+      "body": "大家好，我是新来的旅人～",
+      "created_at": "2026-11-10T01:03:00.000Z",
+      "mine": true,
+      "bubble_id": "paid-bubble-peach",
+      "pendant_id": "paid-pendant-amber",
+      "avatar_id": "whale",
+      "badge_tier": 1
+    },
+    {
+      "id": 105,
+      "nickname": "演示·糖糖",
+      "body": "欢迎欢迎！一起玩五子棋吗？",
+      "created_at": "2026-11-10T01:04:00.000Z",
+      "mine": false,
+      "pendant_id": "paid-pendant-mint",
+      "avatar_id": "pearl"
+    },
+    {
+      "id": 106,
+      "nickname": "演示·月月",
+      "body": "嗨嗨嗨嗨嗨嗨嗨嗨嗨嗨嗨嗨嗨嗨嗨嗨嗨嗨嗨嗨嗨嗨嗨嗨——这是一条很长的测试消息用来检查气泡与头像装饰是否会压住时间戳或相邻气泡。",
+      "created_at": "2026-11-10T01:05:00.000Z",
+      "mine": false,
+      "pendant_id": "paid-pendant-peach",
+      "avatar_id": "silver",
+      "badge_tier": 4
+    }
+  ]
  }
 };

@@ -69,13 +69,22 @@
     $('discover-list').replaceChildren(); $('friend-search').disabled = true;
   }
   let curTab = 'planet';
+  function setChatroom(on, kind) {
+    document.body.classList.toggle('sg-in-chatroom', !!on);
+    if (!on) document.body.classList.remove('sg-in-conversation');
+    notifyPetAvoid(!!on);
+    try { window.dispatchEvent(new CustomEvent('sg-chatroom', { detail: { on: !!on, kind: kind || null } })); } catch (_) {}
+  }
   function showTab(name) {
     const sec = document.querySelector(`.sg-tab[data-tab="${name}"]`); if (!sec) return;
+    if (name !== 'chats' && conv) closeConv();
+    else if (name !== 'chats') { const view = $('conv-view'); if (view) { view.hidden = true; document.body.classList.remove('sg-conv-open', 'sg-in-conversation'); } }
     curTab = name;
     document.querySelectorAll('.sg-tab').forEach(t => { t.hidden = t !== sec; });
     document.querySelectorAll('.sg-nav button').forEach(x => x.setAttribute('aria-selected', String(x.dataset.go === sec.dataset.nav)));
     $('sg-heading').textContent = sec.dataset.title; $('lobby-form').hidden = name !== 'lobby';
-    if (name === 'lobby' && ready) lobbyRefresh(true);
+    setChatroom(name === 'lobby', 'lobby');
+    if (name === 'lobby') { maybeShowLobbyHint(); if (ready) lobbyRefresh(true); }
     if ((name === 'friends' || name === 'more') && ready) loadFriends();
     document.querySelectorAll('.sg-seg [data-go-nav]').forEach(x => x.setAttribute('aria-selected', String(x.dataset.goNav === name)));
     if (ready) syncRead();
@@ -88,6 +97,8 @@
   $('game-grid').replaceChildren(...Core.GAMES.map(g => el('a', { class: 'sg-game', href: Core.gameHref(g.id) }, el('img', { src: '../assets/' + ({ lan: 'lan', li: 'li', mo: 'mo', hu: 'hu', xing: 'xing' }[({ 'space-shooter': 'xing', snake: 'lan', fighter: 'hu', 'monster-loot': 'li', 'moe-runner': 'lan', 'lili-merge': 'li', 'lili-match': 'mo', 'lili-2048': 'hu' })[g.id]]) + '-chibi.webp', alt: '' }), el('b', { text: g.name }), el('small', { class: 'sg-muted', text: g.desc }))));
   // +游戏：挑选/预览/发送统一由 social-invite.js 处理（邀请白名单 7 款；大厅仅预览）
   // 只读本地视图深链接：白名单映射，不读其它 hash 内容、不触发写请求
+  const convScope = Core.createScope();
+  let conv = null; // {kind,id,conversation_id,title,msgs,nextBefore}
   // #messages/thread=<uuid>：只作为"想打开哪段会话"的提示；须在服务端返回的会话列表中，或经服务端 community_chat_messages 成员校验通过才打开，绝不按 hash 造会话
   let pendingThread = null;
   const threadFromHash = h => { const m = /^#messages\/thread=(.*)$/.exec(h || ''); return !m ? undefined : Core.isUuid(m[1]) ? m[1].toLowerCase() : null; };
@@ -117,8 +128,6 @@
   // ---------- 好友私信 / 公会频道（主体 FRIENDS-GUILD-API.md 提案；只读接入，未部署则降级） ----------
   // 唯一来源：主体 public RPC（服务端 auth.uid() 鉴权）。不查表、不跨账号缓存（仅内存，退出即 reload 清空）。
   const comm = { dm: { state: 'unknown', items: [], cursor: null }, guild: { state: 'unknown', items: [], cursor: null } };
-  const convScope = Core.createScope();
-  let conv = null; // {kind,id,conversation_id,title,msgs,nextBefore}
   const COMM_TEXT = { BANNED: '账号受限，仅可查看', INVALID_INPUT: '请求参数无效', missing: '接口尚未部署', network: '网络异常', AUTH_REQUIRED: '请重新登录', NOT_READY: '服务未就绪', RATE_LIMITED: '操作太频繁', unknown: '加载失败' };
   async function commRpc(name, args) { const { data, error } = await sb.rpc(name, args || {}); if (error) { const k = Core.communityError(error); const e2 = new Error(COMM_TEXT[k] || k); e2.kind = k; throw e2; } return data; }
   function commState(box, text, retry) {
@@ -173,7 +182,7 @@
   $('guild-more').addEventListener('click', () => loadComm('guild'));
   function closeConv(reason) {
     queueMicrotask(() => window.dispatchEvent(new CustomEvent('sg-conv-change')));
-    convScope.leave(); conv = null; $('conv-log').replaceChildren(); $('conv-view').hidden = true; document.body.classList.remove('sg-conv-open', 'sg-in-conversation'); notifyPetAvoid(false); $('conv-list').hidden = false; $('chat-search').parentElement.hidden = false;
+    convScope.leave(); conv = null; $('conv-log').replaceChildren(); $('conv-view').hidden = true; document.body.classList.remove('sg-conv-open', 'sg-in-conversation'); setChatroom(false); $('conv-list').hidden = false; $('chat-search').parentElement.hidden = false;
     if (reason) toast(reason);
   }
   function dropRevoked(kind, id, e) {
@@ -238,7 +247,7 @@
   async function openConv(x) {
     const t = convScope.enter(x.kind + ':' + x.id);
     conv = { kind: x.kind, id: x.id, conversation_id: x.kind === 'dm' ? x.id : null, title: x.title, peer_pid: x.peer_pid || null, msgs: [], nextBefore: null, readSent: 0, looks: null };
-    document.body.classList.add('sg-conv-open', 'sg-in-conversation'); notifyPetAvoid(true);   // 全屏会话 + 桌宠避让钩子
+    document.body.classList.add('sg-conv-open', 'sg-in-conversation'); setChatroom(true, 'dm');   // 全屏会话 + 桌宠避让钩子
     $('conv-title').textContent = x.title; $('conv-log').replaceChildren(el('div', { class: 'sg-empty', text: '载入中…' }));
     $('conv-list').hidden = true; $('chat-search').parentElement.hidden = true; $('search-result').hidden = true; $('conv-view').hidden = false;
     try {
@@ -284,11 +293,14 @@
       const lobby = $('lobby-form');
       const bar = $('conv-form');
       const banner = document.getElementById('sg-demo-banner');
+      const head = document.querySelector('.sg-lobby:not([hidden]) .sg-chat-head, #conv-view:not([hidden]) .sg-chat-head');
       // --nav-h = 导航内容高度（不含 safe-area；safe 由 --safe-b 另加）
       if (nav) root.style.setProperty('--nav-h', Math.max(44, Math.round(nav.clientHeight || 58)) + 'px');
       if (lobby && !lobby.hidden) root.style.setProperty('--composer-h', Math.max(48, Math.round(lobby.getBoundingClientRect().height)) + 'px');
-      if (bar && root.classList.contains('sg-in-conversation')) root.style.setProperty('--conv-bar-h', Math.max(44, Math.round(bar.getBoundingClientRect().height)) + 'px');
-      if (banner) root.style.setProperty('--demo-banner-h', Math.max(0, Math.round(banner.getBoundingClientRect().height)) + 'px');
+      if (bar && (root.classList.contains('sg-in-conversation') || root.classList.contains('sg-in-chatroom'))) root.style.setProperty('--conv-bar-h', Math.max(44, Math.round(bar.getBoundingClientRect().height)) + 'px');
+      if (banner && getComputedStyle(banner).display !== 'none') root.style.setProperty('--demo-banner-h', Math.max(0, Math.round(banner.getBoundingClientRect().height)) + 'px');
+      else root.style.setProperty('--demo-banner-h', '0px');
+      if (head) root.style.setProperty('--chat-head-h', Math.max(48, Math.round(head.getBoundingClientRect().height)) + 'px');
     } catch (_) {}
   }
   function syncKeyboard() {
@@ -315,8 +327,8 @@
   function bootLayoutGuards() {
     measureChrome(); syncKeyboard();
     if (window.ResizeObserver) {
-      const ro = new ResizeObserver(() => { measureChrome(); notifyPetAvoid(document.body.classList.contains('sg-in-conversation')); });
-      [document.querySelector('.sg-nav'), $('lobby-form'), $('conv-form'), document.getElementById('sg-demo-banner')].forEach(el => el && ro.observe(el));
+      const ro = new ResizeObserver(() => { measureChrome(); notifyPetAvoid(document.body.classList.contains('sg-in-chatroom') || document.body.classList.contains('sg-in-conversation')); });
+      [document.querySelector('.sg-nav'), $('lobby-form'), $('conv-form'), $('lobby-hint'), document.querySelector('.sg-chat-head'), document.getElementById('sg-demo-banner')].forEach(el => el && ro.observe(el));
     }
     window.addEventListener('resize', () => { measureChrome(); syncKeyboard(); });
     window.visualViewport?.addEventListener('resize', syncKeyboard);
@@ -327,28 +339,76 @@
   function initComm() { loadComm('dm', true); loadComm('guild', true); }
 
   // ---------- 输入：表情 / 破冰话题（只插草稿） / 字数 / IME ----------
-  const input = $('lobby-input'), MAXLEN = 300;
-  const updCount = () => { $('lobby-count').textContent = `${input.value.length}/${MAXLEN}`; };
+  const input = $('lobby-input'), MAXLEN = 300, COUNT_SHOW = 260;
+  const HINT_KEY = 'sg-lobby-hint-dismissed-v1';
+  function maybeShowLobbyHint() {
+    const h = $('lobby-hint'); if (!h) return;
+    try { if (localStorage.getItem(HINT_KEY) === '1') { h.hidden = true; return; } } catch (_) {}
+    h.hidden = false;
+  }
+  function dismissLobbyHint() {
+    const h = $('lobby-hint'); if (h) h.hidden = true;
+    try { localStorage.setItem(HINT_KEY, '1'); } catch (_) {}
+    measureChrome();
+  }
+  const updCount = () => {
+    const n = input.value.length, c = $('lobby-count');
+    if (!c) return;
+    c.textContent = `${n}/${MAXLEN}`;
+    c.hidden = n < COUNT_SHOW;
+  };
   function insertText(t) {
     const r = Core.insertAt(input.value, input.selectionStart, input.selectionEnd, t, MAXLEN);
     input.value = r.value; input.focus(); try { input.setSelectionRange(r.caret, r.caret); } catch {} updCount();
     if (r.truncated) toast('已达 300 字上限');
   }
-  function togglePanel(btn, panel, open) {
-    const on = open ?? panel.hidden; panel.hidden = !on; btn.setAttribute('aria-expanded', String(on));
-    for (const [b2, p2] of [[$('emoji-btn'), $('emoji-panel')], [$('topic-btn'), $('topic-panel')]]) if (p2 !== panel && on) { p2.hidden = true; b2.setAttribute('aria-expanded', 'false'); }
+  function closeChatPops(except) {
+    const pairs = [
+      [$('plus-btn'), $('plus-panel')],
+      [$('emoji-btn'), $('emoji-panel')],
+      [$('topic-btn'), $('topic-panel')],
+      [$('emoji-more-btn'), $('emoji-pop')],
+      [$('sticker-btn'), $('sticker-pop')],
+      [$('lobby-more-btn'), $('lobby-more-menu')],
+      [$('conv-more-btn'), $('conv-more-menu')],
+      [$('conv-plus-btn'), $('conv-plus-panel')]
+    ];
+    for (const [b, p] of pairs) {
+      if (!p || p === except) continue;
+      p.hidden = true; if (b) b.setAttribute('aria-expanded', 'false');
+    }
   }
-  $('emoji-panel').replaceChildren(...Core.EMOJI.map(e => el('button', { type: 'button', class: 'sg-emoji', text: e, 'aria-label': '插入表情 ' + e, onclick: () => insertText(e) })));
-  $('topic-panel').replaceChildren(el('small', { class: 'sg-muted', text: '点一下放进输入框，确认后再发送' }), ...Core.ICEBREAKERS.map(t => el('button', { type: 'button', class: 'sg-chip-btn', text: t, onclick: () => { if (input.value.trim() && !confirm('替换当前草稿？')) return; input.value = ''; insertText(t); togglePanel($('topic-btn'), $('topic-panel'), false); } })));
-  $('emoji-btn').addEventListener('click', () => togglePanel($('emoji-btn'), $('emoji-panel')));
-  $('topic-btn').addEventListener('click', () => togglePanel($('topic-btn'), $('topic-panel')));
-  $('image-btn').addEventListener('click', () => toast('图片功能准备中：需要存储权限、图片审核与元数据清理后才会开放'));
+  function togglePanel(btn, panel, open) {
+    if (!panel) return;
+    const on = open ?? panel.hidden;
+    if (on) closeChatPops(panel);
+    panel.hidden = !on; if (btn) btn.setAttribute('aria-expanded', String(on));
+  }
+  $('emoji-panel') && $('emoji-panel').replaceChildren(...Core.EMOJI.map(e => el('button', { type: 'button', class: 'sg-emoji', text: e, 'aria-label': '插入表情 ' + e, onclick: () => insertText(e) })));
+  $('topic-panel') && $('topic-panel').replaceChildren(el('small', { class: 'sg-muted', text: '点一下放进输入框，确认后再发送' }), ...Core.ICEBREAKERS.map(t => el('button', { type: 'button', class: 'sg-chip-btn', text: t, onclick: () => { insertText(t); togglePanel($('topic-btn'), $('topic-panel'), false); } })));
+  $('plus-btn')?.addEventListener('click', () => togglePanel($('plus-btn'), $('plus-panel')));
+  $('emoji-btn')?.addEventListener('click', () => togglePanel($('emoji-btn'), $('emoji-panel')));
+  $('topic-btn')?.addEventListener('click', () => { togglePanel($('plus-btn'), $('plus-panel'), false); togglePanel($('topic-btn'), $('topic-panel')); });
+  $('image-btn')?.addEventListener('click', () => toast('图片功能准备中：需要存储权限、图片审核与元数据清理后才会开放'));
+  $('lobby-hint-dismiss')?.addEventListener('click', dismissLobbyHint);
+  $('lobby-more-btn')?.addEventListener('click', () => togglePanel($('lobby-more-btn'), $('lobby-more-menu')));
+  $('conv-more-btn')?.addEventListener('click', () => togglePanel($('conv-more-btn'), $('conv-more-menu')));
+  $('conv-plus-btn')?.addEventListener('click', () => togglePanel($('conv-plus-btn'), $('conv-plus-panel')));
+  $('lobby-rules-btn')?.addEventListener('click', () => { togglePanel($('lobby-more-btn'), $('lobby-more-menu'), false); toast('友善聊天，禁止联系方式与链接；内容经服务端审核'); });
   input.addEventListener('input', updCount);
-  input.addEventListener('keydown', e => { if (Core.isImeEnter(e)) { e.preventDefault(); e.stopPropagation(); } if (e.key === 'Escape') { togglePanel($('emoji-btn'), $('emoji-panel'), false); togglePanel($('topic-btn'), $('topic-panel'), false); } });
+  input.addEventListener('keydown', e => {
+    if (Core.isImeEnter(e)) { e.preventDefault(); e.stopPropagation(); }
+    if (e.key === 'Escape') closeChatPops();
+  });
+  document.addEventListener('click', e => {
+    if (e.target.closest('#lobby-form, #emoji-pop, #sticker-pop, .sg-chat-head, .sg-chat-menu')) return;
+    closeChatPops();
+  });
   let composing = false;
   input.addEventListener('compositionstart', () => { composing = true; });
   input.addEventListener('compositionend', () => { setTimeout(() => { composing = false; }, 0); });
   $('lobby-form').addEventListener('submit', e => { if (composing) { e.preventDefault(); e.stopImmediatePropagation(); } }, true);
+  updCount();
 
   // ---------- 举报 ----------
   function askReason() { return new Promise(res => { const d = $('report-dialog'); d.returnValue = ''; d.showModal(); d.onclose = () => res(d.returnValue === 'ok' ? $('report-reason').value : null); }); }
@@ -500,7 +560,7 @@
   $('lobby-form').addEventListener('submit', e => {
     e.preventDefault(); if (!ready) return toast('服务尚未启用');
     const input = $('lobby-input'), v = input.value.trim(); if (!v) return;
-    input.value = ''; $('lobby-count').textContent = `0/300`; sendJob(Core.makeJob(v));
+    input.value = ''; updCount(); sendJob(Core.makeJob(v));
   });
   function userSheet(m) {
     const d = $('user-sheet'); $('sheet-title').textContent = m.nickname; $('sheet-avatar').src = avatarFor(m.nickname);

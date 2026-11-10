@@ -126,6 +126,8 @@
       var wait = function (f, cb, n) { n = n || 0; var x = f(); if (x) cb(x); else if (n < 100) setTimeout(function () { wait(f, cb, n + 1); }, 50); };
       var mark = function (el) { el.scrollIntoView({ block: 'start' }); el.style.outline = '3px solid #ffd84d'; };
       if (s === 'conv' || s === 'stickers' || s === 'invite' || s === 'result') { if (location.hash !== thread) location.hash = thread; }
+      if (s === 'lobby') location.hash = '#lobby';
+      if (s === 'guild') { location.hash = '#messages'; wait(function () { var b = document.getElementById('guild-more') || document.querySelector('[data-open-guild], #guild-list .sg-row, #guild-list button'); return b || document.querySelector('#guild-list'); }, function (el) { if (el && el.click) el.click(); }); }
       if (s === 'square') location.hash = '#square';
       if (s === 'me') location.hash = '#me';
       if (s === 'stickers') wait(function () { var b = document.getElementById('conv-sticker-btn'); return b && !document.getElementById('conv-view').hidden && document.querySelector('#conv-log .sg-msg') ? b : null; }, function (b) { b.click(); });   // 只展开弹层，不发送
