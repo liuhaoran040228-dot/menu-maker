@@ -340,18 +340,31 @@
       if (head) root.style.setProperty('--chat-head-h', Math.max(48, Math.round(head.getBoundingClientRect().height)) + 'px');
     } catch (_) {}
   }
-  function syncKeyboard() {
+  function keyboardInset() {
     const vv = window.visualViewport;
-    if (!vv) { document.body.style.setProperty('--kb-inset', '0px'); return; }
+    if (!vv) return 0;
+    // 手机首次绘制时 innerHeight 常大于 visualViewport（布局视口/地址栏），
+    // 不能把这个差值当成键盘高度，否则底栏 padding-bottom 会把消息区挤成一条缝。
+    const ae = document.activeElement;
+    const typing = !!(ae && !ae.readOnly && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA' || ae.isContentEditable));
+    if (!typing) return 0;
+    const inset = Math.max(0, Math.round(window.innerHeight - vv.height - (vv.offsetTop || 0)));
+    if (inset < 80) return 0;
+    const cap = Math.min(520, Math.round((vv.height || 0) * 0.75));
+    if (inset > cap) return 0;
+    return inset;
+  }
+  function syncKeyboard() {
     try {
-      // 会话输入栏在文档流内随布局上移：--kb-inset 只加给消息区留白，避免与 bottom 补偿双倍
-      const inset = Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop));
+      const inset = keyboardInset();
       document.body.style.setProperty('--kb-inset', inset + 'px');
-      const convView = $('conv-view');
-      if (inset > 40 && convView && !convView.hidden) {
-        const lg = $('conv-log'); if (lg) lg.scrollTop = lg.scrollHeight;
+      if (inset > 40) {
+        const convView = $('conv-view');
+        if (convView && !convView.hidden) { const lg = $('conv-log'); if (lg) lg.scrollTop = lg.scrollHeight; }
+        const lobby = $('tab-lobby');
+        if (lobby && !lobby.hidden) { const lg = $('lobby-log'); if (lg) lg.scrollTop = lg.scrollHeight; }
       }
-    } catch (_) { /* 保留已写入的 --kb-inset，避免误清零 */ }
+    } catch (_) { document.body.style.setProperty('--kb-inset', '0px'); }
   }
   function notifyPetAvoid(on) {
     try {
@@ -362,14 +375,20 @@
     } catch (_) {}
   }
   function bootLayoutGuards() {
-    measureChrome(); syncKeyboard();
+    const relayout = () => { measureChrome(); syncKeyboard(); };
+    relayout();
     if (window.ResizeObserver) {
-      const ro = new ResizeObserver(() => { measureChrome(); notifyPetAvoid(document.body.classList.contains('sg-in-chatroom') || document.body.classList.contains('sg-in-conversation')); });
+      const ro = new ResizeObserver(() => { relayout(); notifyPetAvoid(document.body.classList.contains('sg-in-chatroom') || document.body.classList.contains('sg-in-conversation')); });
       [document.querySelector('.sg-nav'), $('lobby-form'), $('conv-form'), $('lobby-hint'), document.querySelector('.sg-chat-head'), document.getElementById('sg-demo-banner')].forEach(el => el && ro.observe(el));
     }
-    window.addEventListener('resize', () => { measureChrome(); syncKeyboard(); });
+    window.addEventListener('resize', relayout);
     window.visualViewport?.addEventListener('resize', syncKeyboard);
     window.visualViewport?.addEventListener('scroll', syncKeyboard);
+    window.addEventListener('focusin', syncKeyboard);
+    window.addEventListener('focusout', () => setTimeout(syncKeyboard, 50));
+    window.addEventListener('pageshow', relayout);
+    requestAnimationFrame(relayout);
+    setTimeout(relayout, 300);
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bootLayoutGuards); else bootLayoutGuards();
 
