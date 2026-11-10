@@ -7,7 +7,7 @@
   const HIS_KEY = "yuanjing-wallpaper-history-v1";
   const THEME_KEY = "yuanjing-wallpaper-theme-v1";
   const WEEK = "日一二三四五六";
-  const ASSET_V = "20261110d";
+  const ASSET_V = "20261110e";
   const HOME_APPS = [
     ["电话", "#34c759", "☎"],
     ["信息", "#30d158", "✉"],
@@ -296,7 +296,7 @@
             return `<b style="background:${col}">${a[1]}</b>`;
           })
           .join("");
-        return `<button type="button" class="theme" data-theme="${c.id}">
+        return `<button type="button" class="theme" data-theme-open="${c.id}">
           <img src="${cover.thumb}" alt="${c.name}" width="86" height="168" loading="lazy" decoding="async">
           <div>
             <h3>${c.name}</h3>
@@ -725,9 +725,9 @@
       openPreview(openBtn.dataset.open, contextList());
       return;
     }
-    const themeBtn = ev.target.closest("[data-theme]");
+    const themeBtn = ev.target.closest("[data-theme-open]");
     if (themeBtn) {
-      openTheme(themeBtn.dataset.theme);
+      openTheme(themeBtn.dataset.themeOpen);
       return;
     }
     const catBtn = ev.target.closest("[data-cat]");

@@ -1,4 +1,4 @@
-const CACHE = "yuanjing-wallpaper-v3";
+const CACHE = "yuanjing-wallpaper-v4";
 const SHELL = [
   "./",
   "./index.html",
@@ -31,16 +31,22 @@ self.addEventListener("fetch", (event) => {
   if (req.method !== "GET") return;
   const url = new URL(req.url);
   if (url.origin !== location.origin) return;
-  event.respondWith(
-    caches.match(req).then((hit) => {
-      if (hit) return hit;
-      return fetch(req).then((res) => {
-        if (res && res.ok && (url.pathname.includes("/thumbs/") || url.pathname.includes("/icons/") || url.pathname.endsWith("manifest.json"))) {
-          const copy = res.clone();
-          caches.open(CACHE).then((cache) => cache.put(req, copy));
-        }
+  const isShell = req.mode === "navigate" || /\.(html|js|css|webmanifest)$/.test(url.pathname) || url.pathname.endsWith("/") || url.pathname.endsWith("manifest.json");
+  if (isShell) {
+    event.respondWith(
+      fetch(req).then((res) => {
+        if (res && res.ok) { const copy = res.clone(); caches.open(CACHE).then((c) => c.put(req, copy)); }
         return res;
-      }).catch(() => caches.match("./index.html"));
-    })
+      }).catch(() => caches.match(req).then((hit) => hit || caches.match("./index.html")))
+    );
+    return;
+  }
+  event.respondWith(
+    caches.match(req).then((hit) => hit || fetch(req).then((res) => {
+      if (res && res.ok && (url.pathname.includes("/thumbs/") || url.pathname.includes("/icons/"))) {
+        const copy = res.clone(); caches.open(CACHE).then((c) => c.put(req, copy));
+      }
+      return res;
+    }))
   );
 });
