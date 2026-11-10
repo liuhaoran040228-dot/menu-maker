@@ -1,4 +1,4 @@
-const CACHE = "xingtang-wallpaper-v1";
+const CACHE = "yuanjing-wallpaper-v3";
 const SHELL = [
   "./",
   "./index.html",

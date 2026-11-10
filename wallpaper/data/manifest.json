@@ -1,12 +1,12 @@
 {
-  "app": "星糖壁纸",
+  "app": "元境",
   "version": "20261110",
   "width": 1080,
   "height": 2340,
   "categories": [
     {
       "id": "dream",
-      "name": "星糖梦境",
+      "name": "梦幻次元",
       "desc": "暖街、花灯、星堡与海边的风景画"
     },
     {
@@ -27,7 +27,7 @@
     {
       "id": "glam",
       "name": "星耀华裳",
-      "desc": "五位星糖角色的华服立绘"
+      "desc": "五位次元角色的华服立绘"
     },
     {
       "id": "stage",
@@ -582,8 +582,8 @@
     },
     {
       "id": "star-hall",
-      "name": "星糖大厅",
-      "themeName": "星糖大厅",
+      "name": "次元大厅",
+      "themeName": "次元大厅",
       "category": "flower",
       "file": "wallpapers/star-hall.webp",
       "thumb": "thumbs/star-hall.webp",

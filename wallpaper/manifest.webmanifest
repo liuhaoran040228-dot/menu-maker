@@ -1,7 +1,7 @@
 {
-  "name": "星糖壁纸",
-  "short_name": "星糖壁纸",
-  "description": "星糖宇宙原创手机壁纸与主题包",
+  "name": "元境",
+  "short_name": "元境",
+  "description": "二次元元宇宙原创壁纸与主题包",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

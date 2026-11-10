@@ -1,74 +1,194 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-theme="dark">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#16111f">
+  <meta name="theme-color" content="#16111f" id="meta-theme-color">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="星糖壁纸">
-  <meta name="description" content="星糖宇宙原创手机壁纸与主题包">
-  <title>星糖壁纸</title>
+  <meta name="apple-mobile-web-app-title" content="元境">
+  <meta name="description" content="二次元元宇宙原创壁纸与主题包">
+  <title>元境</title>
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" type="image/png" href="./icons/favicon.png">
   <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
-  <link rel="stylesheet" href="./app.css">
+  <link rel="stylesheet" href="./app.css?v=20261110d">
 </head>
 <body>
-  <header class="top">
+  <header class="top" id="top">
+    <button type="button" class="icon-btn" id="btn-back" hidden aria-label="返回">
+      <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M15.5 4.5 8 12l7.5 7.5 1.4-1.4L10.8 12l6.1-6.1z"/></svg>
+    </button>
     <div class="top-in">
-      <h1>星糖壁纸</h1>
-      <p class="sub">星糖宇宙 · 原创插画</p>
+      <h1 id="top-title">元境</h1>
+      <p class="sub" id="top-sub">二次元 · 元宇宙 · 原创插画</p>
     </div>
+    <button type="button" class="icon-btn" id="btn-search" aria-label="搜索">
+      <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M15.5 14h-.8l-.3-.3A6.5 6.5 0 1 0 14 15.5l.3.3v.8l5 5 1.5-1.5-5-5zm-6 0A4.5 4.5 0 1 1 14 9.5 4.5 4.5 0 0 1 9.5 14z"/></svg>
+    </button>
   </header>
 
   <main id="main">
-    <section id="view-discover" class="view">
-      <article class="daily" id="daily"></article>
-      <nav class="cats" id="cats" aria-label="分类"></nav>
-      <div class="grid" id="grid"></div>
+    <section id="view-home" class="view">
+      <div class="carousel" id="carousel" aria-label="精选推荐">
+        <div class="carousel-track" id="carousel-track"></div>
+        <div class="carousel-dots" id="carousel-dots"></div>
+      </div>
+      <section class="row-sec">
+        <header class="row-head"><h2>热门</h2></header>
+        <div class="hrow" id="row-hot"></div>
+      </section>
+      <section class="row-sec">
+        <header class="row-head"><h2>最新</h2></header>
+        <div class="hrow" id="row-new"></div>
+      </section>
+      <section class="row-sec">
+        <header class="row-head"><h2>精选</h2></header>
+        <div class="hrow" id="row-pick"></div>
+      </section>
+      <section class="row-sec">
+        <header class="row-head"><h2>专题合集</h2></header>
+        <div class="topics" id="topics"></div>
+      </section>
+    </section>
+
+    <section id="view-cats" class="view" hidden>
+      <header class="view-head">
+        <h2>分类</h2>
+        <p>按风格浏览全部原创插画。</p>
+      </header>
+      <div class="cat-grid" id="cat-grid"></div>
     </section>
 
     <section id="view-themes" class="view" hidden>
       <header class="view-head">
-        <h2>主题包</h2>
-        <p>每张壁纸都配有从画面提取的主题色，点开即可预览。</p>
+        <h2>主题</h2>
+        <p>壁纸、主题色与图标风格预览，先看效果再下载。</p>
       </header>
       <div class="theme-list" id="themes"></div>
     </section>
 
-    <section id="view-favs" class="view" hidden>
-      <header class="view-head">
-        <h2>我的收藏</h2>
-        <p id="fav-count"></p>
+    <section id="view-mine" class="view" hidden>
+      <header class="mine-hero">
+        <div class="mine-logo" aria-hidden="true">元</div>
+        <div>
+          <h2>元境</h2>
+          <p>二次元 · 元宇宙 · 原创插画</p>
+        </div>
       </header>
-      <div class="grid" id="fav-grid"></div>
-      <p class="empty" id="fav-empty" hidden>还没有收藏。<br>在发现页点一颗星，喜欢的壁纸会出现在这里。</p>
+      <div class="mine-stats" id="mine-stats"></div>
+      <div class="mine-group">
+        <button type="button" class="mine-item" data-mlist="favs">
+          <span>我的收藏</span><span class="chev">›</span>
+        </button>
+        <button type="button" class="mine-item" data-mlist="downloads">
+          <span>下载记录</span><span class="chev">›</span>
+        </button>
+        <button type="button" class="mine-item" data-mlist="history">
+          <span>浏览历史</span><span class="chev">›</span>
+        </button>
+      </div>
+      <div class="mine-group">
+        <div class="mine-item static">
+          <span>外观</span>
+          <div class="seg" role="group" aria-label="外观">
+            <button type="button" class="seg-btn" data-theme-set="dark">暗色</button>
+            <button type="button" class="seg-btn" data-theme-set="light">浅色</button>
+          </div>
+        </div>
+        <button type="button" class="mine-item" id="btn-guide">
+          <span>安卓设置教程</span><span class="chev">›</span>
+        </button>
+      </div>
+      <p class="mine-note">添加到手机桌面：用浏览器打开本页，选「添加到主屏幕」。所有插画均为原创，可免费下载。</p>
     </section>
   </main>
 
+  <section id="page-cat" class="sheet" aria-hidden="true">
+    <div class="grid" id="cat-list"></div>
+    <p class="empty" id="cat-empty" hidden>这个分类暂时还没有壁纸。</p>
+  </section>
+
+  <section id="page-theme" class="sheet" aria-hidden="true">
+    <div class="theme-detail" id="theme-detail"></div>
+  </section>
+
+  <section id="page-mlist" class="sheet" aria-hidden="true">
+    <div class="grid" id="mlist-grid"></div>
+    <p class="empty" id="mlist-empty" hidden></p>
+  </section>
+
+  <section id="page-guide" class="sheet" aria-hidden="true">
+    <article class="guide">
+      <p class="lead">网页版无法直接写入系统壁纸。请先下载到相册，再按下面的步骤设置。</p>
+      <ol>
+        <li>在预览页点「下载壁纸」，把图片保存到相册。若没有开始下载，请长按预览图，选「保存图片」。</li>
+        <li>回到手机桌面，长按空白处，选择「壁纸」或「桌面与壁纸」。</li>
+        <li>从相册里选中刚下载的图片。</li>
+        <li>按需要设为桌面、锁屏，或同时设置。</li>
+      </ol>
+      <h3>各品牌入口</h3>
+      <ul>
+        <li>小米 / 红米：设置 → 桌面 → 壁纸</li>
+        <li>华为 / 荣耀：设置 → 壁纸与风格 → 壁纸</li>
+        <li>OPPO / 一加：设置 → 壁纸</li>
+        <li>vivo / iQOO：设置 → 桌面与锁屏 → 壁纸</li>
+      </ul>
+      <p>也可以打开系统「相册 / 图库」，打开刚保存的图片，在菜单里选「设为壁纸」。</p>
+      <h3>苹果手机</h3>
+      <p>长按预览图保存到照片，打开「照片」→ 分享 →「用作墙纸」，再分别调整锁屏和主屏幕。</p>
+    </article>
+  </section>
+
+  <section id="page-search" class="sheet" aria-hidden="true">
+    <div class="search-box">
+      <input id="search-input" type="search" placeholder="搜索壁纸、分类或标签" enterkeyhint="search" autocomplete="off">
+    </div>
+    <div class="filters">
+      <p class="filter-label">标签</p>
+      <div class="chips" id="tag-chips"></div>
+      <p class="filter-label">颜色</p>
+      <div class="swatch-row" id="color-chips"></div>
+    </div>
+    <div class="grid" id="search-grid"></div>
+    <p class="empty" id="search-empty" hidden>没有找到符合条件的壁纸。</p>
+  </section>
+
   <nav class="tabbar" aria-label="主导航">
-    <button type="button" class="tab on" data-view="discover">
-      <span class="ico" aria-hidden="true">✧</span>
-      <span>发现</span>
+    <button type="button" class="tab on" data-view="home">
+      <span class="ico" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M12 3.2 3 11h2v9h6v-6h2v6h6v-9h2L12 3.2z"/></svg>
+      </span>
+      <span>首页</span>
+    </button>
+    <button type="button" class="tab" data-view="cats">
+      <span class="ico" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M3 3h8v8H3V3zm10 0h8v8h-8V3zM3 13h8v8H3v-8zm10 0h8v8h-8v-8z"/></svg>
+      </span>
+      <span>分类</span>
     </button>
     <button type="button" class="tab" data-view="themes">
-      <span class="ico" aria-hidden="true">▣</span>
-      <span>主题包</span>
+      <span class="ico" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M5 3h10l4 4v14H5V3zm9 1.5V8h3.5L14 4.5zM8 12h8v2H8v-2zm0 4h8v2H8v-2z"/></svg>
+      </span>
+      <span>主题</span>
     </button>
-    <button type="button" class="tab" data-view="favs">
-      <span class="ico" aria-hidden="true">★</span>
-      <span>收藏</span>
+    <button type="button" class="tab" data-view="mine">
+      <span class="ico" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4zm0 2c-4 0-8 2-8 6v1h16v-1c0-4-4-6-8-6z"/></svg>
+      </span>
+      <span>我的</span>
     </button>
   </nav>
 
   <div id="preview" class="preview" hidden>
-    <div class="pv-stage">
+    <div class="pv-stage" id="pv-stage">
+      <button type="button" class="pv-close" id="btn-close" aria-label="关闭">×</button>
       <img id="pv-img" class="pv-img" alt="">
       <div id="ov-lock" class="ov ov-lock">
         <div class="lock-status">
-          <span class="lock-carrier">星糖</span>
+          <span class="lock-carrier">元境</span>
           <span class="lock-icons">●●● ☾</span>
         </div>
         <div class="lock-clock">
@@ -88,6 +208,8 @@
         <div class="home-grid" id="home-grid"></div>
         <div class="home-dock" id="home-dock"></div>
       </div>
+      <button type="button" class="pv-nav prev" id="pv-prev" aria-label="上一张">‹</button>
+      <button type="button" class="pv-nav next" id="pv-next" aria-label="下一张">›</button>
     </div>
     <div class="pv-bar">
       <div class="pv-title">
@@ -100,15 +222,20 @@
         <button type="button" class="mode" data-mode="plain">原图</button>
       </div>
       <div class="pv-actions">
-        <button type="button" class="btn ghost" id="btn-close">关闭</button>
         <button type="button" class="btn ghost" id="btn-fav">收藏</button>
-        <button type="button" class="btn primary" id="btn-dl">下载壁纸</button>
+        <button type="button" class="btn ghost" id="btn-share">分享</button>
+        <button type="button" class="btn ghost" id="btn-dl">下载</button>
       </div>
-      <p class="pv-hint">下载后请在系统相册里设为壁纸。苹果手机请长按图片保存。</p>
+      <button type="button" class="btn primary btn-set" id="btn-set">设为壁纸</button>
+      <p class="pv-hint" id="pv-counts"></p>
+      <div class="similar">
+        <h3>相似推荐</h3>
+        <div class="hrow" id="similar-row"></div>
+      </div>
     </div>
   </div>
 
   <div id="toast" class="toast" hidden></div>
-  <script src="./app.js"></script>
+  <script src="./app.js?v=20261110d"></script>
 </body>
 </html>
