@@ -47,7 +47,7 @@
     ready = true; banner(''); status('ok', '在线'); setEnabled(true);
     sb.auth.onAuthStateChange((_e, s) => { if (!s) location.reload(); });
 
-    initLobby(); initComm(); loadOwnLook(true); probeProfile(); loadPosts(true); loadProfile(); loadBlocks(); subscribeInbox(); initAdmin(); window.dispatchEvent(new CustomEvent('sg-session'));
+    initLobby(); initComm(); loadOwnLook(true); probeProfile(); loadPosts(true); loadProfile(); loadBlocks(); subscribeInbox(); initAdmin(); window.dispatchEvent(new CustomEvent('sg-session')); queueMicrotask(syncChatroomFromDom);
     setInterval(() => { if (visible() && curTab === 'friends') loadFriends(); }, 60000);
   }
 
@@ -69,11 +69,34 @@
     $('discover-list').replaceChildren(); $('friend-search').disabled = true;
   }
   let curTab = 'planet';
-  function setChatroom(on, kind) {
-    document.body.classList.toggle('sg-in-chatroom', !!on);
-    if (!on) document.body.classList.remove('sg-in-conversation');
-    notifyPetAvoid(!!on);
-    try { window.dispatchEvent(new CustomEvent('sg-chatroom', { detail: { on: !!on, kind: kind || null } })); } catch (_) {}
+  let chatroomKind = null, chatroomSyncing = false;
+  function setChatroomMode(on, kind) {
+    const want = !!on;
+    const nextKind = want ? (kind || chatroomKind || 'lobby') : null;
+    const prev = document.body.classList.contains('sg-in-chatroom');
+    if (prev === want && chatroomKind === nextKind) return; // 幂等，避免 MutationObserver 环
+    document.body.classList.toggle('sg-in-chatroom', want);
+    if (!want) { document.body.classList.remove('sg-in-conversation', 'sg-conv-open'); chatroomKind = null; }
+    else chatroomKind = nextKind;
+    document.body.dataset.chatroom = want ? (chatroomKind || '1') : '';
+    notifyPetAvoid(want);
+    try { window.dispatchEvent(new CustomEvent('sg-chatroom', { detail: { on: want, kind: chatroomKind } })); } catch (_) {}
+    try { measureChrome(); } catch (_) {}
+  }
+  const setChatroom = setChatroomMode; // 兼容旧名
+  // 单一来源：根据真实可见 DOM 校准（hash/登录后重渲染/返回键兜底）
+  function syncChatroomFromDom() {
+    if (chatroomSyncing) return;
+    chatroomSyncing = true;
+    try {
+      const lobby = $('tab-lobby');
+      const view = $('conv-view');
+      const lobbyOn = !!(lobby && !lobby.hidden);
+      const convOn = !!(view && !view.hidden && document.body.classList.contains('sg-conv-open'));
+      if (convOn) setChatroomMode(true, 'dm');
+      else if (lobbyOn) setChatroomMode(true, 'lobby');
+      else setChatroomMode(false);
+    } finally { chatroomSyncing = false; }
   }
   function showTab(name) {
     const sec = document.querySelector(`.sg-tab[data-tab="${name}"]`); if (!sec) return;
@@ -83,12 +106,15 @@
     document.querySelectorAll('.sg-tab').forEach(t => { t.hidden = t !== sec; });
     document.querySelectorAll('.sg-nav button').forEach(x => x.setAttribute('aria-selected', String(x.dataset.go === sec.dataset.nav)));
     $('sg-heading').textContent = sec.dataset.title; $('lobby-form').hidden = name !== 'lobby';
-    setChatroom(name === 'lobby', 'lobby');
+    if (name === 'lobby') setChatroomMode(true, 'lobby');
+    else if (name === 'chats' && $('conv-view') && !$('conv-view').hidden) setChatroomMode(true, 'dm');
+    else setChatroomMode(false);
     if (name === 'lobby') { maybeShowLobbyHint(); if (ready) lobbyRefresh(true); }
     if ((name === 'friends' || name === 'more') && ready) loadFriends();
     document.querySelectorAll('.sg-seg [data-go-nav]').forEach(x => x.setAttribute('aria-selected', String(x.dataset.goNav === name)));
     if (ready) syncRead();
     window.dispatchEvent(new CustomEvent('sg-tab', { detail: name }));
+    queueMicrotask(syncChatroomFromDom);
   }
   document.querySelectorAll('.sg-nav button').forEach(b => b.addEventListener('click', () => showTab(b.dataset.go)));
   // 星球：破冰话题（仅放入大厅草稿）与游戏入口（白名单站内链接）
@@ -104,7 +130,18 @@
   const threadFromHash = h => { const m = /^#messages\/thread=(.*)$/.exec(h || ''); return !m ? undefined : Core.isUuid(m[1]) ? m[1].toLowerCase() : null; };
   const fromHash = () => { const th = threadFromHash(location.hash); if (th !== undefined) { showTab('chats'); if (th === null) toast('会话链接无效'); else { pendingThread = th; try { openThread(); } catch {} } return; }
     const t = Core.tabFromHash(location.hash); if (t) showTab(t); if (location.hash === '#skins') $('cc-section')?.scrollIntoView({ block: 'start' }); };
-  window.addEventListener('hashchange', fromHash); fromHash();
+  window.addEventListener('hashchange', () => { fromHash(); queueMicrotask(syncChatroomFromDom); });
+  window.addEventListener('pageshow', () => queueMicrotask(syncChatroomFromDom));
+  window.addEventListener('popstate', () => queueMicrotask(syncChatroomFromDom));
+  fromHash();
+  queueMicrotask(syncChatroomFromDom);
+  if (window.MutationObserver) {
+    const mo = new MutationObserver(() => queueMicrotask(syncChatroomFromDom));
+    const lobby = $('tab-lobby'), view = $('conv-view');
+    if (lobby) mo.observe(lobby, { attributes: true, attributeFilter: ['hidden', 'class'] });
+    if (view) mo.observe(view, { attributes: true, attributeFilter: ['hidden', 'class'] });
+    mo.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+  }
   document.querySelectorAll('[data-go-nav]').forEach(b => b.addEventListener('click', () => showTab(b.dataset.goNav)));
   $('friend-search').addEventListener('input', () => filterFriends());
   function filterFriends() {
@@ -386,23 +423,30 @@
   }
   $('emoji-panel') && $('emoji-panel').replaceChildren(...Core.EMOJI.map(e => el('button', { type: 'button', class: 'sg-emoji', text: e, 'aria-label': '插入表情 ' + e, onclick: () => insertText(e) })));
   $('topic-panel') && $('topic-panel').replaceChildren(el('small', { class: 'sg-muted', text: '点一下放进输入框，确认后再发送' }), ...Core.ICEBREAKERS.map(t => el('button', { type: 'button', class: 'sg-chip-btn', text: t, onclick: () => { insertText(t); togglePanel($('topic-btn'), $('topic-panel'), false); } })));
-  $('plus-btn')?.addEventListener('click', () => togglePanel($('plus-btn'), $('plus-panel')));
-  $('emoji-btn')?.addEventListener('click', () => togglePanel($('emoji-btn'), $('emoji-panel')));
-  $('topic-btn')?.addEventListener('click', () => { togglePanel($('plus-btn'), $('plus-panel'), false); togglePanel($('topic-btn'), $('topic-panel')); });
-  $('image-btn')?.addEventListener('click', () => toast('图片功能准备中：需要存储权限、图片审核与元数据清理后才会开放'));
-  $('lobby-hint-dismiss')?.addEventListener('click', dismissLobbyHint);
-  $('lobby-more-btn')?.addEventListener('click', () => togglePanel($('lobby-more-btn'), $('lobby-more-menu')));
-  $('conv-more-btn')?.addEventListener('click', () => togglePanel($('conv-more-btn'), $('conv-more-menu')));
-  $('conv-plus-btn')?.addEventListener('click', () => togglePanel($('conv-plus-btn'), $('conv-plus-panel')));
-  $('lobby-rules-btn')?.addEventListener('click', () => { togglePanel($('lobby-more-btn'), $('lobby-more-menu'), false); toast('友善聊天，禁止联系方式与链接；内容经服务端审核'); });
+  // 聊天室控件：事件委托（重渲染/缓存错位后仍可用）
+  document.addEventListener('click', e => {
+    const t = e.target.closest && e.target.closest('button, a, [data-act]');
+    if (!t) {
+      if (!e.target.closest('#lobby-form, #conv-form, #emoji-pop, #sticker-pop, .sg-chat-head, .sg-chat-menu, .sg-panel, .sg-pop')) closeChatPops();
+      return;
+    }
+    const id = t.id;
+    if (id === 'plus-btn') { e.preventDefault(); togglePanel($('plus-btn'), $('plus-panel')); return; }
+    if (id === 'emoji-btn') { e.preventDefault(); togglePanel($('emoji-btn'), $('emoji-panel')); return; }
+    if (id === 'topic-btn') { e.preventDefault(); togglePanel($('plus-btn'), $('plus-panel'), false); togglePanel($('topic-btn'), $('topic-panel')); return; }
+    if (id === 'image-btn') { e.preventDefault(); toast('图片功能准备中：需要存储权限、图片审核与元数据清理后才会开放'); return; }
+    if (id === 'lobby-hint-dismiss') { e.preventDefault(); dismissLobbyHint(); return; }
+    if (id === 'lobby-more-btn') { e.preventDefault(); e.stopPropagation(); togglePanel($('lobby-more-btn'), $('lobby-more-menu')); return; }
+    if (id === 'conv-more-btn') { e.preventDefault(); e.stopPropagation(); togglePanel($('conv-more-btn'), $('conv-more-menu')); return; }
+    if (id === 'conv-plus-btn') { e.preventDefault(); togglePanel($('conv-plus-btn'), $('conv-plus-panel')); return; }
+    if (id === 'lobby-rules-btn') { e.preventDefault(); togglePanel($('lobby-more-btn'), $('lobby-more-menu'), false); toast('友善聊天，禁止联系方式与链接；内容经服务端审核'); return; }
+    if (t.closest('.sg-chat-menu a[href="#skins"]')) { closeChatPops(); return; }
+    if (!t.closest('#lobby-form, #conv-form, #emoji-pop, #sticker-pop, .sg-chat-head, .sg-chat-menu, .sg-panel, .sg-pop')) closeChatPops();
+  });
   input.addEventListener('input', updCount);
   input.addEventListener('keydown', e => {
     if (Core.isImeEnter(e)) { e.preventDefault(); e.stopPropagation(); }
     if (e.key === 'Escape') closeChatPops();
-  });
-  document.addEventListener('click', e => {
-    if (e.target.closest('#lobby-form, #emoji-pop, #sticker-pop, .sg-chat-head, .sg-chat-menu')) return;
-    closeChatPops();
   });
   let composing = false;
   input.addEventListener('compositionstart', () => { composing = true; });

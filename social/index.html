@@ -6,15 +6,15 @@
 <meta name="referrer" content="no-referrer">
 <meta name="theme-color" content="#0e1021">
 <title>星糖星球 · 星糖宇宙</title>
-<link rel="stylesheet" href="./social.css">
-<link rel="stylesheet" href="../vendor/photoswipe@5.4.4/photoswipe.css">
-<link rel="stylesheet" href="../chat-cosmetics.css">
+<link rel="stylesheet" href="./social.css?v=20261110a">
+<link rel="stylesheet" href="../vendor/photoswipe@5.4.4/photoswipe.css?v=20261110a">
+<link rel="stylesheet" href="../chat-cosmetics.css?v=20261110a">
 </head>
 <body class="sg-page">
 <header class="sg-top">
   <a class="sg-back" href="../tools.html" aria-label="返回星糖宇宙">‹</a>
   <div class="sg-title"><h1 id="sg-heading">星球</h1><span id="sg-status" class="sg-chip" aria-live="polite">连接中…</span></div>
-  <img class="sg-mascot" src="../assets/xing-chibi.webp" alt="" aria-hidden="true">
+  <img class="sg-mascot" src="../assets/xing-chibi.webp?v=20261110a" alt="" aria-hidden="true">
 </header>
 
 <div id="sg-banner" class="sg-banner" role="status" aria-live="polite" hidden></div>
@@ -58,7 +58,7 @@
       </div>
     </header>
     <div id="lobby-log" class="sg-log" role="log" aria-live="polite" aria-label="大厅消息">
-      <div class="sg-state"><img src="../assets/lan-chibi.webp" alt=""><p>正在载入大厅…</p></div>
+      <div class="sg-state"><img src="../assets/lan-chibi.webp?v=20261110a" alt=""><p>正在载入大厅…</p></div>
     </div>
     <button id="lobby-newpill" class="sg-newpill" type="button" hidden>有新消息 ↓</button>
 <form id="lobby-form" data-pet-avoid class="sg-composer sg-chat-bar" data-for="lobby" hidden>
@@ -89,7 +89,7 @@
     <div id="search-result" class="sg-list" aria-live="polite" hidden></div>
     <div id="conv-list" class="sg-list" role="list">
       <button type="button" id="conv-lobby" class="sg-conv" role="listitem" data-go-tab="lobby">
-        <img class="sg-avatar" src="../assets/xing-chibi.webp" alt="">
+        <img class="sg-avatar" src="../assets/xing-chibi.webp?v=20261110a" alt="">
         <span class="sg-conv-main"><b>星糖大厅 · 公开</b><small id="conv-lobby-last" class="sg-muted">尚未载入</small></span>
         <span id="conv-lobby-unread" class="sg-unread" hidden></span>
       </button>
@@ -177,7 +177,7 @@
     <div class="sg-me-top">
       <div id="me-cover" class="sg-me-cover" role="img" aria-label="我的背景（来自商城已装备背景）"></div>
       <div class="sg-me-hero" aria-labelledby="me-nick">
-        <div class="sg-me-avwrap"><img id="me-avatar" class="sg-me-av" src="../assets/avatar-whale.webp" alt="我的头像"><img id="me-pendant" class="sg-me-pendant" alt="" hidden></div>
+        <div class="sg-me-avwrap"><img id="me-avatar" class="sg-me-av" src="../assets/avatar-whale.webp?v=20261110a" alt="我的头像"><img id="me-pendant" class="sg-me-pendant" alt="" hidden></div>
         <div class="sg-me-info">
           <h2 id="me-nick" class="sg-me-nick">星糖旅人</h2>
           <p id="me-sign" class="sg-me-sign">签名：未接入（资料接口未部署）</p>
@@ -237,7 +237,7 @@
 
     <details class="sg-card sg-fold">
       <summary><span>公会群聊</span><em class="sg-badge sg-off">即将开放</em></summary>
-      <div class="sg-state sg-state-sm"><img src="../assets/mo-chibi.webp" alt=""><p>公会功能尚未启用：建群、邀请、审批与群聊会在后续版本逐步开放。<br>当前没有任何公会或成员数据。</p></div>
+      <div class="sg-state sg-state-sm"><img src="../assets/mo-chibi.webp?v=20261110a" alt=""><p>公会功能尚未启用：建群、邀请、审批与群聊会在后续版本逐步开放。<br>当前没有任何公会或成员数据。</p></div>
     </details>
 
     <div class="sg-card"><h2>已拉黑</h2><div id="block-list" class="sg-list"></div></div>
@@ -286,7 +286,7 @@
 
 <dialog id="user-sheet" data-pet-avoid class="sg-dialog sg-sheet" aria-labelledby="sheet-title">
   <form method="dialog">
-    <div class="sg-person"><img id="sheet-avatar" class="sg-avatar" src="../assets/avatar-whale.webp" alt=""><div><h2 id="sheet-title">用户</h2><small id="sheet-quote" class="sg-muted"></small></div></div>
+    <div class="sg-person"><img id="sheet-avatar" class="sg-avatar" src="../assets/avatar-whale.webp?v=20261110a" alt=""><div><h2 id="sheet-title">用户</h2><small id="sheet-quote" class="sg-muted"></small></div></div>
     <div class="sg-list">
       <button value="friend" class="sg-primary">申请加好友（对方同意后才能私聊）</button>
       <button value="report">举报这条消息</button>
@@ -296,22 +296,22 @@
   </form>
 </dialog>
 
-<script src="./social-demo-gate.js"></script>
+<script src="./social-demo-gate.js?v=20261110a"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0/dist/umd/supabase.min.js" crossorigin="anonymous"></script>
-<script src="./social-core.js"></script>
-<script src="./social-client.js"></script>
-<script src="./social.js"></script>
-<script src="./social-media.js"></script>
-<script src="../vendor/compressorjs@1.4.0/compressor.min.js"></script>
-<script src="../vendor/photoswipe@5.4.4/photoswipe.umd.min.js"></script>
+<script src="./social-core.js?v=20261110a"></script>
+<script src="./social-client.js?v=20261110a"></script>
+<script src="./social.js?v=20261110a"></script>
+<script src="./social-media.js?v=20261110a"></script>
+<script src="../vendor/compressorjs@1.4.0/compressor.min.js?v=20261110a"></script>
+<script src="../vendor/photoswipe@5.4.4/photoswipe.umd.min.js?v=20261110a"></script>
 <script type="module" src="../vendor/emoji-picker-element@1.29.1/index.js"></script>
-<script src="../chat-cosmetics-catalog.js"></script>
-<script src="../chat-cosmetics.js"></script>
-<script src="./social-appearance.js"></script>
-<script src="./social-libs.js"></script>
-<script src="./social-chat.js"></script>
-<script src="./social-invite.js"></script>
-<script src="./social-feed.js"></script>
-<script src="../star-pet.js" defer></script>
+<script src="../chat-cosmetics-catalog.js?v=20261110a"></script>
+<script src="../chat-cosmetics.js?v=20261110a"></script>
+<script src="./social-appearance.js?v=20261110a"></script>
+<script src="./social-libs.js?v=20261110a"></script>
+<script src="./social-chat.js?v=20261110a"></script>
+<script src="./social-invite.js?v=20261110a"></script>
+<script src="./social-feed.js?v=20261110a"></script>
+<script src="../star-pet.js?v=20261110a" defer></script>
 </body>
 </html>

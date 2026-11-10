@@ -391,3 +391,9 @@ html[data-demo="synthetic"] body.sg-conv-open #conv-view{padding-bottom:var(--sa
 body.sg-conv-open #conv-view>.sg-chat-head{flex:0 0 auto}
 body.sg-conv-open #conv-view{padding-top:0}
 body.sg-in-conversation.sg-in-chatroom #conv-view{z-index:var(--z-conv)}
+
+/* 兜底：即使 JS 未及时加 sg-in-chatroom，只要大厅/会话面板可见就隐藏外层顶栏与主导航 */
+body:has(#tab-lobby:not([hidden])) .sg-top,
+body:has(#conv-view:not([hidden])) .sg-top{visibility:hidden;pointer-events:none}
+body:has(#tab-lobby:not([hidden])) .sg-nav,
+body:has(#conv-view:not([hidden])) .sg-nav{visibility:hidden;pointer-events:none;height:0!important;padding:0!important;overflow:hidden;min-height:0!important}
