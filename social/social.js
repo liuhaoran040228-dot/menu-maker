@@ -323,6 +323,11 @@
     refresh: () => { if (conv) { const tok = convScope.enter(convScope.key); loadConvPage(tok, null).catch(() => {}); } } };
 
   // —— 遮挡防护：测量真实高度 → CSS 变量；键盘 visualViewport → --kb-inset；桌宠钩子 ——
+  function setVar(root, name, value) {
+    if (root.style.getPropertyValue(name) === value) return false;
+    root.style.setProperty(name, value);
+    return true;
+  }
   function measureChrome() {
     const root = document.body;
     try {
@@ -332,12 +337,12 @@
       const banner = document.getElementById('sg-demo-banner');
       const head = document.querySelector('.sg-lobby:not([hidden]) .sg-chat-head, #conv-view:not([hidden]) .sg-chat-head');
       // --nav-h = 导航内容高度（不含 safe-area；safe 由 --safe-b 另加）
-      if (nav) root.style.setProperty('--nav-h', Math.max(44, Math.round(nav.clientHeight || 58)) + 'px');
-      if (lobby && !lobby.hidden) root.style.setProperty('--composer-h', Math.max(48, Math.round(lobby.getBoundingClientRect().height)) + 'px');
-      if (bar && (root.classList.contains('sg-in-conversation') || root.classList.contains('sg-in-chatroom'))) root.style.setProperty('--conv-bar-h', Math.max(44, Math.round(bar.getBoundingClientRect().height)) + 'px');
-      if (banner && getComputedStyle(banner).display !== 'none') root.style.setProperty('--demo-banner-h', Math.max(0, Math.round(banner.getBoundingClientRect().height)) + 'px');
-      else root.style.setProperty('--demo-banner-h', '0px');
-      if (head) root.style.setProperty('--chat-head-h', Math.max(48, Math.round(head.getBoundingClientRect().height)) + 'px');
+      if (nav) setVar(root, '--nav-h', Math.max(44, Math.round(nav.clientHeight || 58)) + 'px');
+      if (lobby && !lobby.hidden) setVar(root, '--composer-h', Math.max(48, Math.round(lobby.getBoundingClientRect().height)) + 'px');
+      if (bar && (root.classList.contains('sg-in-conversation') || root.classList.contains('sg-in-chatroom'))) setVar(root, '--conv-bar-h', Math.max(44, Math.round(bar.getBoundingClientRect().height)) + 'px');
+      if (banner && getComputedStyle(banner).display !== 'none') setVar(root, '--demo-banner-h', Math.max(0, Math.round(banner.getBoundingClientRect().height)) + 'px');
+      else setVar(root, '--demo-banner-h', '0px');
+      if (head) setVar(root, '--chat-head-h', Math.max(48, Math.round(head.getBoundingClientRect().height)) + 'px');
     } catch (_) {}
   }
   function keyboardInset() {
@@ -357,33 +362,53 @@
   function syncKeyboard() {
     try {
       const inset = keyboardInset();
-      document.body.style.setProperty('--kb-inset', inset + 'px');
+      const val = inset + 'px';
+      if (!setVar(document.body, '--kb-inset', val)) return;
       if (inset > 40) {
         const convView = $('conv-view');
         if (convView && !convView.hidden) { const lg = $('conv-log'); if (lg) lg.scrollTop = lg.scrollHeight; }
         const lobby = $('tab-lobby');
         if (lobby && !lobby.hidden) { const lg = $('lobby-log'); if (lg) lg.scrollTop = lg.scrollHeight; }
       }
-    } catch (_) { document.body.style.setProperty('--kb-inset', '0px'); }
+    } catch (_) { setVar(document.body, '--kb-inset', '0px'); }
   }
+  let lastPetAvoid = '';
   function notifyPetAvoid(on) {
     try {
       const rects = [];
-      ['conv-form', 'conv-send', 'lobby-form'].forEach(id => { const el = $(id); if (el && !el.hidden) { const r = el.getBoundingClientRect(); if (r.width && r.height) rects.push({ id, x: r.x, y: r.y, w: r.width, h: r.height, top: r.top, right: r.right, bottom: r.bottom, left: r.left }); } });
-      const nav = document.querySelector('.sg-nav'); if (nav) { const r = nav.getBoundingClientRect(); rects.push({ id: 'sg-nav', x: r.x, y: r.y, w: r.width, h: r.height, top: r.top, right: r.right, bottom: r.bottom, left: r.left }); }
+      ['conv-form', 'conv-send', 'lobby-form'].forEach(id => { const el = $(id); if (el && !el.hidden) { const r = el.getBoundingClientRect(); if (r.width && r.height) rects.push({ id, x: Math.round(r.x), y: Math.round(r.y), w: Math.round(r.width), h: Math.round(r.height), top: Math.round(r.top), right: Math.round(r.right), bottom: Math.round(r.bottom), left: Math.round(r.left) }); } });
+      const nav = document.querySelector('.sg-nav'); if (nav && getComputedStyle(nav).visibility !== 'hidden') { const r = nav.getBoundingClientRect(); if (r.height > 1) rects.push({ id: 'sg-nav', x: Math.round(r.x), y: Math.round(r.y), w: Math.round(r.width), h: Math.round(r.height), top: Math.round(r.top), right: Math.round(r.right), bottom: Math.round(r.bottom), left: Math.round(r.left) }); }
+      const key = (on ? 'edge' : 'clear') + JSON.stringify(rects);
+      if (key === lastPetAvoid) return;
+      lastPetAvoid = key;
       window.dispatchEvent(new CustomEvent('star-pet-avoid', { detail: { mode: on ? 'edge' : 'clear', rects } }));
     } catch (_) {}
   }
   function bootLayoutGuards() {
     const relayout = () => { measureChrome(); syncKeyboard(); };
+    let roTick = 0;
+    const relayoutDebounced = () => {
+      if (roTick) return;
+      roTick = requestAnimationFrame(() => {
+        roTick = 0;
+        relayout();
+        notifyPetAvoid(document.body.classList.contains('sg-in-chatroom') || document.body.classList.contains('sg-in-conversation'));
+      });
+    };
+    function onVvChange() {
+      const ae = document.activeElement;
+      const typing = !!(ae && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA' || ae.isContentEditable));
+      if (!typing) { setVar(document.body, '--kb-inset', '0px'); return; }
+      syncKeyboard();
+    }
     relayout();
     if (window.ResizeObserver) {
-      const ro = new ResizeObserver(() => { relayout(); notifyPetAvoid(document.body.classList.contains('sg-in-chatroom') || document.body.classList.contains('sg-in-conversation')); });
+      const ro = new ResizeObserver(relayoutDebounced);
       [document.querySelector('.sg-nav'), $('lobby-form'), $('conv-form'), $('lobby-hint'), document.querySelector('.sg-chat-head'), document.getElementById('sg-demo-banner')].forEach(el => el && ro.observe(el));
     }
-    window.addEventListener('resize', relayout);
-    window.visualViewport?.addEventListener('resize', syncKeyboard);
-    window.visualViewport?.addEventListener('scroll', syncKeyboard);
+    window.addEventListener('resize', relayoutDebounced);
+    window.visualViewport?.addEventListener('resize', onVvChange);
+    window.visualViewport?.addEventListener('scroll', onVvChange);
     window.addEventListener('focusin', syncKeyboard);
     window.addEventListener('focusout', () => setTimeout(syncKeyboard, 50));
     window.addEventListener('pageshow', relayout);
@@ -484,7 +509,14 @@
   const jobs = new Map(); // clientId -> {job, state:'pending'|'failed'|'unknown', note}
   const nearBottom = () => log.scrollHeight - log.scrollTop - log.clientHeight < 60;
   const toBottom = () => { log.scrollTop = log.scrollHeight; unseen = 0; $('lobby-newpill').hidden = true; };
-  log.addEventListener('scroll', () => { if (nearBottom()) { unseen = 0; $('lobby-newpill').hidden = true; syncRead(); } if (log.scrollTop < 40 && hasOlder) loadOlder(); }, { passive: true });
+  let busyTimer = 0;
+  function markBusy() {
+    document.body.classList.add('sg-busy');
+    clearTimeout(busyTimer);
+    busyTimer = setTimeout(() => document.body.classList.remove('sg-busy'), 180);
+  }
+  log.addEventListener('scroll', () => { markBusy(); if (nearBottom()) { unseen = 0; $('lobby-newpill').hidden = true; syncRead(); } if (log.scrollTop < 40 && hasOlder) loadOlder(); }, { passive: true });
+  $('conv-log')?.addEventListener('scroll', markBusy, { passive: true });
   $('lobby-newpill').addEventListener('click', toBottom);
 
   function lobbyMsg(m, fresh) {
@@ -512,7 +544,19 @@
   // 由状态整体渲染；非底部时以首个可见消息为锚点保持阅读位置。
   function render({ keep = true, freshIds = null } = {}) {
     const stick = nearBottom();
-    const anchor = (!stick && keep) ? [...log.querySelectorAll('.sg-msg[data-id]')].find(n => n.offsetTop + n.offsetHeight > log.scrollTop) : null;
+    const existing = [...log.querySelectorAll('.sg-msg[data-id]')];
+    const existingIds = existing.map(n => n.dataset.id);
+    const msgIds = msgs.map(m => String(m.id));
+    const canAppend = !jobs.size && existingIds.length && msgIds.length > existingIds.length
+      && msgIds.slice(0, existingIds.length).every((id, i) => id === existingIds[i])
+      && !log.querySelector('.sg-state');
+    if (canAppend) {
+      for (const m of msgs.slice(existingIds.length)) log.appendChild(lobbyMsg(m, freshIds?.has(String(m.id))));
+      if (stick || !keep) toBottom();
+      syncRead();
+      return;
+    }
+    const anchor = (!stick && keep) ? existing.find(n => n.offsetTop + n.offsetHeight > log.scrollTop) : null;
     const anchorId = anchor?.dataset.id, anchorOff = anchor ? anchor.offsetTop - log.scrollTop : 0;
     const nodes = msgs.map(m => lobbyMsg(m, freshIds?.has(String(m.id))));
     for (const j of jobs.values()) nodes.push(jobNode(j));

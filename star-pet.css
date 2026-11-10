@@ -16,3 +16,5 @@
 
 #star-pet.sp-chat-expanded:not(.sp-thread-docked){width:68px;height:88px}
 #star-pet.sp-chat-expanded:not(.sp-thread-docked)>.sp-controls{display:none!important}
+
+body.sg-busy #star-pet .sp-body .starshow,body.sg-busy #star-pet .sp-body>.starshow{animation-play-state:paused!important}

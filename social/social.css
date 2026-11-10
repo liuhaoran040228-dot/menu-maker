@@ -16,7 +16,7 @@
 .sg-page [hidden],.sg-page[hidden],[hidden]{display:none!important}
 .sg-page>*{position:relative;z-index:var(--z-content)}
 /* 顶栏 */
-.sg-top{flex:none;position:sticky;top:0;z-index:var(--z-nav);display:flex;align-items:center;gap:8px;padding:calc(6px + var(--safe-t)) 12px 6px;background:linear-gradient(180deg,#0e1021f2,#0e1021cc);border-bottom:1px solid var(--line);backdrop-filter:blur(8px)}
+.sg-top{flex:none;position:sticky;top:0;z-index:var(--z-nav);display:flex;align-items:center;gap:8px;padding:calc(6px + var(--safe-t)) 12px 6px;background:#0e1021;border-bottom:1px solid var(--line)}
 .sg-back{color:var(--muted);text-decoration:none;font-size:26px;width:36px;height:40px;display:grid;place-items:center}
 .sg-title{flex:1;min-width:0;display:flex;align-items:baseline;gap:8px}
 .sg-top h1{margin:0;font-size:18px;letter-spacing:.06em;white-space:nowrap;background:linear-gradient(90deg,var(--pink),var(--violet));-webkit-background-clip:text;background-clip:text;color:transparent}
@@ -34,7 +34,7 @@
 .sg-log{flex:1;min-height:0;overflow-y:auto;padding:10px 12px var(--log-pad-b);display:flex;flex-direction:column;gap:10px;overscroll-behavior:contain;overflow-anchor:auto}
 .sg-log-sm{max-height:44dvh;padding:6px 0}
 /* 消息 */
-.sg-msg{display:flex;gap:8px;align-items:flex-start;max-width:100%}
+.sg-msg{display:flex;gap:8px;align-items:flex-start;max-width:100%;contain:layout style paint}
 .sg-msg.me{flex-direction:row-reverse}
 .sg-avatar{width:34px;height:34px;border-radius:50%;object-fit:cover;background:#2b2b45;border:1.5px solid #ffffff22;flex:none}
 .sg-msg-body{min-width:0;max-width:78%;display:flex;flex-direction:column;align-items:flex-start}
@@ -50,7 +50,7 @@
 .sg-day{align-self:center;font-size:11px;color:var(--muted);background:#ffffff0d;border-radius:999px;padding:1px 10px}
 .sg-newpill{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(var(--nav-h) + var(--composer-h) + var(--safe-b) + 10px);border:0;border-radius:999px;padding:6px 14px;background:var(--pink);color:#2a1030;font-weight:700;box-shadow:0 4px 14px #0007;z-index:3;min-height:34px}
 /* 输入区 */
-.sg-composer{position:fixed;left:0;right:0;bottom:calc(var(--nav-h) + var(--safe-b) + var(--kb-inset));z-index:var(--z-nav);max-width:680px;margin:0 auto;padding:6px 10px 8px;background:linear-gradient(180deg,#12142bcc,#12142bf7);border-top:1px solid var(--line);backdrop-filter:blur(8px)}
+.sg-composer{position:fixed;left:0;right:0;bottom:calc(var(--nav-h) + var(--safe-b) + var(--kb-inset));z-index:var(--z-nav);max-width:680px;margin:0 auto;padding:6px 10px 8px;background:#12142b;border-top:1px solid var(--line)}
 .sg-composer[hidden]{display:none}
 .sg-hint{margin:0 2px 5px;font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sg-hint b{color:var(--violet)}
@@ -110,7 +110,7 @@
 @media(prefers-reduced-motion:reduce){.sg-page *{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
 
 /* ---- 背景主题：只用站内已有素材或 CSS 渐变；叠加暗色遮罩保证对比度 ---- */
-.sg-page[data-theme]{background-size:cover;background-position:center;background-attachment:fixed}
+.sg-page[data-theme]{background-size:cover;background-position:center;background-attachment:scroll}
 .sg-page[data-theme]::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none; /* under content */background:linear-gradient(180deg,#0e1021b3,#0e1021d9)}
 .sg-page[data-theme=starry]::after{display:none}
 .sg-page[data-theme=dusk]{background:linear-gradient(160deg,#2b1d4a,#4a2350 45%,#14183a)}
@@ -249,7 +249,7 @@
 /* ---- 星球主站（外部模型 design3 稿改写；原创糖果星球，无外部资源） ---- */
 .sg-planet-hero{display:flex;flex-direction:column;align-items:center;gap:14px;padding:22px 12px 18px;text-align:center;background:radial-gradient(ellipse at 50% 0,#4a3a7a55 0,transparent 65%);border-radius:20px;margin-bottom:12px}
 .sg-orb{width:160px;height:160px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#ffe3f4,#ff8fc7 32%,#a493ff 62%,#5b3f8f 100%);box-shadow:0 0 40px #ff8fc744,inset -10px -10px 26px #3b2a6a88,inset 6px 6px 18px #ffffffaa}
-@media (prefers-reduced-motion:no-preference){.sg-orb{animation:sg-orb 24s linear infinite}@keyframes sg-orb{to{filter:hue-rotate(40deg)}}}
+@media (prefers-reduced-motion:no-preference){#tab-planet:not([hidden]) .sg-orb{animation:sg-orb 24s linear infinite}@keyframes sg-orb{to{filter:hue-rotate(40deg)}}}
 .sg-planet-hero p{margin:0;max-width:300px;font-size:14px;color:#d8d5ee;line-height:1.6}
 .sg-planet-hero .sg-primary{min-height:44px}
 .sg-ice-list{display:flex;flex-direction:column;gap:8px}
@@ -359,14 +359,14 @@ body.sg-in-chatroom .sg-lobby{display:flex;flex-direction:column;flex:1 1 0%;min
 body.sg-in-chatroom .sg-lobby .sg-log{flex:1 1 0%;min-height:0;padding:10px 12px 12px}
 body.sg-in-chatroom #lobby-form.sg-composer,
 body.sg-in-chatroom #conv-form.sg-composer{position:relative;left:auto;right:auto;bottom:auto;flex:0 0 auto;width:100%;max-width:none;margin:0;z-index:var(--z-nav);padding-bottom:calc(8px + var(--safe-b) + var(--kb-inset))}
-body.sg-in-chatroom #lobby-form{border-top:1px solid var(--line);background:linear-gradient(180deg,#12142bcc,#12142bf7)}
+body.sg-in-chatroom #lobby-form{border-top:1px solid var(--line);background:#12142b}
 /* 私聊：表单已在 #conv-view flex 列内，取消 fixed 叠层；日志底垫只需小 gap */
 body.sg-conv-open #conv-log{padding:8px 2px 12px!important}
 body.sg-conv-open #conv-form.sg-composer{position:relative;left:auto;right:auto;bottom:auto;flex:0 0 auto;width:100%;max-width:none;margin:0;padding-bottom:calc(8px + var(--safe-b) + var(--kb-inset))}
 html[data-demo="synthetic"] body.sg-conv-open #conv-view{padding-bottom:var(--safe-b)!important}
 
 .sg-chat-head{position:sticky;top:0;z-index:var(--z-conv);display:grid;grid-template-columns:44px minmax(0,1fr) 44px;align-items:center;gap:6px;
-  min-height:48px;padding:calc(var(--safe-t) + 4px) 8px 8px;background:linear-gradient(180deg,#171a36f2,#171a36cc);border-bottom:1px solid #ffffff14;backdrop-filter:blur(8px)}
+  min-height:48px;padding:calc(var(--safe-t) + 4px) 8px 8px;background:#171a36;border-bottom:1px solid #ffffff14}
 .sg-chat-back{width:44px;height:44px;border:0;border-radius:12px;background:#ffffff10;color:inherit;font-size:22px;line-height:1}
 .sg-chat-title{min-width:0;display:flex;flex-direction:column;gap:2px}
 .sg-chat-title b{font-size:16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -398,3 +398,11 @@ body:has(#tab-lobby:not([hidden])) .sg-top,
 body:has(#conv-view:not([hidden])) .sg-top{visibility:hidden;pointer-events:none;position:absolute;height:0!important;min-height:0!important;padding:0!important;margin:0!important;border:0!important;overflow:hidden}
 body:has(#tab-lobby:not([hidden])) .sg-nav,
 body:has(#conv-view:not([hidden])) .sg-nav{visibility:hidden;pointer-events:none;height:0!important;padding:0!important;overflow:hidden;min-height:0!important}
+
+/* 滚动/输入时暂停非必要动画，减轻中低端机卡顿 */
+body.sg-busy #star-pet .sp-body .starshow,
+body.sg-busy #star-pet .sp-body>.starshow,
+body.sg-busy .sg-orb{animation-play-state:paused!important}
+@media (min-width:760px) and (hover:hover){
+  .sg-page[data-theme]{background-attachment:fixed}
+}
